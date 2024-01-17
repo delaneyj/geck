@@ -1,0 +1,22 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  VERSION: 0.0.1
+
+tasks:
+  libpub:
+    dir: ./library
+    cmds:
+      - git push origin
+      - git tag v{{.VERSION}}
+      - git push origin --tags
+      - git push --tags
+      - GOPROXY=proxy.golang.org go list -m github.com/delaneyj/geck@v{{.VERSION}}
+  default:
+    sources:
+      - "**/*.go"
+    cmds:
+      - go test -benchmem -run=^$ -bench ^BenchmarkPathelogical$ github.com/delaneyj/geck/tests
+    silent: true
