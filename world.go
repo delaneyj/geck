@@ -8,6 +8,7 @@ type entityRecord struct {
 }
 
 type World struct {
+	availableIDs                     []ID
 	nextID                           ID
 	emptyArchetype                   *Archetype
 	finishedIter                     *EntityIterator
@@ -136,9 +137,15 @@ func (w *World) createEntity(id ID, name ...string) {
 	// }
 }
 
-func (w *World) CreateEntity(name ...string) ID {
-	id := w.nextID
-	w.nextID++
+func (w *World) CreateEntity(name ...string) (id ID) {
+	if len(w.availableIDs) > 0 {
+		lastIdx := len(w.availableIDs) - 1
+		id = w.availableIDs[lastIdx].UpdateGeneration()
+		w.availableIDs = w.availableIDs[:lastIdx]
+	} else {
+		id = w.nextID
+		w.nextID++
+	}
 	w.createEntity(id, name...)
 	return id
 }
@@ -173,6 +180,24 @@ func (w *World) SetEntityName(id ID, name string) {
 func (w *World) EntityName(id ID) (name string) {
 	ComponentData(w, w.identifierNameID, id, &name)
 	return name
+}
+
+func (w *World) DeleteEntity(id ID) {
+	record, ok := w.entityRecords[id]
+	if !ok {
+		panic("entity not found")
+	}
+
+	// remove from archetype
+	archetype := record.archetype
+	row := record.row
+	archetype.entities[row] = archetype.entities[len(archetype.entities)-1]
+	archetype.entities = archetype.entities[:len(archetype.entities)-1]
+
+	// remove from world
+	delete(w.entityRecords, id)
+
+	w.availableIDs = append(w.availableIDs, id)
 }
 
 func (w *World) upsertArchetype(from *Archetype, cIDs *IDSet) (current *Archetype, changed bool) {
