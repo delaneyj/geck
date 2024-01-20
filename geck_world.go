@@ -1,5 +1,7 @@
 package geck
 
+import geckpb "github.com/delaneyj/geck/pb/gen/geck/v1"
+
 type archetypeToRowMap map[ID]int
 type componentToArchetypeMap map[uint64]archetypeToRowMap
 type entityRecord struct {
@@ -78,7 +80,7 @@ func NewWorld() *World {
 	internalTagTags := NewIDSet(w.internalID, w.wildcardAllID)
 	// log.Printf("Add %s tags to entities %s", internalTagTags, internalTags)
 	AddComponentsTo(w, internalTagTags, internalTags)
-	w.nextID = UserDefined
+	w.nextID = ID(geckpb.KnownID_USER_DEFINED)
 
 	// add internal components to internal tags
 	internalComponents := NewIDSet(w.identfierID)

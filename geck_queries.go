@@ -51,6 +51,90 @@ func Data[T any](eIter *EntityIterator, data *T, colIdx int) {
 	componentData(eIter.w, eIter.currentArchetype, colIdx, eIter.rowIdx, data)
 }
 
+type TermOp int
+
+const (
+	TermOpAnd TermOp = iota
+	TermOpOr
+	TermOpNot
+)
+
+type Term struct {
+	Operation TermOp
+	IDs       []ID
+	Names     []string
+	Children  []*Term
+}
+
+func And(terms ...*Term) *Term {
+	return &Term{
+		Operation: TermOpAnd,
+		Children:  terms,
+	}
+}
+
+func Or(terms ...*Term) *Term {
+	return &Term{
+		Operation: TermOpOr,
+		Children:  terms,
+	}
+}
+
+func Not(term *Term) *Term {
+	return &Term{
+		Operation: TermOpNot,
+		Children:  []*Term{term},
+	}
+}
+
+func (t *Term) AndIDs(ids ...ID) *Term {
+	t.IDs = append(t.IDs, ids...)
+	return t
+}
+
+func (t *Term) OrIDs(ids ...ID) *Term {
+	t.IDs = append(t.IDs, ids...)
+	return t
+}
+
+func (t *Term) NotIDs(ids ...ID) *Term {
+	t.IDs = append(t.IDs, ids...)
+	return t
+}
+
+func (t *Term) AndTerms(terms ...*Term) *Term {
+	t.Children = append(t.Children, terms...)
+	return t
+}
+
+func (t *Term) OrTerms(terms ...*Term) *Term {
+	t.Children = append(t.Children, terms...)
+	return t
+}
+
+func (t *Term) NotTerms(terms ...*Term) *Term {
+	t.Children = append(t.Children, terms...)
+	return t
+}
+
+func (t *Term) AndNames(names ...string) *Term {
+	t.Operation = TermOpAnd
+	t.Names = append(t.Names, names...)
+	return t
+}
+
+func (t *Term) OrNames(names ...string) *Term {
+	t.Operation = TermOpOr
+	t.Names = append(t.Names, names...)
+	return t
+}
+
+func (t *Term) NotNames(names ...string) *Term {
+	t.Operation = TermOpNot
+	t.Names = append(t.Names, names...)
+	return t
+}
+
 func Query(w *World, componentIDs ...ID) (iter *EntityIterator) {
 
 	if len(componentIDs) == 0 {

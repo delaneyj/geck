@@ -11,7 +11,7 @@ const PairMask = 1 << 31
 
 type ID uint64
 
-const UserDefined = 1000
+// const UserDefined = 1000
 
 func (id ID) IsPair() bool {
 	// check if the second highest bit is set
@@ -59,6 +59,14 @@ func (id ID) Target() ID {
 
 type IDSet struct {
 	bits *roaring64.Bitmap
+}
+
+func NewIDSetFromUint64s(ids ...uint64) *IDSet {
+	bits := roaring64.NewBitmap()
+	for _, id := range ids {
+		bits.Add(id)
+	}
+	return &IDSet{bits}
 }
 
 func NewIDSet(ids ...ID) *IDSet {

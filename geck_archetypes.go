@@ -34,7 +34,6 @@ type Archetype struct {
 	hash         uint64
 	depth        int
 	componentIDs *IDSet
-	canHaveData  bool
 	dataColumns  []*componentColumn
 	edges        map[ID]*archetypeEdge // component id to archetype
 	entities     []ID
@@ -129,7 +128,6 @@ func NewArchetype(w *World, from *Archetype, componentID *ID) *Archetype {
 				count:    0,
 				data:     make([]byte, 0, PageSize),
 			})
-			archetype.canHaveData = true
 			componentColIdx = i
 			i++
 		}
@@ -176,7 +174,7 @@ func moveEntity(w *World, entity ID, r *entityRecord, newArchetype *Archetype) {
 	}
 
 	// Move old data to new data
-	if r.row >= 0 && r.archetype.canHaveData {
+	if r.row >= 0 && len(r.archetype.dataColumns) > 0 {
 		oldRowPtr := uintptr(r.row)
 
 		newColumns := w.archetypeComponentColumnIndicies[newArchetype.hash]

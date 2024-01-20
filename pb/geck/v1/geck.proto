@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package natsproxy.v1;
+
+option go_package = "github.com/delaneyj/geck/pb/gen/geck/v1;geckpb";
+
+enum KnownID {
+  UNKNOWN = 0;
+  INTERNAL = 1;
+  INDENTIFIER = 2;
+  NAME = 3;
+  WILDCARD = 4;
+  CHILD_OF = 5;
+  INSTANCE_OF = 6;
+  COMPONENT = 7;
+  USER_DEFINED = 1000;
+}
+
+message ComponentColumnDefinition {
+  uint64 component_id = 1;
+  uint32 archetype_index = 2;
+  uint32 count = 3;
+  bytes data = 4;
+}
+
+message ArchetypeDefinition {
+  message Edge {
+    uint64 add_id = 1;
+    uint64 remove_id = 2;
+  }
+
+  uint64 hash = 1;
+  uint32 depth = 2;
+  repeated uint64 component_ids = 3;
+  repeated ComponentColumnDefinition data_columns = 4;
+  map<uint64, Edge> edges = 5;
+  repeated uint64 entities = 6;
+}
+
+message IDRecordDefinition {
+  ArchetypeDefinition archetype = 1;
+  uint32 row = 2;
+}
+
+message ArchetypeToRowMap { map<uint64, uint32> value = 1; }
+message ComponentToArchetype { map<uint64, ArchetypeToRowMap> value = 1; }
+
+message ComponentMetadataDefinition {
+  uint64 id = 1;
+  string name = 2;
+  bytes resetExample = 3;
+  uint32 element_size = 4;
+}
+
+message WorldDefinition {
+  repeated uint64 available_id = 1;
+  uint64 next_id = 2;
+  map<uint64, ComponentMetadataDefinition> component_metadata = 3;
+  map<uint64, ArchetypeDefinition> archetypes = 4;
+  ComponentToArchetype archetype_component_comlumn_indicies = 5;
+}

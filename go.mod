@@ -7,6 +7,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/stretchr/testify v1.8.4
 	github.com/zeebo/xxh3 v1.0.2
+	google.golang.org/protobuf v1.32.0
 )
 
 require (

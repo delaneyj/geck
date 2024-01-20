@@ -6,6 +6,19 @@ vars:
   VERSION: 0.0.2
 
 tasks:
+  pb:
+    dir: pb
+    sources:
+      - "**/*.proto"
+      - "**/*.yaml"
+    generates:
+      - "gen/**/*"
+    cmds:
+      - go install github.com/bufbuild/buf/cmd/buf@latest
+      - buf mod update
+      - rm -rf gen
+      - buf generate
+
   libpub:
     dir: ./library
     cmds:

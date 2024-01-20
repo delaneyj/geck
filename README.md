@@ -1,6 +1,8 @@
 # G.E.C.K
-## Golang Entity Component Kit
+
 ![](./assets/geck.png)
+
+## Golang Entity Component Kit
 
 Taking the relational archetype ideas from [flecs](https://www.flecs.dev) and port them to Go.
 
