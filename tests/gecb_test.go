@@ -86,7 +86,7 @@ func BenchmarkArchetype(b *testing.B) {
 	w.CreateEntitiesWith(nPosVel, geck.NewIDSet(position, velocity))
 
 	p, v := &Vector2{}, &Vector2{}
-	iter := geck.Query(w, position, velocity)
+	iter := w.QueryAnd(position, velocity)
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {

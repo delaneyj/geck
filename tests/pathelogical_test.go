@@ -2,10 +2,7 @@ package tests
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
-	"os"
-	"runtime/pprof"
 	"testing"
 	"time"
 
@@ -90,12 +87,12 @@ func run(b *testing.B, entityCount int) {
 		sumD, minD, maxD time.Duration
 	)
 
-	f, err := os.Create("profile.out")
-	if err != nil {
-		log.Fatal(err)
-	}
-	pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
+	// f, err := os.Create("profile.out")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// pprof.StartCPUProfile(f)
+	// defer pprof.StopCPUProfile()
 
 	queryTags := make([]geck.ID, 0, componentCount)
 	tags.ConditionalRange(func(id geck.ID, i int) bool {
@@ -104,7 +101,7 @@ func run(b *testing.B, entityCount int) {
 	})
 
 	b.StartTimer()
-	iter := geck.Query(w, queryTags...)
+	iter := w.QueryAnd(queryTags...)
 	for s := 0; s < sampleCount; s++ {
 		start = time.Now()
 		iter.Reset()

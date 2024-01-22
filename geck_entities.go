@@ -90,6 +90,10 @@ func (set *IDSet) String() string {
 	return set.bits.String()
 }
 
+func (set *IDSet) ToUint64s() []uint64 {
+	return set.bits.ToArray()
+}
+
 func (set *IDSet) ToBase64() string {
 	b64, err := set.bits.ToBase64()
 	if err != nil {

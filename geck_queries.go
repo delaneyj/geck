@@ -1,5 +1,9 @@
 package geck
 
+import (
+	geckpb "github.com/delaneyj/geck/pb/gen/geck/v1"
+)
+
 type EntityIterator struct {
 	w                    *World
 	archetypes           []*Archetype
@@ -51,127 +55,87 @@ func Data[T any](eIter *EntityIterator, data *T, colIdx int) {
 	componentData(eIter.w, eIter.currentArchetype, colIdx, eIter.rowIdx, data)
 }
 
-type TermOp int
-
-const (
-	TermOpAnd TermOp = iota
-	TermOpOr
-	TermOpNot
-)
-
-type Term struct {
-	Operation TermOp
-	IDs       []ID
-	Names     []string
-	Children  []*Term
-}
-
-func And(terms ...*Term) *Term {
-	return &Term{
-		Operation: TermOpAnd,
-		Children:  terms,
-	}
-}
-
-func Or(terms ...*Term) *Term {
-	return &Term{
-		Operation: TermOpOr,
-		Children:  terms,
-	}
-}
-
-func Not(term *Term) *Term {
-	return &Term{
-		Operation: TermOpNot,
-		Children:  []*Term{term},
-	}
-}
-
-func (t *Term) AndIDs(ids ...ID) *Term {
-	t.IDs = append(t.IDs, ids...)
-	return t
-}
-
-func (t *Term) OrIDs(ids ...ID) *Term {
-	t.IDs = append(t.IDs, ids...)
-	return t
-}
-
-func (t *Term) NotIDs(ids ...ID) *Term {
-	t.IDs = append(t.IDs, ids...)
-	return t
-}
-
-func (t *Term) AndTerms(terms ...*Term) *Term {
-	t.Children = append(t.Children, terms...)
-	return t
-}
-
-func (t *Term) OrTerms(terms ...*Term) *Term {
-	t.Children = append(t.Children, terms...)
-	return t
-}
-
-func (t *Term) NotTerms(terms ...*Term) *Term {
-	t.Children = append(t.Children, terms...)
-	return t
-}
-
-func (t *Term) AndNames(names ...string) *Term {
-	t.Operation = TermOpAnd
-	t.Names = append(t.Names, names...)
-	return t
-}
-
-func (t *Term) OrNames(names ...string) *Term {
-	t.Operation = TermOpOr
-	t.Names = append(t.Names, names...)
-	return t
-}
-
-func (t *Term) NotNames(names ...string) *Term {
-	t.Operation = TermOpNot
-	t.Names = append(t.Names, names...)
-	return t
-}
-
-func Query(w *World, componentIDs ...ID) (iter *EntityIterator) {
-
-	if len(componentIDs) == 0 {
-		return w.finishedIter
-	}
-
-	queryCIDs := NewIDSet(componentIDs...)
-	componentCount := len(componentIDs)
+func (w *World) Query(terms *geckpb.Query_Terms) (iter *EntityIterator) {
+	// queryCIDs := NewIDSet(componentIDs...)
+	// componentCount := len(componentIDs)
 
 	archetypes := []*Archetype{}
-	archetypeComponentColumns := [][]ID{}
+	archetypeComponentsColumns := [][]ID{}
 	for archetypeID, components := range w.archetypeComponentColumnIndicies {
 		if len(components) == 0 {
 			continue
 		}
 
-		archetype := w.archetypes[archetypeID]
-		sharedCount := queryCIDs.AndCardinality(archetype.componentIDs)
-		if sharedCount != componentCount {
+		archetype, ok := w.archetypes[archetypeID]
+
+		if !ok || len(archetype.entities) == 0 {
 			continue
 		}
-		if len(archetype.entities) == 0 {
-			continue
-		}
-		archetypes = append(archetypes, archetype)
 
 		dataCols := make([]ID, len(archetype.dataColumns))
-		for i, col := range archetype.dataColumns {
-			for _, cID := range componentIDs {
-				if col.metadata.id == cID {
-					dataCols[i] = cID
-					break
+
+		// check that query terms are satisfied
+		var checkValidity func(depth int, terms *geckpb.Query_Terms) bool
+		checkValidity = func(depth int, terms *geckpb.Query_Terms) bool {
+			isValid := false
+		valid:
+			for _, term := range terms.Terms {
+				// check that the archetype has the component
+				switch el := term.Element.(type) {
+				case *geckpb.Query_Term_Id:
+					elID := ID(el.Id)
+					hasComponent := archetype.componentIDs.Contains(elID)
+
+					shouldBreak := false
+					if hasComponent {
+						switch terms.Op {
+						case geckpb.Query_AND:
+							isValid = true
+						case geckpb.Query_OR:
+							isValid = true
+							shouldBreak = true
+						case geckpb.Query_NOT:
+							isValid = false
+							shouldBreak = true
+						}
+					} else {
+						switch terms.Op {
+						case geckpb.Query_AND:
+							isValid = false
+							shouldBreak = true
+						case geckpb.Query_NOT:
+							isValid = true
+							shouldBreak = true
+						}
+					}
+
+					if depth == 0 && isValid {
+						for j, dc := range archetype.dataColumns {
+							if dc.metadata.id == elID {
+								dataCols[j] = elID
+								break
+							}
+						}
+					}
+
+					if shouldBreak {
+						break valid
+					}
+
+				case *geckpb.Query_Term_Terms:
+					isValid = checkValidity(depth+1, el.Terms)
 				}
 			}
 
+			return isValid
 		}
-		archetypeComponentColumns = append(archetypeComponentColumns, dataCols)
+
+		if !checkValidity(0, terms) {
+			continue
+		}
+
+		archetypes = append(archetypes, archetype)
+		archetypeComponentsColumns = append(archetypeComponentsColumns, dataCols)
 	}
 
 	if len(archetypes) == 0 {
@@ -181,8 +145,38 @@ func Query(w *World, componentIDs ...ID) (iter *EntityIterator) {
 	iter = &EntityIterator{
 		w:             w,
 		archetypes:    archetypes,
-		componentCols: archetypeComponentColumns,
+		componentCols: archetypeComponentsColumns,
 	}
 	iter.Reset()
 	return iter
+}
+
+func idToTerms(op geckpb.Query_Op, ids ...ID) *geckpb.Query_Terms {
+	terms := make([]*geckpb.Query_Term, len(ids))
+	for i, id := range ids {
+		terms[i] = &geckpb.Query_Term{
+			Element: &geckpb.Query_Term_Id{
+				Id: uint64(id),
+			},
+		}
+	}
+	return &geckpb.Query_Terms{
+		Op:    op,
+		Terms: terms,
+	}
+}
+
+func (w *World) QueryAnd(componentIDs ...ID) *EntityIterator {
+	qt := idToTerms(geckpb.Query_AND, componentIDs...)
+	return w.Query(qt)
+}
+
+func (w *World) QueryOr(componentIDs ...ID) *EntityIterator {
+	qt := idToTerms(geckpb.Query_OR, componentIDs...)
+	return w.Query(qt)
+}
+
+func (w *World) QueryNot(componentIDs ...ID) *EntityIterator {
+	qt := idToTerms(geckpb.Query_NOT, componentIDs...)
+	return w.Query(qt)
 }

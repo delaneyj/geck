@@ -59,3 +59,23 @@ message WorldDefinition {
   map<uint64, ArchetypeDefinition> archetypes = 4;
   ComponentToArchetype archetype_component_comlumn_indicies = 5;
 }
+
+message Query {
+  enum Op {
+    AND = 0;
+    OR = 1;
+    NOT = 2;
+  }
+
+  message Term {
+    oneof element {
+      Terms terms = 1;
+      uint64 id = 2;
+    }
+  }
+
+  message Terms {
+    Op op = 1;
+    repeated Term terms = 2;
+  }
+}
