@@ -13,6 +13,10 @@ type ID uint64
 
 // const UserDefined = 1000
 
+func (id ID) U64() uint64 {
+	return uint64(id)
+}
+
 func (id ID) IsPair() bool {
 	// check if the second highest bit is set
 	return id&PairMask != 0
