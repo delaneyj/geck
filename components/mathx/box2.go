@@ -7,6 +7,11 @@ type Box2 struct {
 	Max Vector2
 }
 
+var Box2Empty = Box2{
+	Min: Vector2{X: math.MaxFloat64, Y: math.MaxFloat64},
+	Max: Vector2{X: -math.MaxFloat64, Y: -math.MaxFloat64},
+}
+
 func NewBox2() *Box2 {
 	return &Box2{
 		Min: Vector2{X: math.MaxFloat64, Y: math.MaxFloat64},
