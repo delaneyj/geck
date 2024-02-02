@@ -145,3 +145,17 @@ func AddPairs[T any](w *World, entities *IDSet, source, target ID, data ...T) {
 		SetComponentData(w, pair, data[0], entities)
 	}
 }
+
+func AddPairTag(w *World, entities *IDSet, source, target ID) {
+	pair := NewPair(source, target)
+	sourceWildcard := NewPair(source, w.wildcardID)
+	targetWildcard := NewPair(w.wildcardID, target)
+	bothWildcard := NewPair(w.wildcardID, w.wildcardID)
+	set := NewIDSet(pair, sourceWildcard, targetWildcard, bothWildcard)
+
+	AddComponentsTo(w, set, entities)
+}
+
+func AddTag(w *World, entities *IDSet, tag ID) {
+	AddComponentsTo(w, NewIDSet(tag), entities)
+}

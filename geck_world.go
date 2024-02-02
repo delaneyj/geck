@@ -13,6 +13,16 @@ type entityRecord struct {
 	row       int
 }
 
+const (
+	IdentifierName = "Identifier"
+	NameName       = "Name"
+	InternalName   = "Internal"
+	WildcardName   = "Wildcard"
+	ChildOfName    = "ChildOf"
+	InstanceOfName = "InstanceOf"
+	ComponentName  = "Component"
+)
+
 type World struct {
 	availableIDs                     []ID
 	nextID                           ID
@@ -56,18 +66,18 @@ func NewWorld() *World {
 	}
 
 	// bootstrar naming
-	w.identfierID = RegisterComponent(w, "", "Identifier")
+	w.identfierID = RegisterComponent(w, "", IdentifierName)
 	w.nameID = w.CreateEntity()
 	w.identifierNameID = w.CreatePair(w.identfierID, w.nameID)
-	w.SetEntityName(w.identfierID, "Identifier")
-	w.SetEntityName(w.nameID, "Name")
+	w.SetEntityName(w.identfierID, IdentifierName)
+	w.SetEntityName(w.nameID, NameName)
 
 	// create internal tags
-	w.internalID = w.CreateEntity("Internal")
-	w.wildcardID = w.CreateEntity("Wildcard")
-	w.childOfID = w.CreateEntity("ChildOf")
-	w.instanceOfID = w.CreateEntity("InstanceOf")
-	w.componentID = w.CreateEntity("Component")
+	w.internalID = w.CreateEntity(InternalName)
+	w.wildcardID = w.CreateEntity(WildcardName)
+	w.childOfID = w.CreateEntity(ChildOfName)
+	w.instanceOfID = w.CreateEntity(InstanceOfName)
+	w.componentID = w.CreateEntity(ComponentName)
 
 	// create internal pairs
 	w.wildcardAllID = NewPair(w.wildcardID, w.wildcardID)
