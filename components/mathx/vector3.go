@@ -22,8 +22,8 @@ func NewOneVector3() *Vector3 {
 }
 
 var (
-	V3Zero = NewZeroVector3()
-	V3One  = NewOneVector3()
+	V3Zero = *NewZeroVector3()
+	V3One  = *NewOneVector3()
 )
 
 func (v *Vector3) Set(x, y, z float64) *Vector3 {
@@ -96,8 +96,11 @@ func AddVector3s(a, b Vector3) *Vector3 {
 	return NewVector3(a.X+b.X, a.Y+b.Y, a.Z+b.Z)
 }
 
-func AddScaledVector3(vector Vector3, scalar float64) *Vector3 {
-	return NewVector3(vector.X*scalar, vector.Y*scalar, vector.Z*scalar)
+func (v *Vector3) AddScaledVector(vector Vector3, scalar float64) *Vector3 {
+	v.X += vector.X * scalar
+	v.Y += vector.Y * scalar
+	v.Z += vector.Z * scalar
+	return v
 }
 
 func (v *Vector3) Sub(v2 Vector3) *Vector3 {
@@ -178,14 +181,6 @@ func (v *Vector3) ApplyQuaternion(q Quaternion) *Vector3 {
 	v.Y = vy + qw*ty + qz*tx - qx*tz
 	v.Z = vz + qw*tz + qx*ty - qy*tx
 	return v
-}
-
-func (v *Vector3) Project(camera Camera) *Vector3 {
-	return v.ApplyMatrix4(camera.MatrixWorldInverse).ApplyMatrix4(camera.ProjectionMatrix)
-}
-
-func (v *Vector3) Unproject(camera Camera) *Vector3 {
-	return v.ApplyMatrix4(camera.ProjectionMatrixInverse).ApplyMatrix4(camera.MatrixWorld)
 }
 
 func (v *Vector3) TransformDirection(m Matrix4) *Vector3 {

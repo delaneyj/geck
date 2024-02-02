@@ -143,7 +143,7 @@ func (m *Matrix3) Transpose() *Matrix3 {
 	return m
 }
 
-func (m *Matrix3) GNormalMatrix(matrix4 Matrix4) *Matrix3 {
+func (m *Matrix3) NormalMatrix(matrix4 Matrix4) *Matrix3 {
 	return m.SetFromMatrix4(matrix4).Invert().Transpose()
 }
 

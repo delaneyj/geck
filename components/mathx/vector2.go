@@ -127,7 +127,7 @@ func (v *Vector2) SubScalar(scalar float64) *Vector2 {
 	return v
 }
 
-func SubVectors(a, b Vector2) *Vector2 {
+func SubVector2s(a, b Vector2) *Vector2 {
 	return NewVector2(a.X-b.X, a.Y-b.Y)
 }
 

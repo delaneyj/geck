@@ -184,7 +184,7 @@ func (m *Matrix4) MakeRotationFromEuler(euler Euler) *Matrix4 {
 
 func MakeRotationFromQuaternion(q Quaternion) *Matrix4 {
 	m := Matrix4{}
-	return m.Compose(*V3Zero, q, *V3One)
+	return m.Compose(V3Zero, q, V3One)
 }
 
 func (m *Matrix4) LookAt(eye, target, up Vector3) *Matrix4 {
