@@ -136,9 +136,7 @@ func (c *CurvePath) Points(divisions int) []Vector3 {
 
 func (c *CurvePath) Copy(source *CurvePath) *CurvePath {
 	c.curves = make([]Curve, len(source.curves))
-	for i := 0; i < len(source.curves); i++ {
-		c.curves[i] = source.curves[i]
-	}
+	copy(c.curves, source.curves)
 	c.autoClose = source.autoClose
 	return c
 }

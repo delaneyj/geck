@@ -82,12 +82,13 @@ func (c *SplineCurve) Lengths(divisions int) []float64 {
 
 	lengths := make([]float64, 0)
 	lengths = append(lengths, 0)
+	divF := float64(divisions)
 
 	sum := 0.0
 	var current, last *Vector3
 	last = c.Point(0)
 	for p := 1; p <= divisions; p++ {
-		current = c.Point(float64(p) / float64(divisions))
+		current = c.Point(float64(p) / divF)
 		sum += current.DistanceTo(*last)
 		lengths = append(lengths, sum)
 		last = current

@@ -71,8 +71,11 @@ func (c *baseCurve) PointAt(u float64) *Vector3 {
 // Get sequence of points using getPoint( t )
 func (c *baseCurve) Points(divisions int) []Vector3 {
 	points := make([]Vector3, divisions)
-	for d := 0; d <= divisions; d++ {
+
+	d := 0
+	for d <= divisions {
 		points[d] = *c.Point(float64(d) / float64(divisions))
+		d++
 	}
 	return points
 }
@@ -80,8 +83,10 @@ func (c *baseCurve) Points(divisions int) []Vector3 {
 // Get sequence of points using getPointAt( u )
 func (c *baseCurve) SpacedPoints(divisions int) []Vector3 {
 	points := make([]Vector3, divisions)
-	for d := 0; d <= divisions; d++ {
+	d := 0
+	for d <= divisions {
 		points[d] = *c.PointAt(float64(d) / float64(divisions))
+		d++
 	}
 	return points
 }
@@ -102,11 +107,10 @@ func (c *baseCurve) Lengths(divisions int) []float64 {
 		return c.cacheArcLengths
 	}
 	c.needsUpdate = false
-	cache := make([]float64, 0)
-	var current, last *Vector3
-	last = c.Point(0)
+	last := c.Point(0)
 	sum := 0.0
-	cache = append(cache, 0)
+	cache := []float64{0}
+	current := last
 	for p := 1; p <= divisions; p++ {
 		current = c.Point(float64(p) / float64(divisions))
 		sum += current.DistanceTo(*last)
@@ -162,7 +166,7 @@ func (c *baseCurve) uToTmapping(u float64) float64 {
 // In case any sub curve does not implement its tangent derivation,
 // 2 points a small delta apart will be used to find its gradient
 // which seems to give a reasonable approximation
-func (c *baseCurve) tangent(t float64) *Vector3 {
+func (c *baseCurve) Tangent(t float64) *Vector3 {
 	delta := 0.0001
 	t1 := t - delta
 	t2 := t + delta
@@ -178,20 +182,22 @@ func (c *baseCurve) tangent(t float64) *Vector3 {
 	return tangent
 }
 
-func (c *baseCurve) tangentAt(u float64) *Vector3 {
+func (c *baseCurve) TangentAt(u float64) *Vector3 {
 	t := c.uToTmapping(u)
-	return c.tangent(t)
+	return c.Tangent(t)
 }
 
-func (c *baseCurve) computeFrenetFrames(segments int, closed bool) map[string][]Vector3 {
+func (c *baseCurve) ComputeFrenetFrames(segments int, closed bool) map[string][]Vector3 {
 	normal := NewZeroVector3()
 	tangents := make([]Vector3, segments+1)
 	normals := make([]Vector3, segments+1)
 	binormals := make([]Vector3, segments+1)
 	mat := NewMatrix4Identity()
-	for i := 0; i <= segments; i++ {
+	i := 0
+	for i <= segments {
 		u := float64(i) / float64(segments)
-		tangents[i] = *c.tangentAt(u)
+		tangents[i] = *c.TangentAt(u)
+		i++
 	}
 	normals[0] = *NewZeroVector3()
 	binormals[0] = *NewZeroVector3()
