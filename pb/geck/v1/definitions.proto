@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package geck.v1;
+
+option go_package = "github.com/delaneyj/geck/pb/gen/geck/v1;geckpb";
+
+enum DataType {
+  DATATYPE_UNKNOWN = 0;
+  U8 = 1;
+  U16 = 2;
+  U32 = 3;
+  U64 = 4;
+  I8 = 5;
+  I16 = 6;
+  I32 = 7;
+  I64 = 8;
+  F32 = 9;
+  F64 = 10;
+  STRING = 11;
+  BYTES = 12;
+}
+
+message FieldDefinition {
+  string name = 1;
+  DataType type = 2;
+  string description = 3;
+}
+
+message ComponentDefinition {
+  string name = 1;
+  string description = 2;
+  repeated FieldDefinition fields = 3;
+}
+
+message StateDefinition {
+  string name = 1;
+  string description = 2;
+  repeated string states = 3;
+}
+
+message QueryDefinition {
+  enum Op {
+    AND = 0;
+    OR = 1;
+    NOT = 2;
+  }
+
+  message Term {
+    string name = 1;
+    bool is_mutable = 2;
+    bool is_optional = 3;
+  }
+
+  message Groups { repeated Group groups = 2; }
+
+  message Group {
+    Op op = 1;
+
+    oneof t {
+      Term term = 2;
+      Groups groups = 3;
+    }
+  }
+
+  string name = 1;
+  string description = 2;
+  Group group = 3;
+}
+
+message BundleDefinition {
+  string name = 1;
+  string description = 2;
+  repeated ComponentDefinition components = 3;
+  repeated StateDefinition states = 4;
+  repeated QueryDefinition queries = 5;
+}
