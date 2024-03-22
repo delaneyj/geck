@@ -1,0 +1,181 @@
+{
+  "packageName": "ecs",
+  "folderPath": "../example/ecs",
+  "bundles": [
+    {
+      "name": "example",
+      "description": "A test bundle",
+      "components": [
+        {
+          "name": "Position",
+          "fields": [
+            {
+              "name": "X",
+              "f32": 0
+            },
+            {
+              "name": "Y",
+              "f32": 0
+            },
+            {
+              "name": "Z",
+              "f32": 0
+            }
+          ]
+        },
+        {
+          "name": "Velocity",
+          "fields": [
+            {
+              "name": "X",
+              "f32": 0
+            },
+            {
+              "name": "Y",
+              "f32": 0
+            },
+            {
+              "name": "Z",
+              "f32": 0
+            }
+          ]
+        },
+        {
+          "name": "Rotation",
+          "fields": [
+            {
+              "name": "X",
+              "f32": 0
+            },
+            {
+              "name": "Y",
+              "f32": 0
+            },
+            {
+              "name": "Z",
+              "f32": 0
+            },
+            {
+              "name": "W",
+              "f32": 1
+            }
+          ]
+        },
+        {
+          "name": "Eats",
+          "shouldNotInflect": true,
+          "fields": [
+            {
+              "name": "Entities",
+              "hasMultiple": true,
+              "entity": 0
+            },
+            {
+              "name": "Amounts",
+              "hasMultiple": true,
+              "u8": 5
+            }
+          ]
+        },
+        {
+          "name": "Likes",
+          "shouldNotInflect": true,
+          "fields": [
+            {
+              "name": "Entity",
+              "hasMultiple": true,
+              "entity": 0
+            }
+          ]
+        },
+        {
+          "name": "Enemy"
+        },
+        {
+          "name": "Grows",
+          "shouldNotInflect": true,
+          "fields": [
+            {
+              "name": "Entity",
+              "hasMultiple": true,
+              "entity": 0
+            }
+          ]
+        },
+        {
+          "name": "Gravity",
+          "fields": [
+            {
+              "name": "G",
+              "f32": -9.8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "xxx",
+      "components": [
+        {
+          "name": "Spaceship"
+        },
+        {
+          "name": "Spacestation"
+        },
+        {
+          "name": "Faction",
+          "fields": [
+            {
+              "name": "Entity",
+              "entity": 0
+            }
+          ]
+        },
+        {
+          "name": "DockedTo",
+          "fields": [
+            {
+              "name": "Entity",
+              "entity": 0
+            }
+          ]
+        },
+        {
+          "name": "Planet"
+        },
+        {
+          "name": "RuledBy",
+          "fields": [
+            {
+              "name": "Entity",
+              "entity": 0
+            }
+          ]
+        },
+        {
+          "name": "AlliedWith",
+          "fields": [
+            {
+              "name": "Entity",
+              "hasMultiple": true,
+              "entity": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "componentSets": [
+    {
+      "owned": [
+        {
+          "name": "Velocity"
+        },
+        {
+          "name": "Position",
+          "isWriteable": true
+        }
+      ]
+    }
+  ]
+}

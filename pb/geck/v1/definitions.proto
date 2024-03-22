@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package geck.v1;
 
-option go_package = "github.com/delaneyj/geckrevamp/pb/gen/geck/v1;geckpb";
+option go_package = "github.com/delaneyj/geck/pb/gen/geck/v1;geckpb";
 
 message FieldDefinition {
   string name = 1;

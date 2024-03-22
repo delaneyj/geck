@@ -15,7 +15,7 @@ import (
 	"time"
 
 	sprig "github.com/Masterminds/sprig/v3"
-	geckpb "github.com/delaneyj/geckrevamp/pb/gen/geck/v1"
+	geckpb "github.com/delaneyj/geck/pb/gen/geck/v1"
 	"github.com/delaneyj/toolbelt"
 	"github.com/go-openapi/inflect"
 	"github.com/samber/lo"
