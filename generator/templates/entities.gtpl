@@ -1,4 +1,4 @@
-package geck
+package {{.PackageName}}
 
 import (
 	"github.com/RoaringBitmap/roaring/roaring64"
@@ -7,11 +7,11 @@ import (
 const ID_BIT_SIZE = 31
 const TargetBitMask = 1<<ID_BIT_SIZE - 1
 const SourceBitMask = TargetBitMask << 32
-const PairMask = 1 << ID_BIT_SIZE
+const PairMask = 1 << 31
 
 type ID uint64
 
-// const UserDefined = 1000
+const UserDefined = 1000
 
 func (id ID) U64() uint64 {
 	return uint64(id)

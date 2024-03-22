@@ -1,4 +1,4 @@
-package geck
+package out
 
 import (
 	"encoding/binary"
@@ -18,7 +18,7 @@ type archetypeEdge struct {
 type componentMetadata struct {
 	id           ID
 	name         string
-	resetExample []byte
+	resetBuf []byte
 	elementSize  uintptr
 }
 
@@ -30,6 +30,7 @@ type componentColumn struct {
 	data     []byte
 }
 
+
 type Archetype struct {
 	hash         uint64
 	depth        int
@@ -38,6 +39,7 @@ type Archetype struct {
 	edges        map[ID]*archetypeEdge // component id to archetype
 	entities     []ID
 }
+
 
 func NewArchetype(w *World, from *Archetype, componentID *ID) *Archetype {
 	var (
@@ -140,7 +142,7 @@ func moveEntity(w *World, entity ID, r *entityRecord, newArchetype *Archetype) {
 	newArchetype.entities = append(newArchetype.entities, entity)
 	for _, col := range newArchetype.dataColumns {
 		// append row to all data columns
-		col.data = append(col.data, col.metadata.resetExample...)
+		col.data = append(col.data, col.metadata.resetBuf...)
 		col.count++
 	}
 

@@ -4,32 +4,34 @@ package geck.v1;
 
 option go_package = "github.com/delaneyj/geck/pb/gen/geck/v1;geckpb";
 
-enum DataType {
-  DATATYPE_UNKNOWN = 0;
-  U8 = 1;
-  U16 = 2;
-  U32 = 3;
-  U64 = 4;
-  I8 = 5;
-  I16 = 6;
-  I32 = 7;
-  I64 = 8;
-  F32 = 9;
-  F64 = 10;
-  STRING = 11;
-  BYTES = 12;
-}
-
 message FieldDefinition {
   string name = 1;
-  DataType type = 2;
   string description = 3;
+  bool is_deprecated = 4;
+  int32 order = 5;
+
+  oneof reset_value {
+    uint32 u8 = 6;
+    uint32 u16 = 7;
+    uint32 u32 = 8;
+    uint64 u64 = 9;
+    sint32 i8 = 10;
+    sint32 i16 = 11;
+    sint32 i32 = 12;
+    sint64 i64 = 13;
+    float f32 = 14;
+    double f64 = 15;
+    string txt = 16;
+    bytes bin = 17;
+  }
 }
 
 message ComponentDefinition {
   string name = 1;
   string description = 2;
-  repeated FieldDefinition fields = 3;
+  bool is_deprecated = 3;
+  bool can_be_pair = 4;
+  repeated FieldDefinition fields = 5;
 }
 
 message StateDefinition {
@@ -46,20 +48,17 @@ message QueryDefinition {
   }
 
   message Term {
-    string name = 1;
-    bool is_mutable = 2;
-    bool is_optional = 3;
+    string entity_name = 1;
+    string variable_name = 2;
+    bool is_mutable = 3;
+    bool is_optional = 4;
   }
-
-  message Groups { repeated Group groups = 2; }
 
   message Group {
     Op op = 1;
 
-    oneof t {
-      Term term = 2;
-      Groups groups = 3;
-    }
+    repeated Term terms = 2;
+    repeated Group groups = 3;
   }
 
   string name = 1;
