@@ -1,292 +1,326 @@
 package {{.PackageName}}
 
-type archetypeToRowMap map[ID]int
-type componentToArchetypeMap map[uint64]archetypeToRowMap
-type entityRecord struct {
-	archetype *Archetype
-	row       int
+import (
+	"context"
+	"fmt"
+	"log"
+	"strings"
+	"sync"
+
+	"github.com/RoaringBitmap/roaring"
+	"github.com/btvoidx/mint"
+)
+
+type System interface {
+	Name() string
+	ReliesOn() []string
+	Tick(w *World) error
+}
+
+type systemRunner struct {
+	id                       uint32
+	w                        *World
+	system                   System
+	waitingOnTmpl, waitingOn map[uint32]*systemRunner
+	hasRun, isDisabled       bool
 }
 
 type World struct {
-	availableIDs                     []ID
-	nextID                           ID
-	emptyArchetype                   *Archetype
-	finishedIter                     *EntityIterator
-	componentMetadatas               map[ID]*componentMetadata
-	entityRecords                    map[ID]*entityRecord
-	archetypes                       map[uint64]*Archetype   // hash to archetype
-	archetypeComponentColumnIndicies componentToArchetypeMap // component to archetype to column
-	archetypeSet                     *IDSet
-}
+	zeroEntity, resourceEntity, deadEntity Entity
 
-var(
-	WildCardAllID = NewPair(WildcardID, WildcardID)
-	IdentifierNameID = NewPair(IdentifierID, NameID)
-)
+	// maxEntity  Entity
+	nextEntityID   uint32
+	liveEntitieIDs *roaring.Bitmap
+	freeEntitieIDs *roaring.Bitmap
+
+	eventBus *mint.Emitter
+
+	nextSystemID                                   	uint32
+	systems, leftToRun, notRunWithDependenciesDone 	map[uint32]*systemRunner
+	tickWaitGroup                                  	*sync.WaitGroup
+	tickCount                   					int
+
+	{{range .Components -}}
+	{{.Name.Plural.Camel}}Store *SparseSet[{{.Name.Singular.Pascal}}]
+	{{end -}}
+
+	{{range .ComponentSets}}
+	{{.Name.Singular.Pascal}} *{{.Name.Singular.Pascal}}
+	{{end}}
+}
 
 func NewWorld() *World {
 	w := &World{
-		componentMetadatas:               map[ID]*componentMetadata{},
-		entityRecords:                    map[ID]*entityRecord{},
-		archetypes:                       map[uint64]*Archetype{},   // hash to archetype
-		archetypeComponentColumnIndicies: componentToArchetypeMap{}, // find an archetype for a list of components
-		archetypeSet:                     NewIDSet(),                // component ids used to create archetypes
-		nextID:                           1,
+		liveEntitieIDs: roaring.NewBitmap(),
+		freeEntitieIDs: roaring.NewBitmap(),
+		eventBus: &mint.Emitter{},
+
+		nextSystemID:               1,
+		systems:                    map[uint32]*systemRunner{},
+		leftToRun:                  map[uint32]*systemRunner{},
+		notRunWithDependenciesDone: map[uint32]*systemRunner{},
+		tickWaitGroup:              &sync.WaitGroup{},
+		tickCount:                  0,
+
+		{{range .Components -}}
+		{{.Name.Plural.Camel}}Store : NewSparseSet[{{.Name.Singular.Pascal}}](nil),
+		{{end }}
 	}
-	w.emptyArchetype = NewArchetype(w, nil, nil)
-	w.finishedIter = &EntityIterator{
-		w:      w,
-		isDone: true,
-	}
 
-	// bootstrap naming
-	registerComponent(w, "", IdentifierName)
-	nameID := w.CreateEntityWithoutName()
-	if nameID != NameID {
-		panic("name id mismatch")
-	}
-	w.SetEntityName(IdentifierID, IdentifierName)
-	w.SetEntityName(NameID, NameName)
+	// setup built-in entities
+	w.zeroEntity = w.Entity()
+	w.resourceEntity = w.Entity()
+	w.deadEntity = w.EntityFromU32(DeadEntityID)
 
-	// create internal tags
-	{{ range .Bundles -}}
-	{{ if .IsBuiltin -}}
-		{{ range slice .Components 2 -}}
-			{{.Name.Camel}}ID := w.CreateEntity({{.Name.Pascal}}Name)
-			if {{.Name.Camel}}ID != {{.Name.Pascal}}ID {
-				panic("id mismatch")
-			}
-		{{ end -}}
-	{{ end -}}
-	{{ end -}}
-
-	// add "internal" tag to internal tags
-	internalTags := []ID{
-		{{ range .Bundles -}}
-			{{if .IsBuiltin -}}
-				{{ range .Components -}}
-		{{.Name.Pascal}}ID,
-				{{ end -}}
-			{{ end -}}
-		{{ end -}}
-	}
-	internalTagTags := NewIDSet(InternalID, WildCardAllID)
-	addComponentsTo(w, internalTagTags, internalTags...)
-	w.nextID = 1000
-
-	{{ range .Bundles -}}
-		{{if not .IsBuiltin -}}
-			{{ range .Components -}}
-	registerComponent(w, {{.Name.Pascal}}ResetValue, {{.Name.Pascal}}Name)
-			{{ end -}}
-		{{ end -}}
-	{{ end -}}
-
+	// component sets
+	{{range .ComponentSets -}}
+	w.{{.Name.Singular.Pascal}} = New{{.Name.Singular.Pascal}}(w)
+	{{end}}
 
 	return w
 }
 
-
-func (w *World) Reset() {
-	w.nextID = 0
-	w.componentMetadatas = make(map[ID]*componentMetadata, len(w.componentMetadatas))
-	w.entityRecords = make(map[ID]*entityRecord, len(w.entityRecords))
-	w.archetypes = make(map[uint64]*Archetype, len(w.archetypes))
-	w.archetypeComponentColumnIndicies = make(componentToArchetypeMap, len(w.archetypeComponentColumnIndicies))
-	w.archetypeSet.Clear()
-}
-
-func (w *World) EntityCount() int {
-	return len(w.entityRecords)
-}
-
-func (w *World) ArchetypeCount() int {
-	return len(w.archetypes)
-}
-
-func (w *World) HasComponents(entities, components *IDSet) (allExist bool) {
-	componentsCount := components.Cardinality()
-	entities.ConditionalRange(func(entity ID, i int) bool {
-		record, ok := w.entityRecords[entity]
-		if !ok {
-			panic("entity not found in any archetype")
+//# region Systems
+func (w *World) AddSystems(ss ... System) (err error) {
+	for _, s := range ss {
+		alreadyRegistered := false
+		for _, sys := range w.systems {
+			if sys.system.Name() == s.Name() {
+				alreadyRegistered = true
+				break
+			}
 		}
-		allExist = record.archetype.componentIDs.AndCardinality(components) == componentsCount
-		return allExist
-	})
-	return allExist
+		if alreadyRegistered {
+			return fmt.Errorf("system %s has already been added", s.Name())
+		}
+
+		sr := &systemRunner{
+			id:            w.nextSystemID,
+			w:             w,
+			system:        s,
+			waitingOnTmpl: map[uint32]*systemRunner{},
+		}
+		for _, r := range s.ReliesOn() {
+			var dependentSystem *systemRunner
+			for _, sys := range w.systems {
+				if sys.system.Name() == r {
+					dependentSystem = sys
+					break
+				}
+			}
+			if dependentSystem == nil {
+				return fmt.Errorf(
+					"system %s relies on %s, but %s has not been added",
+					s.Name(), r, r,
+				)
+			}
+
+			sr.waitingOnTmpl[dependentSystem.id] = dependentSystem
+		}
+		sr.waitingOn = map[uint32]*systemRunner{}
+		for k, v := range sr.waitingOnTmpl {
+			sr.waitingOn[k] = v
+		}
+		w.systems[sr.id] = sr
+		w.nextSystemID++
+	}
+	return nil
 }
 
-func (w *World) createEntity(id ID, name ...string) {
-	w.entityRecords[id] = &entityRecord{
-		archetype: w.emptyArchetype,
-		row:       -1,
-	}
-	w.emptyArchetype.entities = append(w.emptyArchetype.entities, id)
+func (w *World) RemoveSystems(ss ... System) error {
+	for _, sys := range ss {
+		name := sys.Name()
+		var found *systemRunner
+		for _, sr := range w.systems {
+			if name == sr.system.Name() {
+				found = sr
+				break
+			}
+		}
+		if found == nil {
+			return fmt.Errorf("system %s not found", name)
+		}
 
-	if len(name) > 0 {
-		setComponentData(w, IdentifierNameID, name[0], id)
+		reliedOnBy := []System{}
+		for id, sr := range w.systems {
+			if found.id == id {
+				reliedOnBy = append(reliedOnBy, sr.system)
+			}
+		}
 
-		// target, source, _ := id.SplitPair()
-		// log.Printf("created source %d->%d", source, target)
+		if len(reliedOnBy) > 0 {
+			names := []string{}
+			for _, s := range reliedOnBy {
+				names = append(names, s.Name())
+			}
+
+			return fmt.Errorf(
+				"system %s is relied on by %s, and cannot be removed",
+				name, strings.Join(names, ","),
+			)
+		}
+
+		delete(w.systems, found.id)
 	}
-	//  else {
-	// log.Printf("created entity %d", id)
-	// }
+
+	return nil
 }
 
-func (w *World) nextAvailableID() (id ID) {
-	if len(w.availableIDs) > 0 {
-		lastIdx := len(w.availableIDs) - 1
-		id = w.availableIDs[lastIdx].UpdateGeneration()
-		w.availableIDs = w.availableIDs[:lastIdx]
+func (w *World) Tick() error {
+	// fill leftToRun
+	for _, sr := range w.systems {
+		if !sr.isDisabled {
+			w.leftToRun[sr.id] = sr
+		}
+	}
+
+	for len(w.leftToRun) > 0 {
+		for _, sr := range w.leftToRun {
+			if !sr.hasRun && len(sr.waitingOn) == 0 {
+				w.notRunWithDependenciesDone[sr.id] = sr
+			}
+		}
+
+		toRunConcurrentlyCount := len(w.notRunWithDependenciesDone)
+		w.tickWaitGroup.Add(toRunConcurrentlyCount)
+		for _, sr := range w.notRunWithDependenciesDone {
+			go func(sr *systemRunner) {
+				defer w.tickWaitGroup.Done()
+				if err := sr.system.Tick(w); err != nil {
+					log.Printf("system %s failed: %s", sr.system.Name(), err)
+				}
+				sr.hasRun = true
+			}(sr)
+		}
+		w.tickWaitGroup.Wait()
+
+		for _, ranSR := range w.notRunWithDependenciesDone {
+			for _, sr := range w.leftToRun {
+				delete(sr.waitingOn, ranSR.id)
+			}
+			delete(w.leftToRun, ranSR.id)
+		}
+	}
+
+	// reset for next tick
+	clear(w.leftToRun)
+	clear(w.notRunWithDependenciesDone)
+	for _, sr := range w.systems {
+		for k, v := range sr.waitingOnTmpl {
+			sr.waitingOn[k] = v
+		}
+		sr.hasRun = false
+	}
+	w.tickCount++
+
+	return nil
+}
+
+func (w *World) DisableSystem(ss ... System) error {
+	for _, sys := range ss {
+		name := sys.Name()
+		var found *systemRunner
+		for _, sr := range w.systems {
+			if name == sr.system.Name() {
+				found = sr
+				break
+			}
+		}
+		if found == nil {
+			return fmt.Errorf("system %s not found", name)
+		}
+
+		found.isDisabled = true
+	}
+
+	return nil
+}
+
+func (w *World) EnableSystem(ss ... System) error {
+	for _, sys := range ss {
+		name := sys.Name()
+		var found *systemRunner
+		for _, sr := range w.systems {
+			if name == sr.system.Name() {
+				found = sr
+				break
+			}
+		}
+		if found == nil {
+			return fmt.Errorf("system %s not found", name)
+		}
+
+		found.isDisabled = false
+	}
+
+	return nil
+}
+
+func (w *World) TickCount() int {
+	return w.tickCount
+}
+
+//# endregion
+
+func (w *World) Entity() (e Entity) {
+	e.w = w
+
+	if w.freeEntitieIDs.IsEmpty() {
+		e.val = w.nextEntityID
+		w.nextEntityID++
 	} else {
-		id = w.nextID
-		w.nextID++
+		last := w.freeEntitieIDs.Maximum()
+		e.val = last
+		w.freeEntitieIDs.Remove(last)
 	}
-	return id
+
+	w.liveEntitieIDs.Add(e.val)
+	fireEvent(w, EntityCreatedEvent{e})
+
+	return e
 }
 
-func (w *World) CreateEntity(name string) (id ID) {
-	id = w.nextAvailableID()
-	w.createEntity(id, name)
-	return id
+func (w *World) EntityWithName(name string) Entity {
+	return w.Entity().SetName(Name(name))
 }
 
-func (w *World) CreateEntityWithoutName() (id ID) {
-	id = w.nextAvailableID()
-	w.createEntity(id)
-	return id
+func (w *World) EntityFromU32(val uint32) Entity {
+	e := Entity{w: w, val: val}
+	if e.IsAlive() {
+		return e
+	}
+
+	w.freeEntitieIDs.Remove(val)
+	w.liveEntitieIDs.Add(val)
+	fireEvent(w, EntityCreatedEvent{e})
+
+	return e
 }
 
-func (w *World) CreatePair(source, target ID, name string) ID {
-	pair := NewPair(source, target)
-	w.createEntity(pair, name)
-	return pair
-}
-
-func (w *World) CreatePairWithoutName(source, target ID) ID {
-	pair := NewPair(source, target)
-	w.createEntity(pair)
-	return pair
-}
-
-func (w *World) CreateEntitiesWith(count int, cIDs *IDSet) []ID {
-	// search for an archetype that matches the components
-	entities := make([]ID, count)
+func (w *World) Entities(count int) []Entity {
+	entities := make([]Entity, count)
 	for i := 0; i < count; i++ {
-		e := w.CreateEntityWithoutName()
-		entities[i] = e
+		entities[i] = w.Entity()
 	}
-
-	if cIDs != nil {
-		addComponentsTo(w, cIDs, entities...)
-	}
-
 	return entities
 }
 
-func (w *World) SetEntityName(id ID, name string) {
-	setComponentData(w, IdentifierNameID, name, id)
-	// log.Printf("set entity %d name to %s", id, name)
-}
+func (w *World) Reset() {
+	{{range .Components -}}
+	w.{{.Name.Plural.Camel}}Store.Clear()
+	{{end }}
 
-func (w *World) EntityName(id ID) (name string) {
-	componentDataFromEntity(w, IdentifierNameID, id, &name)
-	return name
-}
-
-func (w *World) EntityFromName(name string) ID {
-	entities := w.EntitiesFromNames(name)
-	if len(entities) == 0 {
-		panic("entity not found")
-	}
-	return entities[0]
-}
-
-func (w *World) UpsertEntityFromName(name string) ID {
-	entities := w.EntitiesFromNames(name)
-	if len(entities) > 0 {
-		return entities[0]
-	}
-	return w.CreateEntity(name)
-}
-
-func (w *World) DeleteEntity(id ID) {
-	record, ok := w.entityRecords[id]
-	if !ok {
-		panic("entity not found")
+	iter := w.liveEntitieIDs.Iterator()
+	for iter.HasNext() {
+		id := iter.Next()
+		e := w.EntityFromU32(id)
+		fireEvent(w, EntityDestroyedEvent{e})
 	}
 
-	// remove from archetype
-	archetype := record.archetype
-	row := record.row
-	archetype.entities[row] = archetype.entities[len(archetype.entities)-1]
-	archetype.entities = archetype.entities[:len(archetype.entities)-1]
-
-	// remove from world
-	delete(w.entityRecords, id)
-
-	w.availableIDs = append(w.availableIDs, id)
+	w.liveEntitieIDs.Clear()
+	w.freeEntitieIDs.Clear()
 }
 
-func (w *World) SetName(id ID, name string) {
-	setComponentData(w, IdentifierNameID, name, id)
-}
 
-func (w *World) Name(id ID) (name string) {
-	componentDataFromEntity(w, IdentifierNameID, id, &name)
-	return name
-}
 
-func (w *World) EntitiesFromNames(names ...string) (ids []ID) {
-	panic("not implemented")
-}
 
-func (w *World) upsertArchetype(from *Archetype, cIDs *IDSet) (current *Archetype, changed bool) {
-	current = from
-	cIDs.Range(func(cID ID) {
-		if current.componentIDs.Contains(cID) {
-			return
-		}
-
-		edge, ok := current.edges[cID]
-		if !ok {
-			edge = &archetypeEdge{}
-			current.edges[cID] = edge
-		}
-
-		if edge.add == nil {
-			edge.add = NewArchetype(w, current, &cID)
-		}
-
-		current = edge.add
-		changed = true
-	})
-
-	return current, changed
-}
-
-func (w *World) backtrackArchetype(from *Archetype, removedComponents *IDSet) (current *Archetype) {
-	current = from
-	componentsLeft := removedComponents.Clone()
-
-	for componentsLeft.Cardinality() > 0 {
-		cID := componentsLeft.Pop()
-		edge, ok := current.edges[cID]
-		if !ok || edge.remove == nil {
-			panic("edge not found")
-		}
-		current = edge.remove
-	}
-
-	return current
-}
-
-func (w *World) MarshalAll() () {
-	{{ range .Bundles -}}
-		{{ range .Components -}}
-			w.MarshalAll{{.Name.Pascal}}()
-		{{ end -}}
-	{{ end -}}
-}

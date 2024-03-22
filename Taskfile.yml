@@ -3,7 +3,7 @@
 version: "3"
 
 vars:
-  VERSION: 0.0.6
+  VERSION: 0.1.0
 
 tasks:
   pb:
@@ -27,9 +27,3 @@ tasks:
       - git push origin --tags
       - git push --tags
       - GOPROXY=proxy.golang.org go list -m github.com/delaneyj/geck@v{{.VERSION}}
-  default:
-    sources:
-      - "**/*.go"
-    cmds:
-      - go test -benchmem -run=^$ -bench ^BenchmarkPathelogical$ github.com/delaneyj/geck/tests
-    silent: true

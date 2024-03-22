@@ -29,6 +29,7 @@ func (m *FieldDefinition) CloneVT() *FieldDefinition {
 		Name:         m.Name,
 		Description:  m.Description,
 		IsDeprecated: m.IsDeprecated,
+		HasMultiple:  m.HasMultiple,
 		Order:        m.Order,
 	}
 	if m.ResetValue != nil {
@@ -170,15 +171,28 @@ func (m *FieldDefinition_Bin) CloneVT() isFieldDefinition_ResetValue {
 	return r
 }
 
+func (m *FieldDefinition_Entity) CloneVT() isFieldDefinition_ResetValue {
+	if m == nil {
+		return (*FieldDefinition_Entity)(nil)
+	}
+	r := &FieldDefinition_Entity{
+		Entity: m.Entity,
+	}
+	return r
+}
+
 func (m *ComponentDefinition) CloneVT() *ComponentDefinition {
 	if m == nil {
 		return (*ComponentDefinition)(nil)
 	}
 	r := &ComponentDefinition{
-		Name:         m.Name,
-		Description:  m.Description,
-		IsDeprecated: m.IsDeprecated,
-		CanBePair:    m.CanBePair,
+		Name:                       m.Name,
+		Description:                m.Description,
+		IsDeprecated:               m.IsDeprecated,
+		ShouldNotInflect:           m.ShouldNotInflect,
+		ShouldGenerateAddedEvent:   m.ShouldGenerateAddedEvent,
+		ShouldGenerateRemovedEvent: m.ShouldGenerateRemovedEvent,
+		ShouldGenerateChangedEvent: m.ShouldGenerateChangedEvent,
 	}
 	if rhs := m.Fields; rhs != nil {
 		tmpContainer := make([]*FieldDefinition, len(rhs))
@@ -198,18 +212,13 @@ func (m *ComponentDefinition) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *StateDefinition) CloneVT() *StateDefinition {
+func (m *ComponentSetDefinition_Component) CloneVT() *ComponentSetDefinition_Component {
 	if m == nil {
-		return (*StateDefinition)(nil)
+		return (*ComponentSetDefinition_Component)(nil)
 	}
-	r := &StateDefinition{
+	r := &ComponentSetDefinition_Component{
 		Name:        m.Name,
-		Description: m.Description,
-	}
-	if rhs := m.States; rhs != nil {
-		tmpContainer := make([]string, len(rhs))
-		copy(tmpContainer, rhs)
-		r.States = tmpContainer
+		IsWriteable: m.IsWriteable,
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -218,51 +227,28 @@ func (m *StateDefinition) CloneVT() *StateDefinition {
 	return r
 }
 
-func (m *StateDefinition) CloneMessageVT() proto.Message {
+func (m *ComponentSetDefinition_Component) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *QueryDefinition_Term) CloneVT() *QueryDefinition_Term {
+func (m *ComponentSetDefinition) CloneVT() *ComponentSetDefinition {
 	if m == nil {
-		return (*QueryDefinition_Term)(nil)
+		return (*ComponentSetDefinition)(nil)
 	}
-	r := &QueryDefinition_Term{
-		EntityName:   m.EntityName,
-		VariableName: m.VariableName,
-		IsMutable:    m.IsMutable,
-		IsOptional:   m.IsOptional,
-	}
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *QueryDefinition_Term) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
-func (m *QueryDefinition_Group) CloneVT() *QueryDefinition_Group {
-	if m == nil {
-		return (*QueryDefinition_Group)(nil)
-	}
-	r := &QueryDefinition_Group{
-		Op: m.Op,
-	}
-	if rhs := m.Terms; rhs != nil {
-		tmpContainer := make([]*QueryDefinition_Term, len(rhs))
+	r := &ComponentSetDefinition{}
+	if rhs := m.Owned; rhs != nil {
+		tmpContainer := make([]*ComponentSetDefinition_Component, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.Terms = tmpContainer
+		r.Owned = tmpContainer
 	}
-	if rhs := m.Groups; rhs != nil {
-		tmpContainer := make([]*QueryDefinition_Group, len(rhs))
+	if rhs := m.Borrowed; rhs != nil {
+		tmpContainer := make([]*ComponentSetDefinition_Component, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.Groups = tmpContainer
+		r.Borrowed = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -271,27 +257,7 @@ func (m *QueryDefinition_Group) CloneVT() *QueryDefinition_Group {
 	return r
 }
 
-func (m *QueryDefinition_Group) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
-func (m *QueryDefinition) CloneVT() *QueryDefinition {
-	if m == nil {
-		return (*QueryDefinition)(nil)
-	}
-	r := &QueryDefinition{
-		Name:        m.Name,
-		Description: m.Description,
-		Group:       m.Group.CloneVT(),
-	}
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *QueryDefinition) CloneMessageVT() proto.Message {
+func (m *ComponentSetDefinition) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -310,20 +276,6 @@ func (m *BundleDefinition) CloneVT() *BundleDefinition {
 		}
 		r.Components = tmpContainer
 	}
-	if rhs := m.States; rhs != nil {
-		tmpContainer := make([]*StateDefinition, len(rhs))
-		for k, v := range rhs {
-			tmpContainer[k] = v.CloneVT()
-		}
-		r.States = tmpContainer
-	}
-	if rhs := m.Queries; rhs != nil {
-		tmpContainer := make([]*QueryDefinition, len(rhs))
-		for k, v := range rhs {
-			tmpContainer[k] = v.CloneVT()
-		}
-		r.Queries = tmpContainer
-	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -332,6 +284,39 @@ func (m *BundleDefinition) CloneVT() *BundleDefinition {
 }
 
 func (m *BundleDefinition) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *GeneratorOptions) CloneVT() *GeneratorOptions {
+	if m == nil {
+		return (*GeneratorOptions)(nil)
+	}
+	r := &GeneratorOptions{
+		PackageName: m.PackageName,
+		FolderPath:  m.FolderPath,
+	}
+	if rhs := m.Bundles; rhs != nil {
+		tmpContainer := make([]*BundleDefinition, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.Bundles = tmpContainer
+	}
+	if rhs := m.ComponentSets; rhs != nil {
+		tmpContainer := make([]*ComponentSetDefinition, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.ComponentSets = tmpContainer
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *GeneratorOptions) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -360,6 +345,9 @@ func (this *FieldDefinition) EqualVT(that *FieldDefinition) bool {
 		return false
 	}
 	if this.IsDeprecated != that.IsDeprecated {
+		return false
+	}
+	if this.HasMultiple != that.HasMultiple {
 		return false
 	}
 	if this.Order != that.Order {
@@ -579,6 +567,23 @@ func (this *FieldDefinition_Bin) EqualVT(thatIface isFieldDefinition_ResetValue)
 	return true
 }
 
+func (this *FieldDefinition_Entity) EqualVT(thatIface isFieldDefinition_ResetValue) bool {
+	that, ok := thatIface.(*FieldDefinition_Entity)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.Entity != that.Entity {
+		return false
+	}
+	return true
+}
+
 func (this *ComponentDefinition) EqualVT(that *ComponentDefinition) bool {
 	if this == that {
 		return true
@@ -594,7 +599,16 @@ func (this *ComponentDefinition) EqualVT(that *ComponentDefinition) bool {
 	if this.IsDeprecated != that.IsDeprecated {
 		return false
 	}
-	if this.CanBePair != that.CanBePair {
+	if this.ShouldNotInflect != that.ShouldNotInflect {
+		return false
+	}
+	if this.ShouldGenerateAddedEvent != that.ShouldGenerateAddedEvent {
+		return false
+	}
+	if this.ShouldGenerateRemovedEvent != that.ShouldGenerateRemovedEvent {
+		return false
+	}
+	if this.ShouldGenerateChangedEvent != that.ShouldGenerateChangedEvent {
 		return false
 	}
 	if len(this.Fields) != len(that.Fields) {
@@ -624,7 +638,7 @@ func (this *ComponentDefinition) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *StateDefinition) EqualVT(that *StateDefinition) bool {
+func (this *ComponentSetDefinition_Component) EqualVT(that *ComponentSetDefinition_Component) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -633,93 +647,53 @@ func (this *StateDefinition) EqualVT(that *StateDefinition) bool {
 	if this.Name != that.Name {
 		return false
 	}
-	if this.Description != that.Description {
-		return false
-	}
-	if len(this.States) != len(that.States) {
-		return false
-	}
-	for i, vx := range this.States {
-		vy := that.States[i]
-		if vx != vy {
-			return false
-		}
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *StateDefinition) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*StateDefinition)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *QueryDefinition_Term) EqualVT(that *QueryDefinition_Term) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if this.EntityName != that.EntityName {
-		return false
-	}
-	if this.VariableName != that.VariableName {
-		return false
-	}
-	if this.IsMutable != that.IsMutable {
-		return false
-	}
-	if this.IsOptional != that.IsOptional {
+	if this.IsWriteable != that.IsWriteable {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *QueryDefinition_Term) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*QueryDefinition_Term)
+func (this *ComponentSetDefinition_Component) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ComponentSetDefinition_Component)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *QueryDefinition_Group) EqualVT(that *QueryDefinition_Group) bool {
+func (this *ComponentSetDefinition) EqualVT(that *ComponentSetDefinition) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Op != that.Op {
+	if len(this.Owned) != len(that.Owned) {
 		return false
 	}
-	if len(this.Terms) != len(that.Terms) {
-		return false
-	}
-	for i, vx := range this.Terms {
-		vy := that.Terms[i]
+	for i, vx := range this.Owned {
+		vy := that.Owned[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &QueryDefinition_Term{}
+				p = &ComponentSetDefinition_Component{}
 			}
 			if q == nil {
-				q = &QueryDefinition_Term{}
+				q = &ComponentSetDefinition_Component{}
 			}
 			if !p.EqualVT(q) {
 				return false
 			}
 		}
 	}
-	if len(this.Groups) != len(that.Groups) {
+	if len(this.Borrowed) != len(that.Borrowed) {
 		return false
 	}
-	for i, vx := range this.Groups {
-		vy := that.Groups[i]
+	for i, vx := range this.Borrowed {
+		vy := that.Borrowed[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &QueryDefinition_Group{}
+				p = &ComponentSetDefinition_Component{}
 			}
 			if q == nil {
-				q = &QueryDefinition_Group{}
+				q = &ComponentSetDefinition_Component{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -729,33 +703,8 @@ func (this *QueryDefinition_Group) EqualVT(that *QueryDefinition_Group) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *QueryDefinition_Group) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*QueryDefinition_Group)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *QueryDefinition) EqualVT(that *QueryDefinition) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if this.Name != that.Name {
-		return false
-	}
-	if this.Description != that.Description {
-		return false
-	}
-	if !this.Group.EqualVT(that.Group) {
-		return false
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *QueryDefinition) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*QueryDefinition)
+func (this *ComponentSetDefinition) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ComponentSetDefinition)
 	if !ok {
 		return false
 	}
@@ -790,34 +739,56 @@ func (this *BundleDefinition) EqualVT(that *BundleDefinition) bool {
 			}
 		}
 	}
-	if len(this.States) != len(that.States) {
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *BundleDefinition) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*BundleDefinition)
+	if !ok {
 		return false
 	}
-	for i, vx := range this.States {
-		vy := that.States[i]
+	return this.EqualVT(that)
+}
+func (this *GeneratorOptions) EqualVT(that *GeneratorOptions) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.PackageName != that.PackageName {
+		return false
+	}
+	if this.FolderPath != that.FolderPath {
+		return false
+	}
+	if len(this.Bundles) != len(that.Bundles) {
+		return false
+	}
+	for i, vx := range this.Bundles {
+		vy := that.Bundles[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &StateDefinition{}
+				p = &BundleDefinition{}
 			}
 			if q == nil {
-				q = &StateDefinition{}
+				q = &BundleDefinition{}
 			}
 			if !p.EqualVT(q) {
 				return false
 			}
 		}
 	}
-	if len(this.Queries) != len(that.Queries) {
+	if len(this.ComponentSets) != len(that.ComponentSets) {
 		return false
 	}
-	for i, vx := range this.Queries {
-		vy := that.Queries[i]
+	for i, vx := range this.ComponentSets {
+		vy := that.ComponentSets[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &QueryDefinition{}
+				p = &ComponentSetDefinition{}
 			}
 			if q == nil {
-				q = &QueryDefinition{}
+				q = &ComponentSetDefinition{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -827,8 +798,8 @@ func (this *BundleDefinition) EqualVT(that *BundleDefinition) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *BundleDefinition) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*BundleDefinition)
+func (this *GeneratorOptions) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*GeneratorOptions)
 	if !ok {
 		return false
 	}
@@ -876,6 +847,16 @@ func (m *FieldDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.Order != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.Order))
 		i--
+		dAtA[i] = 0x30
+	}
+	if m.HasMultiple {
+		i--
+		if m.HasMultiple {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
 		dAtA[i] = 0x28
 	}
 	if m.IsDeprecated {
@@ -914,7 +895,7 @@ func (m *FieldDefinition_U8) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64(m.U8))
 	i--
-	dAtA[i] = 0x30
+	dAtA[i] = 0x38
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_U16) MarshalToVT(dAtA []byte) (int, error) {
@@ -926,7 +907,7 @@ func (m *FieldDefinition_U16) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64(m.U16))
 	i--
-	dAtA[i] = 0x38
+	dAtA[i] = 0x40
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_U32) MarshalToVT(dAtA []byte) (int, error) {
@@ -938,7 +919,7 @@ func (m *FieldDefinition_U32) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64(m.U32))
 	i--
-	dAtA[i] = 0x40
+	dAtA[i] = 0x48
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_U64) MarshalToVT(dAtA []byte) (int, error) {
@@ -950,7 +931,7 @@ func (m *FieldDefinition_U64) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64(m.U64))
 	i--
-	dAtA[i] = 0x48
+	dAtA[i] = 0x50
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_I8) MarshalToVT(dAtA []byte) (int, error) {
@@ -962,7 +943,7 @@ func (m *FieldDefinition_I8) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64((uint32(m.I8)<<1)^uint32((m.I8>>31))))
 	i--
-	dAtA[i] = 0x50
+	dAtA[i] = 0x58
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_I16) MarshalToVT(dAtA []byte) (int, error) {
@@ -974,7 +955,7 @@ func (m *FieldDefinition_I16) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64((uint32(m.I16)<<1)^uint32((m.I16>>31))))
 	i--
-	dAtA[i] = 0x58
+	dAtA[i] = 0x60
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_I32) MarshalToVT(dAtA []byte) (int, error) {
@@ -986,7 +967,7 @@ func (m *FieldDefinition_I32) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64((uint32(m.I32)<<1)^uint32((m.I32>>31))))
 	i--
-	dAtA[i] = 0x60
+	dAtA[i] = 0x68
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_I64) MarshalToVT(dAtA []byte) (int, error) {
@@ -998,7 +979,7 @@ func (m *FieldDefinition_I64) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64((uint64(m.I64)<<1)^uint64((m.I64>>63))))
 	i--
-	dAtA[i] = 0x68
+	dAtA[i] = 0x70
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_F32) MarshalToVT(dAtA []byte) (int, error) {
@@ -1011,7 +992,7 @@ func (m *FieldDefinition_F32) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i -= 4
 	binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.F32))))
 	i--
-	dAtA[i] = 0x75
+	dAtA[i] = 0x7d
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_F64) MarshalToVT(dAtA []byte) (int, error) {
@@ -1024,7 +1005,9 @@ func (m *FieldDefinition_F64) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i -= 8
 	binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.F64))))
 	i--
-	dAtA[i] = 0x79
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x81
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_Txt) MarshalToVT(dAtA []byte) (int, error) {
@@ -1040,7 +1023,7 @@ func (m *FieldDefinition_Txt) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0x82
+	dAtA[i] = 0x8a
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_Bin) MarshalToVT(dAtA []byte) (int, error) {
@@ -1056,7 +1039,21 @@ func (m *FieldDefinition_Bin) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0x8a
+	dAtA[i] = 0x92
+	return len(dAtA) - i, nil
+}
+func (m *FieldDefinition_Entity) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *FieldDefinition_Entity) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i = encodeVarint(dAtA, i, uint64(m.Entity))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x98
 	return len(dAtA) - i, nil
 }
 func (m *ComponentDefinition) MarshalVT() (dAtA []byte, err error) {
@@ -1098,12 +1095,42 @@ func (m *ComponentDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x2a
+			dAtA[i] = 0x42
 		}
 	}
-	if m.CanBePair {
+	if m.ShouldGenerateChangedEvent {
 		i--
-		if m.CanBePair {
+		if m.ShouldGenerateChangedEvent {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.ShouldGenerateRemovedEvent {
+		i--
+		if m.ShouldGenerateRemovedEvent {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.ShouldGenerateAddedEvent {
+		i--
+		if m.ShouldGenerateAddedEvent {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.ShouldNotInflect {
+		i--
+		if m.ShouldNotInflect {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -1138,7 +1165,7 @@ func (m *ComponentDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *StateDefinition) MarshalVT() (dAtA []byte, err error) {
+func (m *ComponentSetDefinition_Component) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1151,12 +1178,12 @@ func (m *StateDefinition) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *StateDefinition) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ComponentSetDefinition_Component) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *StateDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ComponentSetDefinition_Component) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1168,21 +1195,15 @@ func (m *StateDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.States) > 0 {
-		for iNdEx := len(m.States) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.States[iNdEx])
-			copy(dAtA[i:], m.States[iNdEx])
-			i = encodeVarint(dAtA, i, uint64(len(m.States[iNdEx])))
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
-	if len(m.Description) > 0 {
-		i -= len(m.Description)
-		copy(dAtA[i:], m.Description)
-		i = encodeVarint(dAtA, i, uint64(len(m.Description)))
+	if m.IsWriteable {
 		i--
-		dAtA[i] = 0x12
+		if m.IsWriteable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
 	}
 	if len(m.Name) > 0 {
 		i -= len(m.Name)
@@ -1194,7 +1215,7 @@ func (m *StateDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryDefinition_Term) MarshalVT() (dAtA []byte, err error) {
+func (m *ComponentSetDefinition) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1207,12 +1228,12 @@ func (m *QueryDefinition_Term) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryDefinition_Term) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ComponentSetDefinition) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *QueryDefinition_Term) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ComponentSetDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1224,88 +1245,9 @@ func (m *QueryDefinition_Term) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.IsOptional {
-		i--
-		if m.IsOptional {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.IsMutable {
-		i--
-		if m.IsMutable {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.VariableName) > 0 {
-		i -= len(m.VariableName)
-		copy(dAtA[i:], m.VariableName)
-		i = encodeVarint(dAtA, i, uint64(len(m.VariableName)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.EntityName) > 0 {
-		i -= len(m.EntityName)
-		copy(dAtA[i:], m.EntityName)
-		i = encodeVarint(dAtA, i, uint64(len(m.EntityName)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryDefinition_Group) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryDefinition_Group) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *QueryDefinition_Group) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.Groups) > 0 {
-		for iNdEx := len(m.Groups) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Groups[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
-	if len(m.Terms) > 0 {
-		for iNdEx := len(m.Terms) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Terms[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+	if len(m.Borrowed) > 0 {
+		for iNdEx := len(m.Borrowed) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Borrowed[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -1315,67 +1257,17 @@ func (m *QueryDefinition_Group) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 			dAtA[i] = 0x12
 		}
 	}
-	if m.Op != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.Op))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryDefinition) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryDefinition) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *QueryDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.Group != nil {
-		size, err := m.Group.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+	if len(m.Owned) > 0 {
+		for iNdEx := len(m.Owned) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Owned[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0xa
 		}
-		i -= size
-		i = encodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.Description) > 0 {
-		i -= len(m.Description)
-		copy(dAtA[i:], m.Description)
-		i = encodeVarint(dAtA, i, uint64(len(m.Description)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarint(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1410,30 +1302,6 @@ func (m *BundleDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Queries) > 0 {
-		for iNdEx := len(m.Queries) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Queries[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.States) > 0 {
-		for iNdEx := len(m.States) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.States[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x22
-		}
-	}
 	if len(m.Components) > 0 {
 		for iNdEx := len(m.Components) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Components[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -1457,6 +1325,77 @@ func (m *BundleDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.Name)
 		copy(dAtA[i:], m.Name)
 		i = encodeVarint(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GeneratorOptions) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GeneratorOptions) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *GeneratorOptions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.ComponentSets) > 0 {
+		for iNdEx := len(m.ComponentSets) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.ComponentSets[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Bundles) > 0 {
+		for iNdEx := len(m.Bundles) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Bundles[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.FolderPath) > 0 {
+		i -= len(m.FolderPath)
+		copy(dAtA[i:], m.FolderPath)
+		i = encodeVarint(dAtA, i, uint64(len(m.FolderPath)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.PackageName) > 0 {
+		i -= len(m.PackageName)
+		copy(dAtA[i:], m.PackageName)
+		i = encodeVarint(dAtA, i, uint64(len(m.PackageName)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1503,6 +1442,13 @@ func (m *FieldDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error)
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if msg, ok := m.ResetValue.(*FieldDefinition_Entity); ok {
+		size, err := msg.MarshalToSizedBufferVTStrict(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
 	}
 	if msg, ok := m.ResetValue.(*FieldDefinition_Bin); ok {
 		size, err := msg.MarshalToSizedBufferVTStrict(dAtA[:i])
@@ -1591,6 +1537,16 @@ func (m *FieldDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error)
 	if m.Order != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.Order))
 		i--
+		dAtA[i] = 0x30
+	}
+	if m.HasMultiple {
+		i--
+		if m.HasMultiple {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
 		dAtA[i] = 0x28
 	}
 	if m.IsDeprecated {
@@ -1629,7 +1585,7 @@ func (m *FieldDefinition_U8) MarshalToSizedBufferVTStrict(dAtA []byte) (int, err
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64(m.U8))
 	i--
-	dAtA[i] = 0x30
+	dAtA[i] = 0x38
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_U16) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1641,7 +1597,7 @@ func (m *FieldDefinition_U16) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64(m.U16))
 	i--
-	dAtA[i] = 0x38
+	dAtA[i] = 0x40
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_U32) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1653,7 +1609,7 @@ func (m *FieldDefinition_U32) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64(m.U32))
 	i--
-	dAtA[i] = 0x40
+	dAtA[i] = 0x48
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_U64) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1665,7 +1621,7 @@ func (m *FieldDefinition_U64) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64(m.U64))
 	i--
-	dAtA[i] = 0x48
+	dAtA[i] = 0x50
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_I8) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1677,7 +1633,7 @@ func (m *FieldDefinition_I8) MarshalToSizedBufferVTStrict(dAtA []byte) (int, err
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64((uint32(m.I8)<<1)^uint32((m.I8>>31))))
 	i--
-	dAtA[i] = 0x50
+	dAtA[i] = 0x58
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_I16) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1689,7 +1645,7 @@ func (m *FieldDefinition_I16) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64((uint32(m.I16)<<1)^uint32((m.I16>>31))))
 	i--
-	dAtA[i] = 0x58
+	dAtA[i] = 0x60
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_I32) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1701,7 +1657,7 @@ func (m *FieldDefinition_I32) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64((uint32(m.I32)<<1)^uint32((m.I32>>31))))
 	i--
-	dAtA[i] = 0x60
+	dAtA[i] = 0x68
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_I64) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1713,7 +1669,7 @@ func (m *FieldDefinition_I64) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i := len(dAtA)
 	i = encodeVarint(dAtA, i, uint64((uint64(m.I64)<<1)^uint64((m.I64>>63))))
 	i--
-	dAtA[i] = 0x68
+	dAtA[i] = 0x70
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_F32) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1726,7 +1682,7 @@ func (m *FieldDefinition_F32) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i -= 4
 	binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.F32))))
 	i--
-	dAtA[i] = 0x75
+	dAtA[i] = 0x7d
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_F64) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1739,7 +1695,9 @@ func (m *FieldDefinition_F64) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i -= 8
 	binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.F64))))
 	i--
-	dAtA[i] = 0x79
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x81
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_Txt) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1755,7 +1713,7 @@ func (m *FieldDefinition_Txt) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0x82
+	dAtA[i] = 0x8a
 	return len(dAtA) - i, nil
 }
 func (m *FieldDefinition_Bin) MarshalToVTStrict(dAtA []byte) (int, error) {
@@ -1771,7 +1729,21 @@ func (m *FieldDefinition_Bin) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0x8a
+	dAtA[i] = 0x92
+	return len(dAtA) - i, nil
+}
+func (m *FieldDefinition_Entity) MarshalToVTStrict(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
+}
+
+func (m *FieldDefinition_Entity) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i = encodeVarint(dAtA, i, uint64(m.Entity))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x98
 	return len(dAtA) - i, nil
 }
 func (m *ComponentDefinition) MarshalVTStrict() (dAtA []byte, err error) {
@@ -1813,12 +1785,42 @@ func (m *ComponentDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x2a
+			dAtA[i] = 0x42
 		}
 	}
-	if m.CanBePair {
+	if m.ShouldGenerateChangedEvent {
 		i--
-		if m.CanBePair {
+		if m.ShouldGenerateChangedEvent {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.ShouldGenerateRemovedEvent {
+		i--
+		if m.ShouldGenerateRemovedEvent {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.ShouldGenerateAddedEvent {
+		i--
+		if m.ShouldGenerateAddedEvent {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.ShouldNotInflect {
+		i--
+		if m.ShouldNotInflect {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -1853,7 +1855,7 @@ func (m *ComponentDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *StateDefinition) MarshalVTStrict() (dAtA []byte, err error) {
+func (m *ComponentSetDefinition_Component) MarshalVTStrict() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1866,12 +1868,12 @@ func (m *StateDefinition) MarshalVTStrict() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *StateDefinition) MarshalToVTStrict(dAtA []byte) (int, error) {
+func (m *ComponentSetDefinition_Component) MarshalToVTStrict(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
 }
 
-func (m *StateDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+func (m *ComponentSetDefinition_Component) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1883,21 +1885,15 @@ func (m *StateDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error)
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.States) > 0 {
-		for iNdEx := len(m.States) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.States[iNdEx])
-			copy(dAtA[i:], m.States[iNdEx])
-			i = encodeVarint(dAtA, i, uint64(len(m.States[iNdEx])))
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
-	if len(m.Description) > 0 {
-		i -= len(m.Description)
-		copy(dAtA[i:], m.Description)
-		i = encodeVarint(dAtA, i, uint64(len(m.Description)))
+	if m.IsWriteable {
 		i--
-		dAtA[i] = 0x12
+		if m.IsWriteable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
 	}
 	if len(m.Name) > 0 {
 		i -= len(m.Name)
@@ -1909,7 +1905,7 @@ func (m *StateDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryDefinition_Term) MarshalVTStrict() (dAtA []byte, err error) {
+func (m *ComponentSetDefinition) MarshalVTStrict() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1922,12 +1918,12 @@ func (m *QueryDefinition_Term) MarshalVTStrict() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryDefinition_Term) MarshalToVTStrict(dAtA []byte) (int, error) {
+func (m *ComponentSetDefinition) MarshalToVTStrict(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
 }
 
-func (m *QueryDefinition_Term) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+func (m *ComponentSetDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1939,88 +1935,9 @@ func (m *QueryDefinition_Term) MarshalToSizedBufferVTStrict(dAtA []byte) (int, e
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.IsOptional {
-		i--
-		if m.IsOptional {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.IsMutable {
-		i--
-		if m.IsMutable {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.VariableName) > 0 {
-		i -= len(m.VariableName)
-		copy(dAtA[i:], m.VariableName)
-		i = encodeVarint(dAtA, i, uint64(len(m.VariableName)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.EntityName) > 0 {
-		i -= len(m.EntityName)
-		copy(dAtA[i:], m.EntityName)
-		i = encodeVarint(dAtA, i, uint64(len(m.EntityName)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryDefinition_Group) MarshalVTStrict() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVTStrict(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryDefinition_Group) MarshalToVTStrict(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
-}
-
-func (m *QueryDefinition_Group) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.Groups) > 0 {
-		for iNdEx := len(m.Groups) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Groups[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
-	if len(m.Terms) > 0 {
-		for iNdEx := len(m.Terms) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Terms[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
+	if len(m.Borrowed) > 0 {
+		for iNdEx := len(m.Borrowed) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Borrowed[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2030,67 +1947,17 @@ func (m *QueryDefinition_Group) MarshalToSizedBufferVTStrict(dAtA []byte) (int, 
 			dAtA[i] = 0x12
 		}
 	}
-	if m.Op != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.Op))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryDefinition) MarshalVTStrict() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVTStrict(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryDefinition) MarshalToVTStrict(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
-}
-
-func (m *QueryDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.Group != nil {
-		size, err := m.Group.MarshalToSizedBufferVTStrict(dAtA[:i])
-		if err != nil {
-			return 0, err
+	if len(m.Owned) > 0 {
+		for iNdEx := len(m.Owned) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Owned[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0xa
 		}
-		i -= size
-		i = encodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.Description) > 0 {
-		i -= len(m.Description)
-		copy(dAtA[i:], m.Description)
-		i = encodeVarint(dAtA, i, uint64(len(m.Description)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarint(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -2125,30 +1992,6 @@ func (m *BundleDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Queries) > 0 {
-		for iNdEx := len(m.Queries) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Queries[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.States) > 0 {
-		for iNdEx := len(m.States) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.States[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x22
-		}
-	}
 	if len(m.Components) > 0 {
 		for iNdEx := len(m.Components) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Components[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
@@ -2178,6 +2021,77 @@ func (m *BundleDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
+func (m *GeneratorOptions) MarshalVTStrict() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVTStrict(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GeneratorOptions) MarshalToVTStrict(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
+}
+
+func (m *GeneratorOptions) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.ComponentSets) > 0 {
+		for iNdEx := len(m.ComponentSets) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.ComponentSets[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Bundles) > 0 {
+		for iNdEx := len(m.Bundles) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Bundles[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.FolderPath) > 0 {
+		i -= len(m.FolderPath)
+		copy(dAtA[i:], m.FolderPath)
+		i = encodeVarint(dAtA, i, uint64(len(m.FolderPath)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.PackageName) > 0 {
+		i -= len(m.PackageName)
+		copy(dAtA[i:], m.PackageName)
+		i = encodeVarint(dAtA, i, uint64(len(m.PackageName)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *FieldDefinition) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2193,6 +2107,9 @@ func (m *FieldDefinition) SizeVT() (n int) {
 		n += 1 + l + sov(uint64(l))
 	}
 	if m.IsDeprecated {
+		n += 2
+	}
+	if m.HasMultiple {
 		n += 2
 	}
 	if m.Order != 0 {
@@ -2292,7 +2209,7 @@ func (m *FieldDefinition_F64) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	n += 9
+	n += 10
 	return n
 }
 func (m *FieldDefinition_Txt) SizeVT() (n int) {
@@ -2315,6 +2232,15 @@ func (m *FieldDefinition_Bin) SizeVT() (n int) {
 	n += 2 + l + sov(uint64(l))
 	return n
 }
+func (m *FieldDefinition_Entity) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 2 + sov(uint64(m.Entity))
+	return n
+}
 func (m *ComponentDefinition) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2332,7 +2258,16 @@ func (m *ComponentDefinition) SizeVT() (n int) {
 	if m.IsDeprecated {
 		n += 2
 	}
-	if m.CanBePair {
+	if m.ShouldNotInflect {
+		n += 2
+	}
+	if m.ShouldGenerateAddedEvent {
+		n += 2
+	}
+	if m.ShouldGenerateRemovedEvent {
+		n += 2
+	}
+	if m.ShouldGenerateChangedEvent {
 		n += 2
 	}
 	if len(m.Fields) > 0 {
@@ -2345,7 +2280,7 @@ func (m *ComponentDefinition) SizeVT() (n int) {
 	return n
 }
 
-func (m *StateDefinition) SizeVT() (n int) {
+func (m *ComponentSetDefinition_Component) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2355,86 +2290,30 @@ func (m *StateDefinition) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	l = len(m.Description)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
-	}
-	if len(m.States) > 0 {
-		for _, s := range m.States {
-			l = len(s)
-			n += 1 + l + sov(uint64(l))
-		}
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *QueryDefinition_Term) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.EntityName)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
-	}
-	l = len(m.VariableName)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
-	}
-	if m.IsMutable {
-		n += 2
-	}
-	if m.IsOptional {
+	if m.IsWriteable {
 		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
 }
 
-func (m *QueryDefinition_Group) SizeVT() (n int) {
+func (m *ComponentSetDefinition) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Op != 0 {
-		n += 1 + sov(uint64(m.Op))
-	}
-	if len(m.Terms) > 0 {
-		for _, e := range m.Terms {
+	if len(m.Owned) > 0 {
+		for _, e := range m.Owned {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
 	}
-	if len(m.Groups) > 0 {
-		for _, e := range m.Groups {
+	if len(m.Borrowed) > 0 {
+		for _, e := range m.Borrowed {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *QueryDefinition) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
-	}
-	l = len(m.Description)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
-	}
-	if m.Group != nil {
-		l = m.Group.SizeVT()
-		n += 1 + l + sov(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2460,14 +2339,32 @@ func (m *BundleDefinition) SizeVT() (n int) {
 			n += 1 + l + sov(uint64(l))
 		}
 	}
-	if len(m.States) > 0 {
-		for _, e := range m.States {
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *GeneratorOptions) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.PackageName)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
+	l = len(m.FolderPath)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
+	if len(m.Bundles) > 0 {
+		for _, e := range m.Bundles {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
 	}
-	if len(m.Queries) > 0 {
-		for _, e := range m.Queries {
+	if len(m.ComponentSets) > 0 {
+		for _, e := range m.ComponentSets {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
@@ -2597,6 +2494,26 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			m.IsDeprecated = bool(v != 0)
 		case 5:
 			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HasMultiple", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.HasMultiple = bool(v != 0)
+		case 6:
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Order", wireType)
 			}
 			m.Order = 0
@@ -2614,7 +2531,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-		case 6:
+		case 7:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field U8", wireType)
 			}
@@ -2634,7 +2551,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.ResetValue = &FieldDefinition_U8{U8: v}
-		case 7:
+		case 8:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field U16", wireType)
 			}
@@ -2654,7 +2571,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.ResetValue = &FieldDefinition_U16{U16: v}
-		case 8:
+		case 9:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field U32", wireType)
 			}
@@ -2674,7 +2591,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.ResetValue = &FieldDefinition_U32{U32: v}
-		case 9:
+		case 10:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field U64", wireType)
 			}
@@ -2694,7 +2611,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.ResetValue = &FieldDefinition_U64{U64: v}
-		case 10:
+		case 11:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field I8", wireType)
 			}
@@ -2715,7 +2632,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			}
 			v = int32((uint32(v) >> 1) ^ uint32(((v&1)<<31)>>31))
 			m.ResetValue = &FieldDefinition_I8{I8: v}
-		case 11:
+		case 12:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field I16", wireType)
 			}
@@ -2736,7 +2653,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			}
 			v = int32((uint32(v) >> 1) ^ uint32(((v&1)<<31)>>31))
 			m.ResetValue = &FieldDefinition_I16{I16: v}
-		case 12:
+		case 13:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field I32", wireType)
 			}
@@ -2757,7 +2674,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			}
 			v = int32((uint32(v) >> 1) ^ uint32(((v&1)<<31)>>31))
 			m.ResetValue = &FieldDefinition_I32{I32: v}
-		case 13:
+		case 14:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field I64", wireType)
 			}
@@ -2778,7 +2695,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			}
 			v = (v >> 1) ^ uint64((int64(v&1)<<63)>>63)
 			m.ResetValue = &FieldDefinition_I64{I64: int64(v)}
-		case 14:
+		case 15:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field F32", wireType)
 			}
@@ -2789,7 +2706,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.ResetValue = &FieldDefinition_F32{F32: float32(math.Float32frombits(v))}
-		case 15:
+		case 16:
 			if wireType != 1 {
 				return fmt.Errorf("proto: wrong wireType = %d for field F64", wireType)
 			}
@@ -2800,7 +2717,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
 			iNdEx += 8
 			m.ResetValue = &FieldDefinition_F64{F64: float64(math.Float64frombits(v))}
-		case 16:
+		case 17:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Txt", wireType)
 			}
@@ -2832,7 +2749,7 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ResetValue = &FieldDefinition_Txt{Txt: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
-		case 17:
+		case 18:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Bin", wireType)
 			}
@@ -2865,6 +2782,26 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 			copy(v, dAtA[iNdEx:postIndex])
 			m.ResetValue = &FieldDefinition_Bin{Bin: v}
 			iNdEx = postIndex
+		case 19:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Entity", wireType)
+			}
+			var v uint32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ResetValue = &FieldDefinition_Entity{Entity: v}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -3002,7 +2939,7 @@ func (m *ComponentDefinition) UnmarshalVT(dAtA []byte) error {
 			m.IsDeprecated = bool(v != 0)
 		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CanBePair", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ShouldNotInflect", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -3019,8 +2956,68 @@ func (m *ComponentDefinition) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.CanBePair = bool(v != 0)
+			m.ShouldNotInflect = bool(v != 0)
 		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShouldGenerateAddedEvent", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ShouldGenerateAddedEvent = bool(v != 0)
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShouldGenerateRemovedEvent", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ShouldGenerateRemovedEvent = bool(v != 0)
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShouldGenerateChangedEvent", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ShouldGenerateChangedEvent = bool(v != 0)
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Fields", wireType)
 			}
@@ -3076,7 +3073,7 @@ func (m *ComponentDefinition) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *StateDefinition) UnmarshalVT(dAtA []byte) error {
+func (m *ComponentSetDefinition_Component) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3099,10 +3096,10 @@ func (m *StateDefinition) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: StateDefinition: wiretype end group for non-group")
+			return fmt.Errorf("proto: ComponentSetDefinition_Component: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: StateDefinition: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ComponentSetDefinition_Component: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3138,187 +3135,8 @@ func (m *StateDefinition) UnmarshalVT(dAtA []byte) error {
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Description = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field States", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.States = append(m.States, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryDefinition_Term) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryDefinition_Term: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryDefinition_Term: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EntityName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.EntityName = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field VariableName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.VariableName = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsMutable", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IsWriteable", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -3335,27 +3153,7 @@ func (m *QueryDefinition_Term) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.IsMutable = bool(v != 0)
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsOptional", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsOptional = bool(v != 0)
+			m.IsWriteable = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -3378,7 +3176,7 @@ func (m *QueryDefinition_Term) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryDefinition_Group) UnmarshalVT(dAtA []byte) error {
+func (m *ComponentSetDefinition) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3401,217 +3199,15 @@ func (m *QueryDefinition_Group) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryDefinition_Group: wiretype end group for non-group")
+			return fmt.Errorf("proto: ComponentSetDefinition: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryDefinition_Group: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Op", wireType)
-			}
-			m.Op = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Op |= QueryDefinition_Op(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Terms", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Terms = append(m.Terms, &QueryDefinition_Term{})
-			if err := m.Terms[len(m.Terms)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Groups", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Groups = append(m.Groups, &QueryDefinition_Group{})
-			if err := m.Groups[len(m.Groups)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryDefinition) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryDefinition: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryDefinition: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ComponentSetDefinition: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Description = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Group", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Owned", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3638,10 +3234,42 @@ func (m *QueryDefinition) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Group == nil {
-				m.Group = &QueryDefinition_Group{}
+			m.Owned = append(m.Owned, &ComponentSetDefinition_Component{})
+			if err := m.Owned[len(m.Owned)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
-			if err := m.Group.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Borrowed", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Borrowed = append(m.Borrowed, &ComponentSetDefinition_Component{})
+			if err := m.Borrowed[len(m.Borrowed)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3794,9 +3422,124 @@ func (m *BundleDefinition) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		default:
+			iNdEx = preIndex
+			skippy, err := skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GeneratorOptions) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GeneratorOptions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GeneratorOptions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field States", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PackageName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PackageName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FolderPath", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FolderPath = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Bundles", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3823,14 +3566,14 @@ func (m *BundleDefinition) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.States = append(m.States, &StateDefinition{})
-			if err := m.States[len(m.States)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.Bundles = append(m.Bundles, &BundleDefinition{})
+			if err := m.Bundles[len(m.Bundles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Queries", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentSets", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3857,8 +3600,8 @@ func (m *BundleDefinition) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Queries = append(m.Queries, &QueryDefinition{})
-			if err := m.Queries[len(m.Queries)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.ComponentSets = append(m.ComponentSets, &ComponentSetDefinition{})
+			if err := m.ComponentSets[len(m.ComponentSets)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
