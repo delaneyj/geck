@@ -2,27 +2,29 @@ syntax = "proto3";
 
 package geck.v1;
 
-option go_package = "github.com/delaneyj/geck/pb/gen/geck/v1;geckpb";
+option go_package = "github.com/delaneyj/geckrevamp/pb/gen/geck/v1;geckpb";
 
 message FieldDefinition {
   string name = 1;
   string description = 3;
   bool is_deprecated = 4;
-  int32 order = 5;
+  bool has_multiple = 5;
+  int32 order = 6;
 
   oneof reset_value {
-    uint32 u8 = 6;
-    uint32 u16 = 7;
-    uint32 u32 = 8;
-    uint64 u64 = 9;
-    sint32 i8 = 10;
-    sint32 i16 = 11;
-    sint32 i32 = 12;
-    sint64 i64 = 13;
-    float f32 = 14;
-    double f64 = 15;
-    string txt = 16;
-    bytes bin = 17;
+    uint32 u8 = 7;
+    uint32 u16 = 8;
+    uint32 u32 = 9;
+    uint64 u64 = 10;
+    sint32 i8 = 11;
+    sint32 i16 = 12;
+    sint32 i32 = 13;
+    sint64 i64 = 14;
+    float f32 = 15;
+    double f64 = 16;
+    string txt = 17;
+    bytes bin = 18;
+    uint32 entity = 19;
   }
 }
 
@@ -30,46 +32,31 @@ message ComponentDefinition {
   string name = 1;
   string description = 2;
   bool is_deprecated = 3;
-  bool can_be_pair = 4;
-  repeated FieldDefinition fields = 5;
+  bool should_not_inflect = 4;
+  bool should_generate_added_event = 5;
+  bool should_generate_removed_event = 6;
+  bool should_generate_changed_event = 7;
+  repeated FieldDefinition fields = 8;
 }
 
-message StateDefinition {
-  string name = 1;
-  string description = 2;
-  repeated string states = 3;
-}
-
-message QueryDefinition {
-  enum Op {
-    AND = 0;
-    OR = 1;
-    NOT = 2;
+message ComponentSetDefinition {
+  message Component {
+    string name = 1;
+    bool is_writeable = 2;
   }
-
-  message Term {
-    string entity_name = 1;
-    string variable_name = 2;
-    bool is_mutable = 3;
-    bool is_optional = 4;
-  }
-
-  message Group {
-    Op op = 1;
-
-    repeated Term terms = 2;
-    repeated Group groups = 3;
-  }
-
-  string name = 1;
-  string description = 2;
-  Group group = 3;
+  repeated Component owned = 1;
+  repeated Component borrowed = 2;
 }
 
 message BundleDefinition {
   string name = 1;
   string description = 2;
   repeated ComponentDefinition components = 3;
-  repeated StateDefinition states = 4;
-  repeated QueryDefinition queries = 5;
+}
+
+message GeneratorOptions {
+  string package_name = 1;
+  string folder_path = 2;
+  repeated BundleDefinition bundles = 3;
+  repeated ComponentSetDefinition component_sets = 4;
 }
