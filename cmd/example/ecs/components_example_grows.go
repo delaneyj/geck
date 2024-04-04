@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Grows []Entity
 
 func GrowsFromEntity(c []Entity) Grows {
@@ -14,6 +18,14 @@ func (c Grows) ToEntities() []Entity {
 	entities := make([]Entity, len(c))
 	copy(entities, c)
 	return entities
+}
+
+func (c Grows) ToU32s() []uint32 {
+	u32s := make([]uint32, len(c))
+	for i, e := range c {
+		u32s[i] = e.val
+	}
+	return u32s
 }
 
 func GrowsFromEntities(e ...Entity) Grows {
@@ -65,6 +77,8 @@ func (e Entity) RemoveGrows(toRemove ...Entity) Entity {
 	}
 	e.w.growsStore.Set(clean, e)
 
+	e.w.patch.GrowsComponents[e.val] = nil
+
 	return e
 }
 
@@ -81,15 +95,23 @@ func (e Entity) WritableGrows() (*Grows, bool) {
 func (e Entity) SetGrows(other ...Entity) Entity {
 	e.w.growsStore.Set(Grows(other), e)
 
+	e.w.patch.GrowsComponents[e.w.resourceEntity.val] = Grows(other).ToPB()
 	return e
 }
 
 func (w *World) SetGrows(c Grows, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetGrowsResource?")
+	}
 	w.growsStore.Set(c, entities...)
+	w.patch.GrowsComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveGrows(entities ...Entity) {
 	w.growsStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.GrowsComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -105,9 +127,8 @@ func (w *World) GrowsResource() ([]Entity, bool) {
 }
 
 // Set the Grows resource in the world
-func (w *World) SetGrowsResource(c ...Entity) Entity {
-	w.resourceEntity.SetGrows(c...)
-
+func (w *World) SetGrowsResource(e ...Entity) Entity {
+	w.resourceEntity.SetGrows(e...)
 	return w.resourceEntity
 }
 
@@ -208,4 +229,18 @@ func (w *World) SetGrowsSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortGrows() {
 	w.growsStore.Sort()
+}
+
+func (w *World) ApplyGrowsPatch(e Entity, patch *ecspb.GrowsComponent) Entity {
+
+	c := Grows(w.EntitiesFromU32s(patch.Entity...))
+	e.w.growsStore.Set(c, e)
+	return e
+}
+
+func (c Grows) ToPB() *ecspb.GrowsComponent {
+	pb := &ecspb.GrowsComponent{
+		Entity: c.ToU32s(),
+	}
+	return pb
 }

@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Name string
 
 func NameFromString(c string) Name {
@@ -28,6 +32,7 @@ func (e Entity) ReadName() (Name, bool) {
 func (e Entity) RemoveName() Entity {
 	e.w.namesStore.Remove(e)
 
+	e.w.patch.NameComponents[e.val] = nil
 	return e
 }
 
@@ -38,15 +43,23 @@ func (e Entity) WritableName() (*Name, bool) {
 func (e Entity) SetName(other Name) Entity {
 	e.w.namesStore.Set(other, e)
 
+	e.w.patch.NameComponents[e.w.resourceEntity.val] = Name(other).ToPB()
 	return e
 }
 
 func (w *World) SetNames(c Name, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetNameResource?")
+	}
 	w.namesStore.Set(c, entities...)
+	w.patch.NameComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveNames(entities ...Entity) {
 	w.namesStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.NameComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -164,4 +177,17 @@ func (w *World) SetNameSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortNames() {
 	w.namesStore.Sort()
+}
+
+func (w *World) ApplyNamePatch(e Entity, patch *ecspb.NameComponent) Entity {
+	c := Name(patch.Value)
+	e.w.namesStore.Set(c, e)
+	return e
+}
+
+func (c Name) ToPB() *ecspb.NameComponent {
+	pb := &ecspb.NameComponent{
+		Value: c.ToString(),
+	}
+	return pb
 }

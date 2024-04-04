@@ -21,6 +21,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+func (m *Enum_Value) CloneVT() *Enum_Value {
+	if m == nil {
+		return (*Enum_Value)(nil)
+	}
+	r := &Enum_Value{
+		Name:  m.Name,
+		Value: m.Value,
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *Enum_Value) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *Enum) CloneVT() *Enum {
+	if m == nil {
+		return (*Enum)(nil)
+	}
+	r := &Enum{
+		Name:        m.Name,
+		Description: m.Description,
+		IsBitmask:   m.IsBitmask,
+	}
+	if rhs := m.Values; rhs != nil {
+		tmpContainer := make([]*Enum_Value, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.Values = tmpContainer
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *Enum) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
 func (m *FieldDefinition) CloneVT() *FieldDefinition {
 	if m == nil {
 		return (*FieldDefinition)(nil)
@@ -181,6 +227,16 @@ func (m *FieldDefinition_Entity) CloneVT() isFieldDefinition_ResetValue {
 	return r
 }
 
+func (m *FieldDefinition_Enum) CloneVT() isFieldDefinition_ResetValue {
+	if m == nil {
+		return (*FieldDefinition_Enum)(nil)
+	}
+	r := &FieldDefinition_Enum{
+		Enum: m.Enum.CloneVT(),
+	}
+	return r
+}
+
 func (m *ComponentDefinition) CloneVT() *ComponentDefinition {
 	if m == nil {
 		return (*ComponentDefinition)(nil)
@@ -295,6 +351,13 @@ func (m *GeneratorOptions) CloneVT() *GeneratorOptions {
 		PackageName: m.PackageName,
 		FolderPath:  m.FolderPath,
 	}
+	if rhs := m.Enums; rhs != nil {
+		tmpContainer := make([]*Enum, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.Enums = tmpContainer
+	}
 	if rhs := m.Bundles; rhs != nil {
 		tmpContainer := make([]*BundleDefinition, len(rhs))
 		for k, v := range rhs {
@@ -320,6 +383,70 @@ func (m *GeneratorOptions) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
+func (this *Enum_Value) EqualVT(that *Enum_Value) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Name != that.Name {
+		return false
+	}
+	if this.Value != that.Value {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *Enum_Value) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*Enum_Value)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *Enum) EqualVT(that *Enum) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Name != that.Name {
+		return false
+	}
+	if this.Description != that.Description {
+		return false
+	}
+	if len(this.Values) != len(that.Values) {
+		return false
+	}
+	for i, vx := range this.Values {
+		vy := that.Values[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &Enum_Value{}
+			}
+			if q == nil {
+				q = &Enum_Value{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
+	}
+	if this.IsBitmask != that.IsBitmask {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *Enum) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*Enum)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
 func (this *FieldDefinition) EqualVT(that *FieldDefinition) bool {
 	if this == that {
 		return true
@@ -584,6 +711,31 @@ func (this *FieldDefinition_Entity) EqualVT(thatIface isFieldDefinition_ResetVal
 	return true
 }
 
+func (this *FieldDefinition_Enum) EqualVT(thatIface isFieldDefinition_ResetValue) bool {
+	that, ok := thatIface.(*FieldDefinition_Enum)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.Enum, that.Enum; p != q {
+		if p == nil {
+			p = &Enum_Value{}
+		}
+		if q == nil {
+			q = &Enum_Value{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (this *ComponentDefinition) EqualVT(that *ComponentDefinition) bool {
 	if this == that {
 		return true
@@ -761,6 +913,23 @@ func (this *GeneratorOptions) EqualVT(that *GeneratorOptions) bool {
 	if this.FolderPath != that.FolderPath {
 		return false
 	}
+	if len(this.Enums) != len(that.Enums) {
+		return false
+	}
+	for i, vx := range this.Enums {
+		vy := that.Enums[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &Enum{}
+			}
+			if q == nil {
+				q = &Enum{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
+	}
 	if len(this.Bundles) != len(that.Bundles) {
 		return false
 	}
@@ -805,6 +974,120 @@ func (this *GeneratorOptions) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (m *Enum_Value) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Enum_Value) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Enum_Value) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Value != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Value))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarint(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *Enum) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Enum) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Enum) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.IsBitmask {
+		i--
+		if m.IsBitmask {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Values) > 0 {
+		for iNdEx := len(m.Values) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Values[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.Description) > 0 {
+		i -= len(m.Description)
+		copy(dAtA[i:], m.Description)
+		i = encodeVarint(dAtA, i, uint64(len(m.Description)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarint(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *FieldDefinition) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1054,6 +1337,27 @@ func (m *FieldDefinition_Entity) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	dAtA[i] = 0x1
 	i--
 	dAtA[i] = 0x98
+	return len(dAtA) - i, nil
+}
+func (m *FieldDefinition_Enum) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *FieldDefinition_Enum) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Enum != nil {
+		size, err := m.Enum.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	}
 	return len(dAtA) - i, nil
 }
 func (m *ComponentDefinition) MarshalVT() (dAtA []byte, err error) {
@@ -1370,12 +1674,24 @@ func (m *GeneratorOptions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.Bundles) > 0 {
 		for iNdEx := len(m.Bundles) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Bundles[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Enums) > 0 {
+		for iNdEx := len(m.Enums) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Enums[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -1413,6 +1729,120 @@ func encodeVarint(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Enum_Value) MarshalVTStrict() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVTStrict(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Enum_Value) MarshalToVTStrict(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
+}
+
+func (m *Enum_Value) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Value != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Value))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarint(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *Enum) MarshalVTStrict() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVTStrict(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Enum) MarshalToVTStrict(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
+}
+
+func (m *Enum) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.IsBitmask {
+		i--
+		if m.IsBitmask {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Values) > 0 {
+		for iNdEx := len(m.Values) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Values[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.Description) > 0 {
+		i -= len(m.Description)
+		copy(dAtA[i:], m.Description)
+		i = encodeVarint(dAtA, i, uint64(len(m.Description)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarint(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *FieldDefinition) MarshalVTStrict() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1442,6 +1872,13 @@ func (m *FieldDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error)
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if msg, ok := m.ResetValue.(*FieldDefinition_Enum); ok {
+		size, err := msg.MarshalToSizedBufferVTStrict(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
 	}
 	if msg, ok := m.ResetValue.(*FieldDefinition_Entity); ok {
 		size, err := msg.MarshalToSizedBufferVTStrict(dAtA[:i])
@@ -1744,6 +2181,27 @@ func (m *FieldDefinition_Entity) MarshalToSizedBufferVTStrict(dAtA []byte) (int,
 	dAtA[i] = 0x1
 	i--
 	dAtA[i] = 0x98
+	return len(dAtA) - i, nil
+}
+func (m *FieldDefinition_Enum) MarshalToVTStrict(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
+}
+
+func (m *FieldDefinition_Enum) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Enum != nil {
+		size, err := m.Enum.MarshalToSizedBufferVTStrict(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	}
 	return len(dAtA) - i, nil
 }
 func (m *ComponentDefinition) MarshalVTStrict() (dAtA []byte, err error) {
@@ -2060,12 +2518,24 @@ func (m *GeneratorOptions) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.Bundles) > 0 {
 		for iNdEx := len(m.Bundles) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Bundles[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Enums) > 0 {
+		for iNdEx := len(m.Enums) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Enums[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2090,6 +2560,50 @@ func (m *GeneratorOptions) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
+}
+
+func (m *Enum_Value) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
+	if m.Value != 0 {
+		n += 1 + sov(uint64(m.Value))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *Enum) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
+	l = len(m.Description)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
+	if len(m.Values) > 0 {
+		for _, e := range m.Values {
+			l = e.SizeVT()
+			n += 1 + l + sov(uint64(l))
+		}
+	}
+	if m.IsBitmask {
+		n += 2
+	}
+	n += len(m.unknownFields)
+	return n
 }
 
 func (m *FieldDefinition) SizeVT() (n int) {
@@ -2241,6 +2755,18 @@ func (m *FieldDefinition_Entity) SizeVT() (n int) {
 	n += 2 + sov(uint64(m.Entity))
 	return n
 }
+func (m *FieldDefinition_Enum) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Enum != nil {
+		l = m.Enum.SizeVT()
+		n += 2 + l + sov(uint64(l))
+	}
+	return n
+}
 func (m *ComponentDefinition) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2357,6 +2883,12 @@ func (m *GeneratorOptions) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
+	if len(m.Enums) > 0 {
+		for _, e := range m.Enums {
+			l = e.SizeVT()
+			n += 1 + l + sov(uint64(l))
+		}
+	}
 	if len(m.Bundles) > 0 {
 		for _, e := range m.Bundles {
 			l = e.SizeVT()
@@ -2378,6 +2910,277 @@ func sov(x uint64) (n int) {
 }
 func soz(x uint64) (n int) {
 	return sov(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *Enum_Value) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Enum_Value: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Enum_Value: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			m.Value = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Value |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Enum) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Enum: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Enum: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Values", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Values = append(m.Values, &Enum_Value{})
+			if err := m.Values[len(m.Values)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsBitmask", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsBitmask = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
@@ -2802,6 +3605,47 @@ func (m *FieldDefinition) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.ResetValue = &FieldDefinition_Entity{Entity: v}
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enum", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.ResetValue.(*FieldDefinition_Enum); ok {
+				if err := oneof.Enum.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Enum_Value{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.ResetValue = &FieldDefinition_Enum{Enum: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -3539,6 +4383,40 @@ func (m *GeneratorOptions) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enums", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Enums = append(m.Enums, &Enum{})
+			if err := m.Enums[len(m.Enums)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Bundles", wireType)
 			}
 			var msglen int
@@ -3571,7 +4449,7 @@ func (m *GeneratorOptions) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ComponentSets", wireType)
 			}

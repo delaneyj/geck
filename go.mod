@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/RoaringBitmap/roaring v1.9.0
+	github.com/RoaringBitmap/roaring v1.9.1
 	github.com/btvoidx/mint v0.4.3
 	github.com/delaneyj/toolbelt v0.2.0
 	github.com/go-openapi/inflect v0.20.0

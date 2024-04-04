@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Position struct {
 	X float32 `json:"x"`
 	Y float32 `json:"y"`
@@ -28,6 +32,7 @@ func (e Entity) ReadPosition() (Position, bool) {
 func (e Entity) RemovePosition() Entity {
 	e.w.positionsStore.Remove(e)
 
+	e.w.patch.PositionComponents[e.val] = nil
 	return e
 }
 
@@ -39,17 +44,47 @@ func (e Entity) SetPosition(other Position) Entity {
 	e.w.positionsStore.Set(other, e)
 
 	e.w.PositionVelocitySet.PossibleUpdate(e)
+	e.w.patch.PositionComponents[e.w.resourceEntity.val] = Position(other).ToPB()
+	return e
+}
+
+func (e Entity) SetPositionValues(
+	x0 float32,
+	y1 float32,
+	z2 float32,
+) Entity {
+	err := e.w.positionsStore.Set(Position{
+		X: x0,
+		Y: y1,
+		Z: z2,
+	}, e)
+	if err != nil {
+		panic(err)
+	}
+	pb := &ecspb.PositionComponent{
+		X: x0,
+		Y: y1,
+		Z: z2,
+	}
+	e.w.patch.PositionComponents[e.w.resourceEntity.val] = pb
 	return e
 }
 
 func (w *World) SetPositions(c Position, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetPositionResource?")
+	}
 	w.positionsStore.Set(c, entities...)
 	w.PositionVelocitySet.PossibleUpdate(entities...)
+	w.patch.PositionComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemovePositions(entities ...Entity) {
 	w.positionsStore.Remove(entities...)
 	w.PositionVelocitySet.PossibleUpdate(entities...)
+	for _, entity := range entities {
+		w.patch.PositionComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -67,7 +102,18 @@ func (w *World) PositionResource() (Position, bool) {
 // Set the Position resource in the world
 func (w *World) SetPositionResource(c Position) Entity {
 	w.resourceEntity.SetPosition(c)
-	w.PositionVelocitySet.PossibleUpdate(w.resourceEntity)
+	return w.resourceEntity
+}
+func (w *World) SetPositionResourceValues(
+	x0 float32,
+	y1 float32,
+	z2 float32,
+) Entity {
+	w.resourceEntity.SetPositionValues(
+		x0,
+		y1,
+		z2,
+	)
 	return w.resourceEntity
 }
 
@@ -169,4 +215,23 @@ func (w *World) SetPositionSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortPositions() {
 	w.positionsStore.Sort()
+}
+
+func (w *World) ApplyPositionPatch(e Entity, patch *ecspb.PositionComponent) Entity {
+	c := Position{
+		X: patch.X,
+		Y: patch.Y,
+		Z: patch.Z,
+	}
+	e.w.positionsStore.Set(c, e)
+	return e
+}
+
+func (c Position) ToPB() *ecspb.PositionComponent {
+	pb := &ecspb.PositionComponent{
+		X: c.X,
+		Y: c.Y,
+		Z: c.Z,
+	}
+	return pb
 }

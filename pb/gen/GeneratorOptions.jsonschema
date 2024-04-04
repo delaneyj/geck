@@ -10,6 +10,13 @@
                 "folderPath": {
                     "type": "string"
                 },
+                "enums": {
+                    "items": {
+                        "$ref": "#/definitions/geck.v1.Enum"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
                 "bundles": {
                     "items": {
                         "$ref": "#/definitions/geck.v1.BundleDefinition"
@@ -118,6 +125,42 @@
             "type": "object",
             "title": "Component"
         },
+        "geck.v1.Enum": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "values": {
+                    "items": {
+                        "$ref": "#/definitions/geck.v1.Enum.Value"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "isBitmask": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Enum"
+        },
+        "geck.v1.Enum.Value": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Value"
+        },
         "geck.v1.FieldDefinition": {
             "properties": {
                 "name": {
@@ -175,6 +218,10 @@
                 },
                 "entity": {
                     "type": "integer"
+                },
+                "enum": {
+                    "$ref": "#/definitions/geck.v1.Enum.Value",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -243,6 +290,11 @@
                 {
                     "required": [
                         "entity"
+                    ]
+                },
+                {
+                    "required": [
+                        "enum"
                     ]
                 }
             ],

@@ -29,18 +29,32 @@ type InflectionString struct {
 	Plural   toolbelt.CasedString
 }
 
+type enumEntryTmplData struct {
+	Name  InflectionString
+	Value int
+}
+
+type enumTmplData struct {
+	PackageName string
+	Name        InflectionString
+	Values      []*enumEntryTmplData
+	IsBitmask   bool
+}
 type ecsTmplData struct {
 	PackageName   string
 	FolderPath    string
+	Enums         []*enumTmplData
 	Components    []*componentTmplData
 	ComponentSets []*componentSetTmplData
 }
 type fieldTemplateData struct {
-	Name        InflectionString
-	Type        InflectionString
-	Description string
-	ResetValue  string
-	IsSlice     bool
+	Name              InflectionString
+	Type              InflectionString
+	PBType            string
+	PBTypeSingular    string
+	Description       string
+	ResetValue        string
+	IsSlice, IsEntity bool
 }
 
 type componentTmplData struct {
@@ -119,14 +133,22 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 
 	log.Printf("Generating universal files")
 	if err := generateFiles(tmpls, data,
-		"entities",
-		"events",
-		"sparse_sets",
-		"sparse_sets_test",
-		"sparse_sets_timsort",
-		"world",
+		"entities.go",
+		"events.go",
+		"sparse_sets.go",
+		"sparse_sets_test.go",
+		"sparse_sets_timsort.go",
+		"world.go",
 	); err != nil {
 		return fmt.Errorf("failed to generate top level files: %w", err)
+	}
+
+	log.Printf("Generating enum files")
+	for _, enum := range data.Enums {
+		log.Printf("\t%s", enum.Name.Plural.Pascal)
+		if err := generateEnum(tmpls, data, enum); err != nil {
+			return fmt.Errorf("failed to generate bundle: %w", err)
+		}
 	}
 
 	log.Printf("Generating component files")
@@ -145,16 +167,53 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 		}
 	}
 
-	log.Printf("Running goimports on '%s'", opts.FolderPath)
-	exec.Command("go", "install", "golang.org/x/tools/cmd/goimports@latest").Run()
-	cmd := exec.Command("goimports", "-w", opts.FolderPath)
-	cmd.Run()
+	log.Printf("Generate protobufs")
+	if err := generateProtobufs(tmpls, data); err != nil {
+		return fmt.Errorf("failed to generate protobufs: %w", err)
+	}
 
-	log.Printf("Running go mod tidy")
-	exec.Command("go", "mod", "tidy").Run()
-	// if err := cmd.Run(); err != nil {
-	// 	return fmt.Errorf("failed to run goimports: %w", err)
-	// }
+	log.Printf("Running post generation commands")
+	type postGenCmdSet struct {
+		subdir string
+		cmds   []string
+	}
+	postGenCmds := []postGenCmdSet{
+		{
+			subdir: "pb",
+			cmds: []string{
+				"go install github.com/bufbuild/buf/cmd/buf@latest",
+				"clang-format -i ecs/v1/ecs.proto",
+				"buf mod update",
+				"buf generate",
+			},
+		},
+		{
+			subdir: "",
+			cmds: []string{
+				"go install golang.org/x/tools/cmd/goimports@latest",
+				"goimports -w .",
+				"go mod tidy",
+			},
+		},
+	}
+	for _, set := range postGenCmds {
+		dir, err := filepath.Abs(filepath.Join(opts.FolderPath, set.subdir))
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path: %w", err)
+		}
+
+		for _, cmd := range set.cmds {
+			log.Printf("Running: '%s' inside '%s'", cmd, dir)
+			parts := strings.Split(cmd, " ")
+			c := exec.Command(parts[0], parts[1:]...)
+			c.Dir = dir
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			if err := c.Run(); err != nil {
+				log.Printf("ERROR! failed to run command: %s", err)
+			}
+		}
+	}
 
 	log.Printf("Generating ECS took %s", time.Since(start))
 	return nil
@@ -180,6 +239,44 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 			Singular: toolbelt.ToCasedString(singular),
 			Plural:   toolbelt.ToCasedString(plural),
 		}
+	}
+
+	for _, ed := range opts.Enums {
+		if len(ed.Values) == 0 {
+			return nil, fmt.Errorf("enum must have at least one value")
+		}
+
+		enum := &enumTmplData{
+			PackageName: opts.PackageName,
+			Name:        inflectionStrings(ed.Name, true),
+			IsBitmask:   ed.IsBitmask,
+			Values: lo.Map(ed.Values, func(v *geckpb.Enum_Value, i int) *enumEntryTmplData {
+				return &enumEntryTmplData{
+					Name:  inflectionStrings(v.Name, true),
+					Value: int(v.Value),
+				}
+			}),
+		}
+		slices.SortFunc(enum.Values, func(a, b *enumEntryTmplData) int {
+			return a.Value - b.Value
+		})
+
+		if len(enum.Values) != len(lo.UniqBy(enum.Values, func(e *enumEntryTmplData) int {
+			return e.Value
+		})) {
+			return nil, fmt.Errorf("enum values must be unique")
+		}
+
+		if enum.Values[0].Value != 0 {
+			enum.Values = append([]*enumEntryTmplData{
+				{
+					Name:  inflectionStrings("Unknown", false),
+					Value: 0,
+				},
+			}, enum.Values...)
+		}
+
+		data.Enums = append(data.Enums, enum)
 	}
 
 	componentByNames := map[string]*componentTmplData{}
@@ -215,18 +312,20 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 
 			for _, f := range cd.Fields {
 				ftd := fieldTemplateData{
-					Name:        inflectionStrings(f.Name, !cd.ShouldNotInflect),
+					Name:        inflectionStrings(f.Name, false),
 					Description: f.Description,
 					IsSlice:     f.HasMultiple,
 				}
 
-				typ := ""
+				var typ string
 				switch f.ResetValue.(type) {
 				case *geckpb.FieldDefinition_U8:
 					typ = "uint8"
+					ftd.PBType = "uint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU8())
 				case *geckpb.FieldDefinition_U16:
 					typ = "uint16"
+					ftd.PBType = "uint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU16())
 				case *geckpb.FieldDefinition_U32:
 					typ = "uint32"
@@ -236,42 +335,74 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU64())
 				case *geckpb.FieldDefinition_I8:
 					typ = "int8"
+					ftd.PBType = "sint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI8())
 				case *geckpb.FieldDefinition_I16:
 					typ = "int16"
+					ftd.PBType = "sint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI16())
 				case *geckpb.FieldDefinition_I32:
 					typ = "int32"
+					ftd.PBType = "sint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI32())
 				case *geckpb.FieldDefinition_I64:
 					typ = "int64"
+					ftd.PBType = "sint64"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI64())
 				case *geckpb.FieldDefinition_F32:
 					typ = "float32"
+					ftd.PBType = "float"
 					ftd.ResetValue = fmt.Sprintf("%f", f.GetF32())
 				case *geckpb.FieldDefinition_F64:
 					typ = "float64"
+					ftd.PBType = "double"
 					ftd.ResetValue = fmt.Sprintf("%f", f.GetF64())
 				case *geckpb.FieldDefinition_Txt:
 					typ = "string"
 					ftd.ResetValue = fmt.Sprintf(`"%s"`, f.GetTxt())
 				case *geckpb.FieldDefinition_Bin:
 					typ = "[]byte"
+					ftd.PBType = "bytes"
 					ftd.ResetValue = fmt.Sprintf("[]byte(%v)", f.GetBin())
 				case *geckpb.FieldDefinition_Entity:
 					typ = "Entity"
+					ftd.PBType = "uint32"
 					ftd.ResetValue = "w.EntityFromU32(0)"
+					ftd.IsEntity = true
+				case *geckpb.FieldDefinition_Enum:
+					e := f.GetEnum()
+					typ = e.Name
+
+					var enum *enumTmplData
+					for _, e := range data.Enums {
+						if e.Name.Singular.Original == typ {
+							enum = e
+							break
+						}
+					}
+					if enum == nil {
+						return nil, fmt.Errorf("enum not found: %s", f.Name)
+					}
+					ftd.PBType = typ + "Enum"
+					typ = "Enum" + typ
+					ftd.ResetValue = fmt.Sprintf("%s(%d)", typ, e.Value)
+
 				default:
 					return nil, fmt.Errorf("unknown field type: %T", f.ResetValue)
 				}
 
+				if ftd.PBType == "" {
+					ftd.PBType = typ
+				}
+				ftd.PBTypeSingular = ftd.PBType
+
 				if f.HasMultiple {
 					typ = "[]" + typ
 					ftd.ResetValue = "nil"
+					ftd.PBType = "repeated " + ftd.PBType
 				}
 
 				ftd.Type = inflectionStrings(typ, cd.ShouldNotInflect)
-
 				component.Fields = append(component.Fields, ftd)
 			}
 
@@ -361,7 +492,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 
 func generateFiles(tmpls *template.Template, data *ecsTmplData, templateNames ...string) error {
 	for _, templateName := range templateNames {
-		fn := fmt.Sprintf("ecs_%s.go", templateName)
+		fn := fmt.Sprintf("ecs_%s", templateName)
 		fp := filepath.Join(data.FolderPath, fn)
 		f, err := os.Create(fp)
 		if err != nil {
@@ -374,6 +505,23 @@ func generateFiles(tmpls *template.Template, data *ecsTmplData, templateNames ..
 		}
 	}
 	return nil
+}
+
+func generateEnum(tmpls *template.Template, data *ecsTmplData, enum *enumTmplData) error {
+	fp := filepath.Join(
+		data.FolderPath,
+		fmt.Sprintf(
+			"enums_%s.go",
+			enum.Name.Plural.Snake,
+		),
+	)
+	enumFile, err := os.Create(fp)
+	if err != nil {
+		return fmt.Errorf("failed to create enum file: %w", err)
+	}
+	defer enumFile.Close()
+
+	return tmpls.ExecuteTemplate(enumFile, "enums.go.gtpl", enum)
 }
 
 func generateComponent(tmpls *template.Template, data *ecsTmplData, component *componentTmplData) error {
@@ -396,7 +544,7 @@ func generateComponent(tmpls *template.Template, data *ecsTmplData, component *c
 	}
 	defer componentFile.Close()
 
-	return tmpls.ExecuteTemplate(componentFile, "components.gtpl", component)
+	return tmpls.ExecuteTemplate(componentFile, "components.go.gtpl", component)
 }
 
 func generateComponentSet(tmpls *template.Template, data *ecsTmplData, componentSet *componentSetTmplData) error {
@@ -413,7 +561,7 @@ func generateComponentSet(tmpls *template.Template, data *ecsTmplData, component
 	}
 	defer setFile.Close()
 
-	return tmpls.ExecuteTemplate(setFile, "component_sets.gtpl", componentSet)
+	return tmpls.ExecuteTemplate(setFile, "component_sets.go.gtpl", componentSet)
 }
 
 var builtinBundle = &geckpb.BundleDefinition{
@@ -453,4 +601,50 @@ var builtinBundle = &geckpb.BundleDefinition{
 			},
 		},
 	},
+}
+
+func generateProtobufs(tmpls *template.Template, data *ecsTmplData) error {
+	pbFolder := filepath.Join(data.FolderPath, "pb")
+	if err := os.MkdirAll(pbFolder, 0755); err != nil {
+		return fmt.Errorf("failed to create pb folder: %w", err)
+	}
+
+	topLevelFiles := []string{
+		"buf.gen.yaml",
+		"buf.yaml",
+	}
+
+	for _, filename := range topLevelFiles {
+		fp := filepath.Join(
+			pbFolder,
+			filename,
+		)
+		f, err := os.Create(fp)
+		if err != nil {
+			return fmt.Errorf("failed to create protobuf file: %w", err)
+		}
+		defer f.Close()
+
+		if err := tmpls.ExecuteTemplate(f, filename+".gtpl", data); err != nil {
+			return fmt.Errorf("failed to execute template: %w", err)
+		}
+	}
+
+	// Generate the protobuf files
+	protoPath := filepath.Join(pbFolder, data.PackageName, "v1")
+	if err := os.MkdirAll(protoPath, 0755); err != nil {
+		return fmt.Errorf("failed to create proto folder: %w", err)
+	}
+
+	ecsProto := filepath.Join(protoPath, "ecs.proto")
+	ecsProtoFile, err := os.Create(ecsProto)
+	if err != nil {
+		return fmt.Errorf("failed to create ecs.proto: %w", err)
+	}
+
+	if err := tmpls.ExecuteTemplate(ecsProtoFile, "ecs.proto.gtpl", data); err != nil {
+		return fmt.Errorf("failed to execute template: %w", err)
+	}
+
+	return nil
 }

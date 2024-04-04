@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Enum",
+    "definitions": {
+        "Enum": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "values": {
+                    "items": {
+                        "$ref": "#/definitions/geck.v1.Enum.Value"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "isBitmask": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Enum"
+        },
+        "geck.v1.Enum.Value": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Value"
+        }
+    }
+}

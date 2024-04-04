@@ -59,32 +59,13 @@ func (e Entity) IsResourceEntity() bool {
 }
 
 func (e Entity) Destroy() {
-	if !e.IsAlive() || e.IsResourceEntity() {
-		return
+	e.w.DestroyEntities(e)
+}
+
+func EntitiesToU32s(entities ...Entity) []uint32 {
+	u32s := make([]uint32, len(entities))
+	for i, e := range entities {
+		u32s[i] = e.val
 	}
-
-	e.w.namesStore.Remove(e)
-	e.w.childOfStore.Remove(e)
-	e.w.isAStore.Remove(e)
-	e.w.positionsStore.Remove(e)
-	e.w.velocitiesStore.Remove(e)
-	e.w.rotationsStore.Remove(e)
-	e.w.eatsStore.Remove(e)
-	e.w.likesStore.Remove(e)
-	e.w.enemyStore.Remove(e)
-	e.w.growsStore.Remove(e)
-	e.w.gravitiesStore.Remove(e)
-	e.w.spaceshipStore.Remove(e)
-	e.w.spacestationStore.Remove(e)
-	e.w.factionsStore.Remove(e)
-	e.w.dockedTosStore.Remove(e)
-	e.w.planetStore.Remove(e)
-	e.w.ruledBysStore.Remove(e)
-	e.w.alliedWithsStore.Remove(e)
-
-	e.w.liveEntitieIDs.Remove(e.val)
-	bumped := e.UpdateVersion().val
-	e.w.freeEntitieIDs.Add(bumped)
-
-	fireEvent(e.w, EntityDestroyedEvent{e})
+	return u32s
 }

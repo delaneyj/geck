@@ -1,6 +1,18 @@
 {
   "packageName": "ecs",
   "folderPath": "../example/ecs",
+  "enums": [
+    {
+      "name": "Direction",
+      "values": [
+        { "name": "North", "value": "1" },
+        { "name": "South", "value": "2" },
+        { "name": "East", "value": "4" },
+        { "name": "West", "value": "8" }
+      ],
+      "isBitmask": true
+    }
+  ],
   "bundles": [
     {
       "name": "example",
@@ -58,6 +70,15 @@
             {
               "name": "W",
               "f32": 1
+            }
+          ]
+        },
+        {
+          "name": "Directions",
+          "fields": [
+            {
+              "name": "values",
+              "enum": { "name": "Direction" }
             }
           ]
         },

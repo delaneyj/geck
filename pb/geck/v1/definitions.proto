@@ -4,6 +4,18 @@ package geck.v1;
 
 option go_package = "github.com/delaneyj/geck/pb/gen/geck/v1;geckpb";
 
+message Enum {
+  message Value {
+    string name = 1;
+    int32 value = 2;
+  }
+
+  string name = 1;
+  string description = 2;
+  repeated Value values = 3;
+  bool is_bitmask = 4;
+}
+
 message FieldDefinition {
   string name = 1;
   string description = 3;
@@ -25,6 +37,7 @@ message FieldDefinition {
     string txt = 17;
     bytes bin = 18;
     uint32 entity = 19;
+    Enum.Value enum = 20;
   }
 }
 
@@ -57,6 +70,7 @@ message BundleDefinition {
 message GeneratorOptions {
   string package_name = 1;
   string folder_path = 2;
-  repeated BundleDefinition bundles = 3;
-  repeated ComponentSetDefinition component_sets = 4;
+  repeated Enum enums = 3;
+  repeated BundleDefinition bundles = 4;
+  repeated ComponentSetDefinition component_sets = 5;
 }

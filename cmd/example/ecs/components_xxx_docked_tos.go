@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type DockedTo Entity
 
 func DockedToFromEntity(c Entity) DockedTo {
@@ -46,15 +50,23 @@ func (e Entity) WritableDockedTo() (*DockedTo, bool) {
 func (e Entity) SetDockedTo(other Entity) Entity {
 	e.w.dockedTosStore.Set(DockedTo(other), e)
 
+	e.w.patch.DockedToComponents[e.w.resourceEntity.val] = DockedTo(other).ToPB()
 	return e
 }
 
 func (w *World) SetDockedTos(c DockedTo, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetDockedToResource?")
+	}
 	w.dockedTosStore.Set(c, entities...)
+	w.patch.DockedToComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveDockedTos(entities ...Entity) {
 	w.dockedTosStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.DockedToComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -70,9 +82,8 @@ func (w *World) DockedToResource() (Entity, bool) {
 }
 
 // Set the DockedTo resource in the world
-func (w *World) SetDockedToResource(c Entity) Entity {
-	w.resourceEntity.SetDockedTo(c)
-
+func (w *World) SetDockedToResource(e Entity) Entity {
+	w.resourceEntity.SetDockedTo(e)
 	return w.resourceEntity
 }
 
@@ -173,4 +184,17 @@ func (w *World) SetDockedToSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortDockedTos() {
 	w.dockedTosStore.Sort()
+}
+
+func (w *World) ApplyDockedToPatch(e Entity, patch *ecspb.DockedToComponent) Entity {
+	c := DockedTo(w.EntityFromU32(patch.Entity))
+	e.w.dockedTosStore.Set(c, e)
+	return e
+}
+
+func (c DockedTo) ToPB() *ecspb.DockedToComponent {
+	pb := &ecspb.DockedToComponent{
+		Entity: c.val,
+	}
+	return pb
 }

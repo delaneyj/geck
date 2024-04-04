@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Likes []Entity
 
 func LikesFromEntity(c []Entity) Likes {
@@ -14,6 +18,14 @@ func (c Likes) ToEntities() []Entity {
 	entities := make([]Entity, len(c))
 	copy(entities, c)
 	return entities
+}
+
+func (c Likes) ToU32s() []uint32 {
+	u32s := make([]uint32, len(c))
+	for i, e := range c {
+		u32s[i] = e.val
+	}
+	return u32s
 }
 
 func LikesFromEntities(e ...Entity) Likes {
@@ -65,6 +77,8 @@ func (e Entity) RemoveLikes(toRemove ...Entity) Entity {
 	}
 	e.w.likesStore.Set(clean, e)
 
+	e.w.patch.LikesComponents[e.val] = nil
+
 	return e
 }
 
@@ -81,15 +95,23 @@ func (e Entity) WritableLikes() (*Likes, bool) {
 func (e Entity) SetLikes(other ...Entity) Entity {
 	e.w.likesStore.Set(Likes(other), e)
 
+	e.w.patch.LikesComponents[e.w.resourceEntity.val] = Likes(other).ToPB()
 	return e
 }
 
 func (w *World) SetLikes(c Likes, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetLikesResource?")
+	}
 	w.likesStore.Set(c, entities...)
+	w.patch.LikesComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveLikes(entities ...Entity) {
 	w.likesStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.LikesComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -105,9 +127,8 @@ func (w *World) LikesResource() ([]Entity, bool) {
 }
 
 // Set the Likes resource in the world
-func (w *World) SetLikesResource(c ...Entity) Entity {
-	w.resourceEntity.SetLikes(c...)
-
+func (w *World) SetLikesResource(e ...Entity) Entity {
+	w.resourceEntity.SetLikes(e...)
 	return w.resourceEntity
 }
 
@@ -208,4 +229,18 @@ func (w *World) SetLikesSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortLikes() {
 	w.likesStore.Sort()
+}
+
+func (w *World) ApplyLikesPatch(e Entity, patch *ecspb.LikesComponent) Entity {
+
+	c := Likes(w.EntitiesFromU32s(patch.Entity...))
+	e.w.likesStore.Set(c, e)
+	return e
+}
+
+func (c Likes) ToPB() *ecspb.LikesComponent {
+	pb := &ecspb.LikesComponent{
+		Entity: c.ToU32s(),
+	}
+	return pb
 }

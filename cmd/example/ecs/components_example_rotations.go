@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Rotation struct {
 	X float32 `json:"x"`
 	Y float32 `json:"y"`
@@ -30,6 +34,7 @@ func (e Entity) ReadRotation() (Rotation, bool) {
 func (e Entity) RemoveRotation() Entity {
 	e.w.rotationsStore.Remove(e)
 
+	e.w.patch.RotationComponents[e.val] = nil
 	return e
 }
 
@@ -40,15 +45,48 @@ func (e Entity) WritableRotation() (*Rotation, bool) {
 func (e Entity) SetRotation(other Rotation) Entity {
 	e.w.rotationsStore.Set(other, e)
 
+	e.w.patch.RotationComponents[e.w.resourceEntity.val] = Rotation(other).ToPB()
+	return e
+}
+
+func (e Entity) SetRotationValues(
+	x0 float32,
+	y1 float32,
+	z2 float32,
+	w3 float32,
+) Entity {
+	err := e.w.rotationsStore.Set(Rotation{
+		X: x0,
+		Y: y1,
+		Z: z2,
+		W: w3,
+	}, e)
+	if err != nil {
+		panic(err)
+	}
+	pb := &ecspb.RotationComponent{
+		X: x0,
+		Y: y1,
+		Z: z2,
+		W: w3,
+	}
+	e.w.patch.RotationComponents[e.w.resourceEntity.val] = pb
 	return e
 }
 
 func (w *World) SetRotations(c Rotation, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetRotationResource?")
+	}
 	w.rotationsStore.Set(c, entities...)
+	w.patch.RotationComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveRotations(entities ...Entity) {
 	w.rotationsStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.RotationComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -66,6 +104,20 @@ func (w *World) RotationResource() (Rotation, bool) {
 // Set the Rotation resource in the world
 func (w *World) SetRotationResource(c Rotation) Entity {
 	w.resourceEntity.SetRotation(c)
+	return w.resourceEntity
+}
+func (w *World) SetRotationResourceValues(
+	x0 float32,
+	y1 float32,
+	z2 float32,
+	w3 float32,
+) Entity {
+	w.resourceEntity.SetRotationValues(
+		x0,
+		y1,
+		z2,
+		w3,
+	)
 	return w.resourceEntity
 }
 
@@ -166,4 +218,25 @@ func (w *World) SetRotationSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortRotations() {
 	w.rotationsStore.Sort()
+}
+
+func (w *World) ApplyRotationPatch(e Entity, patch *ecspb.RotationComponent) Entity {
+	c := Rotation{
+		X: patch.X,
+		Y: patch.Y,
+		Z: patch.Z,
+		W: patch.W,
+	}
+	e.w.rotationsStore.Set(c, e)
+	return e
+}
+
+func (c Rotation) ToPB() *ecspb.RotationComponent {
+	pb := &ecspb.RotationComponent{
+		X: c.X,
+		Y: c.Y,
+		Z: c.Z,
+		W: c.W,
+	}
+	return pb
 }

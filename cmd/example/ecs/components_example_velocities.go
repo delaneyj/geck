@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Velocity struct {
 	X float32 `json:"x"`
 	Y float32 `json:"y"`
@@ -28,6 +32,7 @@ func (e Entity) ReadVelocity() (Velocity, bool) {
 func (e Entity) RemoveVelocity() Entity {
 	e.w.velocitiesStore.Remove(e)
 
+	e.w.patch.VelocityComponents[e.val] = nil
 	return e
 }
 
@@ -39,17 +44,47 @@ func (e Entity) SetVelocity(other Velocity) Entity {
 	e.w.velocitiesStore.Set(other, e)
 
 	e.w.PositionVelocitySet.PossibleUpdate(e)
+	e.w.patch.VelocityComponents[e.w.resourceEntity.val] = Velocity(other).ToPB()
+	return e
+}
+
+func (e Entity) SetVelocityValues(
+	x0 float32,
+	y1 float32,
+	z2 float32,
+) Entity {
+	err := e.w.velocitiesStore.Set(Velocity{
+		X: x0,
+		Y: y1,
+		Z: z2,
+	}, e)
+	if err != nil {
+		panic(err)
+	}
+	pb := &ecspb.VelocityComponent{
+		X: x0,
+		Y: y1,
+		Z: z2,
+	}
+	e.w.patch.VelocityComponents[e.w.resourceEntity.val] = pb
 	return e
 }
 
 func (w *World) SetVelocities(c Velocity, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetVelocityResource?")
+	}
 	w.velocitiesStore.Set(c, entities...)
 	w.PositionVelocitySet.PossibleUpdate(entities...)
+	w.patch.VelocityComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveVelocities(entities ...Entity) {
 	w.velocitiesStore.Remove(entities...)
 	w.PositionVelocitySet.PossibleUpdate(entities...)
+	for _, entity := range entities {
+		w.patch.VelocityComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -67,7 +102,18 @@ func (w *World) VelocityResource() (Velocity, bool) {
 // Set the Velocity resource in the world
 func (w *World) SetVelocityResource(c Velocity) Entity {
 	w.resourceEntity.SetVelocity(c)
-	w.PositionVelocitySet.PossibleUpdate(w.resourceEntity)
+	return w.resourceEntity
+}
+func (w *World) SetVelocityResourceValues(
+	x0 float32,
+	y1 float32,
+	z2 float32,
+) Entity {
+	w.resourceEntity.SetVelocityValues(
+		x0,
+		y1,
+		z2,
+	)
 	return w.resourceEntity
 }
 
@@ -169,4 +215,23 @@ func (w *World) SetVelocitySortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortVelocities() {
 	w.velocitiesStore.Sort()
+}
+
+func (w *World) ApplyVelocityPatch(e Entity, patch *ecspb.VelocityComponent) Entity {
+	c := Velocity{
+		X: patch.X,
+		Y: patch.Y,
+		Z: patch.Z,
+	}
+	e.w.velocitiesStore.Set(c, e)
+	return e
+}
+
+func (c Velocity) ToPB() *ecspb.VelocityComponent {
+	pb := &ecspb.VelocityComponent{
+		X: c.X,
+		Y: c.Y,
+		Z: c.Z,
+	}
+	return pb
 }

@@ -1,5 +1,7 @@
 package ecs
 
+import "google.golang.org/protobuf/types/known/emptypb"
+
 type Spaceship struct{}
 
 //#region Events
@@ -11,16 +13,21 @@ func (e Entity) HasSpaceshipTag() bool {
 
 func (e Entity) TagWithSpaceship() Entity {
 	e.w.spaceshipStore.Set(e.w.spaceshipStore.zero, e)
+	e.w.patch.SpaceshipTags[e.val] = empty
 	return e
 }
 
 func (e Entity) RemoveSpaceshipTag() Entity {
 	e.w.spaceshipStore.Remove(e)
+	e.w.patch.SpaceshipTags[e.val] = nil
 	return e
 }
 
 func (w *World) RemoveSpaceshipTags(entities ...Entity) {
 	w.spaceshipStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.SpaceshipTags[entity.val] = nil
+	}
 }
 
 //#region Iterators
@@ -88,4 +95,12 @@ func (w *World) SpaceshipWriteIter() *SpaceshipWriteIterator {
 
 func (w *World) SpaceshipEntities() []Entity {
 	return w.spaceshipStore.entities()
+}
+
+func (w *World) ApplySpaceshipPatch(e Entity, pb *emptypb.Empty) Entity {
+	if pb == nil {
+		e.RemoveSpaceshipTag()
+	}
+	e.TagWithSpaceship()
+	return e
 }

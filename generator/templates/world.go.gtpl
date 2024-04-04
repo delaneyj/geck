@@ -9,12 +9,17 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/btvoidx/mint"
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+var empty = &emptypb.Empty{}
 
 type System interface {
 	Name() string
 	ReliesOn() []string
-	Tick(w *World) error
+	Initialize(w *World) error
+	Tick(ctx context.Context, w *World) error
 }
 
 type systemRunner struct {
@@ -27,12 +32,6 @@ type systemRunner struct {
 
 type World struct {
 	zeroEntity, resourceEntity, deadEntity Entity
-
-	// maxEntity  Entity
-	nextEntityID   uint32
-	liveEntitieIDs *roaring.Bitmap
-	freeEntitieIDs *roaring.Bitmap
-
 	eventBus *mint.Emitter
 
 	nextSystemID                                   	uint32
@@ -40,6 +39,8 @@ type World struct {
 	tickWaitGroup                                  	*sync.WaitGroup
 	tickCount                   					int
 
+	nextEntityID                   uint32
+	liveEntitieIDs, freeEntitieIDs *roaring.Bitmap
 	{{range .Components -}}
 	{{.Name.Plural.Camel}}Store *SparseSet[{{.Name.Singular.Pascal}}]
 	{{end -}}
@@ -47,14 +48,13 @@ type World struct {
 	{{range .ComponentSets}}
 	{{.Name.Singular.Pascal}} *{{.Name.Singular.Pascal}}
 	{{end}}
+
+	patch *ecspb.WorldPatch
 }
 
 func NewWorld() *World {
 	w := &World{
-		liveEntitieIDs: roaring.NewBitmap(),
-		freeEntitieIDs: roaring.NewBitmap(),
 		eventBus: &mint.Emitter{},
-
 		nextSystemID:               1,
 		systems:                    map[uint32]*systemRunner{},
 		leftToRun:                  map[uint32]*systemRunner{},
@@ -62,6 +62,9 @@ func NewWorld() *World {
 		tickWaitGroup:              &sync.WaitGroup{},
 		tickCount:                  0,
 
+		nextEntityID: 1,
+		liveEntitieIDs: roaring.NewBitmap(),
+		freeEntitieIDs: roaring.NewBitmap(),
 		{{range .Components -}}
 		{{.Name.Plural.Camel}}Store : NewSparseSet[{{.Name.Singular.Pascal}}](nil),
 		{{end }}
@@ -122,6 +125,9 @@ func (w *World) AddSystems(ss ... System) (err error) {
 			sr.waitingOn[k] = v
 		}
 		w.systems[sr.id] = sr
+		if err := sr.system.Initialize(w); err != nil {
+			return fmt.Errorf("system %s failed to initialize: %s", s.Name(), err)
+		}
 		w.nextSystemID++
 	}
 	return nil
@@ -166,7 +172,7 @@ func (w *World) RemoveSystems(ss ... System) error {
 	return nil
 }
 
-func (w *World) Tick() error {
+func (w *World) Tick(ctx context.Context) error {
 	// fill leftToRun
 	for _, sr := range w.systems {
 		if !sr.isDisabled {
@@ -186,7 +192,7 @@ func (w *World) Tick() error {
 		for _, sr := range w.notRunWithDependenciesDone {
 			go func(sr *systemRunner) {
 				defer w.tickWaitGroup.Done()
-				if err := sr.system.Tick(w); err != nil {
+				if err := sr.system.Tick(ctx, w); err != nil {
 					log.Printf("system %s failed: %s", sr.system.Name(), err)
 				}
 				sr.hasRun = true
@@ -277,6 +283,8 @@ func (w *World) Entity() (e Entity) {
 	w.liveEntitieIDs.Add(e.val)
 	fireEvent(w, EntityCreatedEvent{e})
 
+	w.patch.Entities[e.val] = empty
+
 	return e
 }
 
@@ -297,6 +305,22 @@ func (w *World) EntityFromU32(val uint32) Entity {
 	return e
 }
 
+func (w *World) EntitiesFromU32s(vals ...uint32) (entities []Entity) {
+	entities = make([]Entity, len(vals))
+	for i, val := range vals {
+		e := Entity{w: w, val: val}
+		if !e.IsAlive() {
+			fireEvent(w, EntityCreatedEvent{e})
+		}
+		entities[i] = e
+		w.freeEntitieIDs.Remove(val)
+		w.liveEntitieIDs.Add(val)
+
+		w.patch.Entities[val] = empty
+	}
+	return entities
+}
+
 func (w *World) Entities(count int) []Entity {
 	entities := make([]Entity, count)
 	for i := 0; i < count; i++ {
@@ -305,22 +329,110 @@ func (w *World) Entities(count int) []Entity {
 	return entities
 }
 
-func (w *World) Reset() {
-	{{range .Components -}}
-	w.{{.Name.Plural.Camel}}Store.Clear()
-	{{end }}
+func (w *World) DestroyEntities(es ...Entity) {
+	{{- range .Components}}
+	w.{{.Name.Plural.Camel}}Store.Remove(es...)
+	{{- end}}
 
-	iter := w.liveEntitieIDs.Iterator()
-	for iter.HasNext() {
-		id := iter.Next()
-		e := w.EntityFromU32(id)
+	for _, e := range es {
+		if !e.IsAlive() {
+			continue
+		}
+
 		fireEvent(w, EntityDestroyedEvent{e})
-	}
+		w.liveEntitieIDs.Remove(e.val)
+		w.freeEntitieIDs.Add(e.val)
 
-	w.liveEntitieIDs.Clear()
-	w.freeEntitieIDs.Clear()
+		w.patch.Entities[e.val] = nil
+	}
 }
 
 
+func(w *World) Reset(){
+	{{- range .Components}}
+	w.{{.Name.Plural.Camel}}Store.Clear()
+	{{- end}}
 
+	liveEntitieIDs := w.liveEntitieIDs.ToArray()
+	w.liveEntitieIDs.Clear()
+	w.freeEntitieIDs.Clear()
 
+	for _, id := range liveEntitieIDs {
+		e := w.EntityFromU32(id)
+		fireEvent(w, EntityDestroyedEvent{e})
+	}
+	ResetWorldPatch(w.patch)
+}
+
+func NewWorldPatch() *ecspb.WorldPatch {
+	return &{{.PackageName}}pb.WorldPatch{
+		Entities: map[uint32]*emptypb.Empty{},
+		{{range .Components -}}
+		{{if .IsTag -}}
+			{{.Name.Singular.Pascal}}Tags: map[uint32]*emptypb.Empty{},
+		{{else -}}
+			{{.Name.Singular.Pascal}}Components: map[uint32]*{{.PackageName}}pb.{{.Name.Singular.Pascal}}Component{},
+		{{end -}}
+		{{end -}}
+	}
+}
+
+func ResetWorldPatch(patch *ecspb.WorldPatch) *ecspb.WorldPatch {
+	clear(patch.Entities)
+	{{range .Components -}}
+	{{if .IsTag -}}
+	clear(patch.{{.Name.Singular.Pascal}}Tags)
+	{{else -}}
+	clear(patch.{{.Name.Singular.Pascal}}Components)
+	{{end -}}
+	{{end -}}
+	return patch
+}
+
+func MergeWorldWriteAheadLogs(patchs ...*ecspb.WorldPatch) *ecspb.WorldPatch {
+	merged := NewWorldPatch()
+	for _, patch := range patchs {
+		for k,v := range patch.Entities {
+			merged.Entities[k] = v
+		}
+
+		{{range .Components -}}
+		// merge {{.Name.Plural.Pascal}}
+		{{if .IsTag -}}
+		for k,v := range patch.{{.Name.Singular.Pascal}}Tags {
+			merged.{{.Name.Singular.Pascal}}Tags[k] = v
+		{{else -}}
+		for k,v := range patch.{{.Name.Singular.Pascal}}Components {
+			merged.{{.Name.Singular.Pascal}}Components[k] = v
+		{{end -}}
+		}
+
+		{{end }}
+	}
+
+	return merged
+}
+
+func(w *World) ApplyPatches(patches ...*ecspb.WorldPatch){
+	for _, patch := range patches {
+		for k,v := range patch.Entities {
+			if v == nil {
+				w.DestroyEntities(w.EntityFromU32(k))
+			} else {
+				w.EntityFromU32(k)
+			}
+		}
+
+		{{range .Components -}}
+		// apply {{.Name.Plural.Pascal}}
+		{{if .IsTag -}}
+		for val,c := range patch.{{.Name.Singular.Pascal}}Tags {
+		{{else -}}
+		for val,c := range patch.{{.Name.Singular.Pascal}}Components {
+		{{end -}}
+			e := w.EntityFromU32(val)
+			w.Apply{{.Name.Singular.Pascal}}Patch(e,c)
+		}
+		{{end }}
+	}
+}

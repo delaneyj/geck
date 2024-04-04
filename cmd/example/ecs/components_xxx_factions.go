@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Faction Entity
 
 func FactionFromEntity(c Entity) Faction {
@@ -46,15 +50,23 @@ func (e Entity) WritableFaction() (*Faction, bool) {
 func (e Entity) SetFaction(other Entity) Entity {
 	e.w.factionsStore.Set(Faction(other), e)
 
+	e.w.patch.FactionComponents[e.w.resourceEntity.val] = Faction(other).ToPB()
 	return e
 }
 
 func (w *World) SetFactions(c Faction, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetFactionResource?")
+	}
 	w.factionsStore.Set(c, entities...)
+	w.patch.FactionComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveFactions(entities ...Entity) {
 	w.factionsStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.FactionComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -70,9 +82,8 @@ func (w *World) FactionResource() (Entity, bool) {
 }
 
 // Set the Faction resource in the world
-func (w *World) SetFactionResource(c Entity) Entity {
-	w.resourceEntity.SetFaction(c)
-
+func (w *World) SetFactionResource(e Entity) Entity {
+	w.resourceEntity.SetFaction(e)
 	return w.resourceEntity
 }
 
@@ -173,4 +184,17 @@ func (w *World) SetFactionSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortFactions() {
 	w.factionsStore.Sort()
+}
+
+func (w *World) ApplyFactionPatch(e Entity, patch *ecspb.FactionComponent) Entity {
+	c := Faction(w.EntityFromU32(patch.Entity))
+	e.w.factionsStore.Set(c, e)
+	return e
+}
+
+func (c Faction) ToPB() *ecspb.FactionComponent {
+	pb := &ecspb.FactionComponent{
+		Entity: c.val,
+	}
+	return pb
 }

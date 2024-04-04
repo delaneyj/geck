@@ -59,6 +59,10 @@
                 },
                 "entity": {
                     "type": "integer"
+                },
+                "enum": {
+                    "$ref": "#/definitions/geck.v1.Enum.Value",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -128,9 +132,27 @@
                     "required": [
                         "entity"
                     ]
+                },
+                {
+                    "required": [
+                        "enum"
+                    ]
                 }
             ],
             "title": "Field Definition"
+        },
+        "geck.v1.Enum.Value": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Value"
         }
     }
 }

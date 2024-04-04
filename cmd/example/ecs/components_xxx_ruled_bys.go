@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type RuledBy Entity
 
 func RuledByFromEntity(c Entity) RuledBy {
@@ -46,15 +50,23 @@ func (e Entity) WritableRuledBy() (*RuledBy, bool) {
 func (e Entity) SetRuledBy(other Entity) Entity {
 	e.w.ruledBysStore.Set(RuledBy(other), e)
 
+	e.w.patch.RuledByComponents[e.w.resourceEntity.val] = RuledBy(other).ToPB()
 	return e
 }
 
 func (w *World) SetRuledBys(c RuledBy, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetRuledByResource?")
+	}
 	w.ruledBysStore.Set(c, entities...)
+	w.patch.RuledByComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveRuledBys(entities ...Entity) {
 	w.ruledBysStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.RuledByComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -70,9 +82,8 @@ func (w *World) RuledByResource() (Entity, bool) {
 }
 
 // Set the RuledBy resource in the world
-func (w *World) SetRuledByResource(c Entity) Entity {
-	w.resourceEntity.SetRuledBy(c)
-
+func (w *World) SetRuledByResource(e Entity) Entity {
+	w.resourceEntity.SetRuledBy(e)
 	return w.resourceEntity
 }
 
@@ -173,4 +184,17 @@ func (w *World) SetRuledBySortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortRuledBys() {
 	w.ruledBysStore.Sort()
+}
+
+func (w *World) ApplyRuledByPatch(e Entity, patch *ecspb.RuledByComponent) Entity {
+	c := RuledBy(w.EntityFromU32(patch.Entity))
+	e.w.ruledBysStore.Set(c, e)
+	return e
+}
+
+func (c RuledBy) ToPB() *ecspb.RuledByComponent {
+	pb := &ecspb.RuledByComponent{
+		Entity: c.val,
+	}
+	return pb
 }

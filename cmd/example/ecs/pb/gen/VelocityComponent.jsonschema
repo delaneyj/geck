@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/VelocityComponent",
+    "definitions": {
+        "VelocityComponent": {
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "type": "number"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Velocity Component"
+        }
+    }
+}

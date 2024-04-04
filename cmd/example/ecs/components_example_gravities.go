@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Gravity float32
 
 func GravityFromFloat32(c float32) Gravity {
@@ -28,6 +32,7 @@ func (e Entity) ReadGravity() (Gravity, bool) {
 func (e Entity) RemoveGravity() Entity {
 	e.w.gravitiesStore.Remove(e)
 
+	e.w.patch.GravityComponents[e.val] = nil
 	return e
 }
 
@@ -38,15 +43,23 @@ func (e Entity) WritableGravity() (*Gravity, bool) {
 func (e Entity) SetGravity(other Gravity) Entity {
 	e.w.gravitiesStore.Set(other, e)
 
+	e.w.patch.GravityComponents[e.w.resourceEntity.val] = Gravity(other).ToPB()
 	return e
 }
 
 func (w *World) SetGravities(c Gravity, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetGravityResource?")
+	}
 	w.gravitiesStore.Set(c, entities...)
+	w.patch.GravityComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveGravities(entities ...Entity) {
 	w.gravitiesStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.GravityComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -164,4 +177,17 @@ func (w *World) SetGravitySortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortGravities() {
 	w.gravitiesStore.Sort()
+}
+
+func (w *World) ApplyGravityPatch(e Entity, patch *ecspb.GravityComponent) Entity {
+	c := Gravity(patch.G)
+	e.w.gravitiesStore.Set(c, e)
+	return e
+}
+
+func (c Gravity) ToPB() *ecspb.GravityComponent {
+	pb := &ecspb.GravityComponent{
+		G: c.ToFloat32(),
+	}
+	return pb
 }

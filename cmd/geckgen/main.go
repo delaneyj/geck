@@ -8,6 +8,7 @@ import (
 
 	"github.com/delaneyj/geck/generator"
 	geckpb "github.com/delaneyj/geck/pb/gen/geck/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func main() {
@@ -20,11 +21,13 @@ func main() {
 
 func run(ctx context.Context) error {
 	opts := &geckpb.GeneratorOptions{}
-	b, err := os.ReadFile("./ecs.gen.json")
+	b, err := os.ReadFile("./geckgen.json")
 	if err != nil {
 		return fmt.Errorf("failed to read bundle definition: %w", err)
 	}
-	if err := opts.UnmarshalJSON(b); err != nil {
+
+	jsonOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
+	if err = jsonOpts.Unmarshal(b, opts); err != nil {
 		return fmt.Errorf("failed to unmarshal bundle definition: %w", err)
 	}
 	return generator.BuildECS(ctx, opts)

@@ -1,5 +1,7 @@
 package ecs
 
+import "google.golang.org/protobuf/types/known/emptypb"
+
 type Planet struct{}
 
 //#region Events
@@ -11,16 +13,21 @@ func (e Entity) HasPlanetTag() bool {
 
 func (e Entity) TagWithPlanet() Entity {
 	e.w.planetStore.Set(e.w.planetStore.zero, e)
+	e.w.patch.PlanetTags[e.val] = empty
 	return e
 }
 
 func (e Entity) RemovePlanetTag() Entity {
 	e.w.planetStore.Remove(e)
+	e.w.patch.PlanetTags[e.val] = nil
 	return e
 }
 
 func (w *World) RemovePlanetTags(entities ...Entity) {
 	w.planetStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.PlanetTags[entity.val] = nil
+	}
 }
 
 //#region Iterators
@@ -88,4 +95,12 @@ func (w *World) PlanetWriteIter() *PlanetWriteIterator {
 
 func (w *World) PlanetEntities() []Entity {
 	return w.planetStore.entities()
+}
+
+func (w *World) ApplyPlanetPatch(e Entity, pb *emptypb.Empty) Entity {
+	if pb == nil {
+		e.RemovePlanetTag()
+	}
+	e.TagWithPlanet()
+	return e
 }

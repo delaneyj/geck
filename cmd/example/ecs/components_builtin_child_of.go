@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type ChildOf Entity
 
 func ChildOfFromEntity(c Entity) ChildOf {
@@ -46,15 +50,23 @@ func (e Entity) WritableChildOf() (*ChildOf, bool) {
 func (e Entity) SetChildOf(other Entity) Entity {
 	e.w.childOfStore.Set(ChildOf(other), e)
 
+	e.w.patch.ChildOfComponents[e.w.resourceEntity.val] = ChildOf(other).ToPB()
 	return e
 }
 
 func (w *World) SetChildOf(c ChildOf, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetChildOfResource?")
+	}
 	w.childOfStore.Set(c, entities...)
+	w.patch.ChildOfComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveChildOf(entities ...Entity) {
 	w.childOfStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.ChildOfComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -70,9 +82,8 @@ func (w *World) ChildOfResource() (Entity, bool) {
 }
 
 // Set the ChildOf resource in the world
-func (w *World) SetChildOfResource(c Entity) Entity {
-	w.resourceEntity.SetChildOf(c)
-
+func (w *World) SetChildOfResource(e Entity) Entity {
+	w.resourceEntity.SetChildOf(e)
 	return w.resourceEntity
 }
 
@@ -173,4 +184,17 @@ func (w *World) SetChildOfSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortChildOf() {
 	w.childOfStore.Sort()
+}
+
+func (w *World) ApplyChildOfPatch(e Entity, patch *ecspb.ChildOfComponent) Entity {
+	c := ChildOf(w.EntityFromU32(patch.Parent))
+	e.w.childOfStore.Set(c, e)
+	return e
+}
+
+func (c ChildOf) ToPB() *ecspb.ChildOfComponent {
+	pb := &ecspb.ChildOfComponent{
+		Parent: c.val,
+	}
+	return pb
 }

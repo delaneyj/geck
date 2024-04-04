@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type Eats struct {
 	Entities []Entity `json:"entities"`
 	Amounts  []uint8  `json:"amounts"`
@@ -26,6 +30,7 @@ func (e Entity) ReadEats() (Eats, bool) {
 func (e Entity) RemoveEats() Entity {
 	e.w.eatsStore.Remove(e)
 
+	e.w.patch.EatsComponents[e.val] = nil
 	return e
 }
 
@@ -36,15 +41,45 @@ func (e Entity) WritableEats() (*Eats, bool) {
 func (e Entity) SetEats(other Eats) Entity {
 	e.w.eatsStore.Set(other, e)
 
+	e.w.patch.EatsComponents[e.w.resourceEntity.val] = Eats(other).ToPB()
+	return e
+}
+
+func (e Entity) SetEatsValues(
+	entities0 []Entity,
+	amounts1 []uint8,
+) Entity {
+	err := e.w.eatsStore.Set(Eats{
+		Entities: entities0,
+		Amounts:  amounts1,
+	}, e)
+	if err != nil {
+		panic(err)
+	}
+	pb := &ecspb.EatsComponent{
+		Entities: EntitiesToU32s(entities0...),
+		Amounts:  make([]uint32, len(amounts1)),
+	}
+	for i, v := range amounts1 {
+		pb.Amounts[i] = uint32(v)
+	}
+	e.w.patch.EatsComponents[e.w.resourceEntity.val] = pb
 	return e
 }
 
 func (w *World) SetEats(c Eats, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetEatsResource?")
+	}
 	w.eatsStore.Set(c, entities...)
+	w.patch.EatsComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveEats(entities ...Entity) {
 	w.eatsStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.EatsComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -62,6 +97,16 @@ func (w *World) EatsResource() (Eats, bool) {
 // Set the Eats resource in the world
 func (w *World) SetEatsResource(c Eats) Entity {
 	w.resourceEntity.SetEats(c)
+	return w.resourceEntity
+}
+func (w *World) SetEatsResourceValues(
+	entities0 []Entity,
+	amounts1 []uint8,
+) Entity {
+	w.resourceEntity.SetEatsValues(
+		entities0,
+		amounts1,
+	)
 	return w.resourceEntity
 }
 
@@ -162,4 +207,24 @@ func (w *World) SetEatsSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortEats() {
 	w.eatsStore.Sort()
+}
+
+func (w *World) ApplyEatsPatch(e Entity, patch *ecspb.EatsComponent) Entity {
+	c := Eats{
+		Entities: w.EntitiesFromU32s(patch.Entities...),
+		Amounts:  make([]uint8, len(patch.Amounts)),
+	}
+	for i, v := range patch.Amounts {
+		c.Amounts[i] = uint8(v)
+	}
+	e.w.eatsStore.Set(c, e)
+	return e
+}
+
+func (c Eats) ToPB() *ecspb.EatsComponent {
+	pb := &ecspb.EatsComponent{
+		Entities: make([]uint32, len(c.Entities)),
+		Amounts:  make([]uint32, len(c.Amounts)),
+	}
+	return pb
 }

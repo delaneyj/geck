@@ -1,5 +1,7 @@
 package ecs
 
+import "google.golang.org/protobuf/types/known/emptypb"
+
 type Enemy struct{}
 
 //#region Events
@@ -11,16 +13,21 @@ func (e Entity) HasEnemyTag() bool {
 
 func (e Entity) TagWithEnemy() Entity {
 	e.w.enemyStore.Set(e.w.enemyStore.zero, e)
+	e.w.patch.EnemyTags[e.val] = empty
 	return e
 }
 
 func (e Entity) RemoveEnemyTag() Entity {
 	e.w.enemyStore.Remove(e)
+	e.w.patch.EnemyTags[e.val] = nil
 	return e
 }
 
 func (w *World) RemoveEnemyTags(entities ...Entity) {
 	w.enemyStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.EnemyTags[entity.val] = nil
+	}
 }
 
 //#region Iterators
@@ -88,4 +95,12 @@ func (w *World) EnemyWriteIter() *EnemyWriteIterator {
 
 func (w *World) EnemyEntities() []Entity {
 	return w.enemyStore.entities()
+}
+
+func (w *World) ApplyEnemyPatch(e Entity, pb *emptypb.Empty) Entity {
+	if pb == nil {
+		e.RemoveEnemyTag()
+	}
+	e.TagWithEnemy()
+	return e
 }

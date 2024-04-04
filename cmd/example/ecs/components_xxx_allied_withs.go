@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type AlliedWith []Entity
 
 func AlliedWithFromEntity(c []Entity) AlliedWith {
@@ -14,6 +18,14 @@ func (c AlliedWith) ToEntities() []Entity {
 	entities := make([]Entity, len(c))
 	copy(entities, c)
 	return entities
+}
+
+func (c AlliedWith) ToU32s() []uint32 {
+	u32s := make([]uint32, len(c))
+	for i, e := range c {
+		u32s[i] = e.val
+	}
+	return u32s
 }
 
 func AlliedWithFromEntities(e ...Entity) AlliedWith {
@@ -65,6 +77,8 @@ func (e Entity) RemoveAlliedWith(toRemove ...Entity) Entity {
 	}
 	e.w.alliedWithsStore.Set(clean, e)
 
+	e.w.patch.AlliedWithComponents[e.val] = nil
+
 	return e
 }
 
@@ -81,15 +95,23 @@ func (e Entity) WritableAlliedWith() (*AlliedWith, bool) {
 func (e Entity) SetAlliedWith(other ...Entity) Entity {
 	e.w.alliedWithsStore.Set(AlliedWith(other), e)
 
+	e.w.patch.AlliedWithComponents[e.w.resourceEntity.val] = AlliedWith(other).ToPB()
 	return e
 }
 
 func (w *World) SetAlliedWiths(c AlliedWith, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetAlliedWithResource?")
+	}
 	w.alliedWithsStore.Set(c, entities...)
+	w.patch.AlliedWithComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveAlliedWiths(entities ...Entity) {
 	w.alliedWithsStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.AlliedWithComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -105,9 +127,8 @@ func (w *World) AlliedWithResource() ([]Entity, bool) {
 }
 
 // Set the AlliedWith resource in the world
-func (w *World) SetAlliedWithResource(c ...Entity) Entity {
-	w.resourceEntity.SetAlliedWith(c...)
-
+func (w *World) SetAlliedWithResource(e ...Entity) Entity {
+	w.resourceEntity.SetAlliedWith(e...)
 	return w.resourceEntity
 }
 
@@ -208,4 +229,18 @@ func (w *World) SetAlliedWithSortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortAlliedWiths() {
 	w.alliedWithsStore.Sort()
+}
+
+func (w *World) ApplyAlliedWithPatch(e Entity, patch *ecspb.AlliedWithComponent) Entity {
+
+	c := AlliedWith(w.EntitiesFromU32s(patch.Entity...))
+	e.w.alliedWithsStore.Set(c, e)
+	return e
+}
+
+func (c AlliedWith) ToPB() *ecspb.AlliedWithComponent {
+	pb := &ecspb.AlliedWithComponent{
+		Entity: c.ToU32s(),
+	}
+	return pb
 }

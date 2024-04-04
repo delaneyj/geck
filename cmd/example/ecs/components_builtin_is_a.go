@@ -1,5 +1,9 @@
 package ecs
 
+import (
+	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+)
+
 type IsA Entity
 
 func IsAFromEntity(c Entity) IsA {
@@ -46,15 +50,23 @@ func (e Entity) WritableIsA() (*IsA, bool) {
 func (e Entity) SetIsA(other Entity) Entity {
 	e.w.isAStore.Set(IsA(other), e)
 
+	e.w.patch.IsAComponents[e.w.resourceEntity.val] = IsA(other).ToPB()
 	return e
 }
 
 func (w *World) SetIsA(c IsA, entities ...Entity) {
+	if len(entities) == 0 {
+		panic("no entities provided, are you sure you didn't mean to call SetIsAResource?")
+	}
 	w.isAStore.Set(c, entities...)
+	w.patch.IsAComponents[w.resourceEntity.val] = c.ToPB()
 }
 
 func (w *World) RemoveIsA(entities ...Entity) {
 	w.isAStore.Remove(entities...)
+	for _, entity := range entities {
+		w.patch.IsAComponents[entity.val] = nil
+	}
 }
 
 //#region Resources
@@ -70,9 +82,8 @@ func (w *World) IsAResource() (Entity, bool) {
 }
 
 // Set the IsA resource in the world
-func (w *World) SetIsAResource(c Entity) Entity {
-	w.resourceEntity.SetIsA(c)
-
+func (w *World) SetIsAResource(e Entity) Entity {
+	w.resourceEntity.SetIsA(e)
 	return w.resourceEntity
 }
 
@@ -173,4 +184,17 @@ func (w *World) SetIsASortFn(lessThan func(a, b Entity) bool) {
 
 func (w *World) SortIsA() {
 	w.isAStore.Sort()
+}
+
+func (w *World) ApplyIsAPatch(e Entity, patch *ecspb.IsAComponent) Entity {
+	c := IsA(w.EntityFromU32(patch.Prototype))
+	e.w.isAStore.Set(c, e)
+	return e
+}
+
+func (c IsA) ToPB() *ecspb.IsAComponent {
+	pb := &ecspb.IsAComponent{
+		Prototype: c.val,
+	}
+	return pb
 }

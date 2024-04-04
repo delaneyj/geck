@@ -59,17 +59,13 @@ func (e Entity) IsResourceEntity() bool {
 }
 
 func (e Entity) Destroy() {
-	if !e.IsAlive() || e.IsResourceEntity() {
-		return
+	e.w.DestroyEntities(e)
+}
+
+func EntitiesToU32s(entities ...Entity) []uint32 {
+	u32s := make([]uint32, len(entities))
+	for i, e := range entities {
+		u32s[i] = e.val
 	}
-
-	{{range .Components -}}
-	e.w.{{.Name.Plural.Camel}}Store.Remove(e)
-	{{end }}
-
-	e.w.liveEntitieIDs.Remove(e.val)
-	bumped := e.UpdateVersion().val
-	e.w.freeEntitieIDs.Add(bumped)
-
-	fireEvent(e.w, EntityDestroyedEvent{e})
+	return u32s
 }
