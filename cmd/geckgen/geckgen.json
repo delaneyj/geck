@@ -1,5 +1,6 @@
 {
   "packageName": "ecs",
+  "version": 1,
   "folderPath": "../example/ecs",
   "enums": [
     {

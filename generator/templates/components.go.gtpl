@@ -3,7 +3,7 @@ package {{.PackageName}}
 import (
     "github.com/btvoidx/mint"
     "github.com/RoaringBitmap/roaring"
-    ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+    {{.PackageName}}pb "{{.PBImportPath}}"
 )
 
 {{$np := .Name.Singular.Pascal -}}
@@ -228,8 +228,15 @@ func (e Entity) Remove{{$np}}() Entity {
 {{end }}
 
 
-func (e Entity) Writable{{$np}}() (*{{$np}}, bool) {
-    return e.w.{{.Name.Plural.Camel}}Store.Writeable(e)
+func (e Entity) Writable{{$np}}() (c *{{$np}}, done func()) {
+    var ok bool
+    c,ok = e.w.{{.Name.Plural.Camel}}Store.Writeable(e)
+    if !ok {
+        return nil, nil
+    }
+    return c, func(){
+        e.w.patch.{{$np}}Components[e.val] = c.ToPB()
+    }
 }
 
 {{ if and .IsOnlyOneField .IsFirstFieldEntity -}}
@@ -246,7 +253,7 @@ func (e Entity) Set{{$np}}(other {{$np}}) Entity {
     e.w.{{.OwnedBySet.Name.Singular.Pascal}}.PossibleUpdate(e)
     {{end -}}
     {{$f := .Fields | first -}}
-    e.w.patch.{{$np}}Components[e.w.resourceEntity.val] = {{$np}}(other).ToPB()
+    e.w.patch.{{$np}}Components[e.val] = {{$np}}(other).ToPB()
     return e
 }
 
@@ -266,15 +273,26 @@ func (e Entity) Set{{$np}}Values(
     }
     pb := &{{.PackageName}}pb.{{.Name.Singular.Pascal}}Component{
         {{range $i,$f := .Fields -}}
-        {{if contains "Entity" .Type.Singular.Pascal -}}
-        {{.Name.Singular.Pascal}}: EntitiesToU32s({{.Name.Singular.Camel}}{{$i}}...),
-        {{else -}}
-        {{if .IsSlice -}}
-        {{.Name.Singular.Pascal}}: make([]{{.PBTypeSingular}}, len({{.Name.Singular.Camel}}{{$i}})),
-        {{else -}}
-        {{.Name.Singular.Pascal}}: {{.Name.Singular.Camel}}{{$i}},
-        {{end -}}
-        {{end -}}
+            {{if contains "Enum" $f.Type.Singular.Pascal -}}
+                {{.Name.Singular.Pascal}}:  {{.Name.Singular.Camel}}{{$i}}.ToPB(),
+            {{else if contains "Entity" .Type.Singular.Pascal -}}
+                {{if .IsSlice}}
+                    {{.Name.Singular.Pascal}}: EntitiesToU32s({{.Name.Singular.Camel}}{{$i}}...),
+                {{else -}}
+                    {{.Name.Singular.Pascal}}: {{.Name.Singular.Camel}}{{$i}}.Raw(),
+                {{end -}}
+            {{else -}}
+                {{if .IsSlice -}}
+                    {{.Name.Singular.Pascal}}: make([]{{.PBTypeSingular}}, len({{.Name.Singular.Camel}}{{$i}})),
+                {{else -}}
+                    {{if .PBNeedsCast -}}
+                        // go cast "{{.PBFromType}}"
+                        {{.Name.Singular.Pascal}}: {{.PBType}}({{.Name.Singular.Camel}}{{$i}}),
+                    {{else -}}
+                        {{.Name.Singular.Pascal}}: {{.Name.Singular.Camel}}{{$i}},
+                    {{end -}}
+                {{end -}}
+            {{end -}}
         {{end -}}
     }
     {{range $i,$f := .Fields -}}
@@ -357,12 +375,12 @@ func (w *World) Remove{{.Name.Singular.Pascal}}Tags(entities ...Entity) {
 {{if not .IsTag -}}
 //#region Resources
 
-// Has{{$np}} checks if the world has a {{$np}}}}
+// Has{{$np}}Resource checks if the world has a {{$np}}}}
 func (w *World) Has{{$np}}Resource() bool {
     return w.resourceEntity.Has{{$np}}()
 }
 
-// Retrieve the {{$np}} resource from the world
+// {{$np}}Resource Retrieve the  resource from the world
 {{if and .IsOnlyOneField .IsFirstFieldEntity -}}
 {{ if .IsFirstSlice -}}
 func (w *World) {{$np}}Resource() ([]Entity, bool) {
@@ -375,7 +393,7 @@ func (w *World) {{$np}}Resource() ({{$np}}, bool) {
     return w.resourceEntity.Read{{$np}}()
 }
 
-// Set the {{$np}} resource in the world
+// Set{{$np}}Resource set the resource in the world
 {{if and .IsOnlyOneField .IsFirstFieldEntity -}}
 func (w *World) Set{{$np}}Resource(e {{if .IsFirstSlice}}...{{end}}Entity) Entity {
     w.resourceEntity.Set{{$np}}(e{{if .IsFirstSlice}}...{{end}})
@@ -402,7 +420,7 @@ func (w *World) Set{{$np}}ResourceValues(
 {{ end -}}
 {{end -}}
 
-// Remove the {{$np}} resource from the world
+// Remove{{$np}}Resource removes the resource from the world
 func (w *World) Remove{{$np}}Resource() Entity {
     w.resourceEntity.Remove{{$np}}()
     {{if .ShouldGenRemoved}}
@@ -475,12 +493,15 @@ func (iter *{{.Name.Singular.Pascal}}WriteIterator) NextEntity() Entity {
 }
 
 {{if not .IsTag -}}
-func (iter *{{.Name.Singular.Pascal}}WriteIterator) Next{{.Name.Singular.Pascal}}() (Entity, *{{.Name.Singular.Pascal}}) {
+func (iter *{{.Name.Singular.Pascal}}WriteIterator) Next{{.Name.Singular.Pascal}}() (Entity, *{{.Name.Singular.Pascal}}, func()) {
     e := iter.store.dense[iter.currIdx]
     c := &iter.store.components[iter.currIdx]
     iter.currIdx--
+    done := func() {
+        iter.w.patch.{{.Name.Singular.Pascal}}Components[e.val] = c.ToPB()
+    }
 
-    return e, c
+    return e, c, done
 }
 {{end }}
 
@@ -538,15 +559,25 @@ func(w *World) Apply{{.Name.Singular.Pascal}}Patch(e Entity, patch *{{.PackageNa
     {{else -}}
     c := {{.Name.Singular.Pascal}}{
         {{range .Fields -}}
-        {{if contains "Entity" .Type.Singular.Pascal -}}
-        {{.Name.Singular.Pascal}}: w.EntitiesFromU32s(patch.{{.Name.Singular.Pascal}}...),
-        {{else -}}
-        {{if .IsSlice -}}
-        {{.Name.Singular.Pascal}}: make({{.Type.Singular.Original}}, len(patch.{{.Name.Plural.Pascal}})),
-        {{else -}}
-        {{.Name.Singular.Pascal}}: patch.{{.Name.Singular.Pascal}},
-        {{end -}}
-        {{end -}}
+            {{if contains "Entity" .Type.Singular.Pascal -}}
+                {{if .IsSlice -}}
+                    {{.Name.Singular.Pascal}}: w.EntitiesFromU32s(patch.{{.Name.Singular.Pascal}}...),
+                {{else -}}
+                    {{.Name.Singular.Pascal}}: w.EntityFromU32(patch.{{.Name.Singular.Pascal}}),
+                {{end -}}
+            {{else if contains "Enum" .Type.Singular.Pascal -}}
+                {{.Name.Singular.Pascal}}: {{.Type.Singular.Pascal}}(patch.{{.Name.Singular.Pascal}}),
+            {{else -}}
+                {{if .IsSlice -}}
+                    {{.Name.Singular.Pascal}}: make({{.Type.Singular.Original}}, len(patch.{{.Name.Plural.Pascal}})),
+                {{else -}}
+                    {{if .PBNeedsCast -}}
+                        {{.Name.Singular.Pascal}}: {{.Type.Singular.Original}}(patch.{{.Name.Singular.Pascal}}),
+                    {{else -}}
+                        {{.Name.Singular.Pascal}}: patch.{{.Name.Singular.Pascal}},
+                    {{end -}}
+                {{end -}}
+            {{end -}}
         {{end -}}
     }
     {{range .Fields -}}
@@ -588,17 +619,38 @@ func (c {{.Name.Singular.Pascal}}) ToPB() *{{.PackageName}}pb.{{.Name.Singular.P
     {{else -}}
     pb := &{{.PackageName}}pb.{{.Name.Singular.Pascal}}Component{
         {{range .Fields -}}
-        {{if contains "Enum" .Name.Singular.Pascal -}}
-        {{.Name.Singular.Pascal}}: {{.PackageName}}pb.{{.Name.Singular.Pascal}}(c.{{.Name.Singular.Pascal}}),
-        {{else -}}
-        {{if .IsSlice -}}
-        {{.Name.Singular.Pascal}}: make([]{{.PBTypeSingular}}, len(c.{{.Name.Singular.Pascal}})),
-        {{else -}}
-        {{.Name.Singular.Pascal}}: c.{{.Name.Singular.Pascal}},
-        {{end -}}
-        {{end -}}
+            {{if contains "Enum" .Type.Singular.Pascal -}}
+                {{.Name.Singular.Pascal}}: c.{{.Name.Singular.Pascal}}.ToPB(),
+            {{else if contains "Entity" .Type.Singular.Pascal -}}
+                {{if .IsSlice -}}
+                    {{.Name.Singular.Pascal}}: EntitiesToU32s(c.{{.Name.Singular.Pascal}}...),
+                {{else -}}
+                    {{.Name.Singular.Pascal}}: c.{{.Name.Singular.Pascal}}.val,
+                {{end -}}
+            {{else -}}
+                {{if .IsSlice -}}
+                    {{.Name.Singular.Pascal}}: make([]{{.PBTypeSingular}}, len(c.{{.Name.Singular.Pascal}})),
+                {{else -}}
+                    {{if .PBNeedsCast -}}
+                        {{.Name.Singular.Pascal}}: {{.PBType}}(c.{{.Name.Singular.Pascal}}),
+                    {{else -}}
+                        {{.Name.Singular.Pascal}}: c.{{.Name.Singular.Pascal}},
+                    {{end -}}
+                {{end -}}
+            {{end -}}
         {{end -}}
     }
+        {{range .Fields -}}
+            {{if and .IsSlice -}}
+                for i, v := range c.{{.Name.Singular.Pascal}} {
+                    {{if .IsEntity -}}
+                    pb.{{.Name.Singular.Pascal}}[i] =  v.val
+                    {{else -}}
+                    pb.{{.Name.Singular.Pascal}}[i] = {{.PBTypeSingular}}(v)
+                    {{end -}}
+                }
+            {{end -}}
+        {{end -}}
     {{end -}}
     return pb
 }

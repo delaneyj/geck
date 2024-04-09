@@ -88,14 +88,21 @@ func (e Entity) RemoveAllAlliedWith() Entity {
 	return e
 }
 
-func (e Entity) WritableAlliedWith() (*AlliedWith, bool) {
-	return e.w.alliedWithsStore.Writeable(e)
+func (e Entity) WritableAlliedWith() (c *AlliedWith, done func()) {
+	var ok bool
+	c, ok = e.w.alliedWithsStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.AlliedWithComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetAlliedWith(other ...Entity) Entity {
 	e.w.alliedWithsStore.Set(AlliedWith(other), e)
 
-	e.w.patch.AlliedWithComponents[e.w.resourceEntity.val] = AlliedWith(other).ToPB()
+	e.w.patch.AlliedWithComponents[e.val] = AlliedWith(other).ToPB()
 	return e
 }
 
@@ -116,23 +123,23 @@ func (w *World) RemoveAlliedWiths(entities ...Entity) {
 
 //#region Resources
 
-// HasAlliedWith checks if the world has a AlliedWith}}
+// HasAlliedWithResource checks if the world has a AlliedWith}}
 func (w *World) HasAlliedWithResource() bool {
 	return w.resourceEntity.HasAlliedWith()
 }
 
-// Retrieve the AlliedWith resource from the world
+// AlliedWithResource Retrieve the  resource from the world
 func (w *World) AlliedWithResource() ([]Entity, bool) {
 	return w.resourceEntity.ReadAlliedWith()
 }
 
-// Set the AlliedWith resource in the world
+// SetAlliedWithResource set the resource in the world
 func (w *World) SetAlliedWithResource(e ...Entity) Entity {
 	w.resourceEntity.SetAlliedWith(e...)
 	return w.resourceEntity
 }
 
-// Remove the AlliedWith resource from the world
+// RemoveAlliedWithResource removes the resource from the world
 func (w *World) RemoveAlliedWithResource() Entity {
 	w.resourceEntity.RemoveAlliedWith()
 
@@ -196,12 +203,15 @@ func (iter *AlliedWithWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *AlliedWithWriteIterator) NextAlliedWith() (Entity, *AlliedWith) {
+func (iter *AlliedWithWriteIterator) NextAlliedWith() (Entity, *AlliedWith, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.AlliedWithComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *AlliedWithWriteIterator) Reset() {

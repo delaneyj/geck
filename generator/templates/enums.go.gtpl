@@ -1,19 +1,24 @@
 package {{.PackageName}}
 
+import (
+    {{.PackageName}}pb "{{.PBImportPath}}"
+)
+
 {{$nsp := .Name.Singular.Pascal -}}
-{{$nspe := printf "Enum%s" $nsp -}}
-type {{$nspe}} int
+{{$ensp := printf "Enum%s" $nsp -}}
+{{$nspe := printf "%sEnum" $nsp -}}
+type {{$ensp}} int
 
 const (
 	{{range .Values -}}
-	{{$nspe}}{{.Name.Singular.Pascal}} = {{.Value}}
+	{{$ensp}}{{.Name.Singular.Pascal}} = {{.Value}}
 	{{end}}
 )
 
-func (e {{$nspe}}) String() (string,bool) {
+func (e {{$ensp}}) String() (string,bool) {
 	switch e {
 	{{range .Values -}}
-	case {{$nspe}}{{.Name.Singular.Pascal}}:
+	case {{$ensp}}{{.Name.Singular.Pascal}}:
 		return "{{.Name.Singular.Pascal}}", true
 	{{end}}
 	default:
@@ -21,24 +26,28 @@ func (e {{$nspe}}) String() (string,bool) {
 	}
 }
 
-func (e {{$nspe}}) ToInt() int {
+func (e {{$ensp}}) ToInt() int {
 	return int(e)
 }
 
-func {{$nspe}}FromInt(i int) {{$nspe}} {
-	return {{$nspe}}(i)
+func {{$ensp}}FromInt(i int) {{$ensp}} {
+	return {{$ensp}}(i)
+}
+
+func (e {{$ensp}}) ToPB() ({{.PackageName}}pb.{{$nspe}}) {
+	return {{.PackageName}}pb.{{$nspe}}(e.ToInt())
 }
 
 {{ if .IsBitmask -}}
-func {{$nspe}}Set(flags ...{{$nspe}}) {{$nspe}} {
-	var e {{$nspe}}
+func {{$ensp}}Set(flags ...{{$ensp}}) {{$ensp}} {
+	var e {{$ensp}}
 	for _, flag := range flags {
 		e |= flag
 	}
 	return e
 }
 
-func (e {{$nspe}}) Has(flags ...{{$nspe}}) bool {
+func (e {{$ensp}}) Has(flags ...{{$ensp}}) bool {
 	for _, flag := range flags {
 		if e & flag == 0 {
 			return false
@@ -47,38 +56,38 @@ func (e {{$nspe}}) Has(flags ...{{$nspe}}) bool {
 	return true
 }
 
-func (e {{$nspe}}) Set(flags...{{$nspe}}) {{$nspe}} {
+func (e {{$ensp}}) Set(flags...{{$ensp}}) {{$ensp}} {
 	for _, flag := range flags {
 		e |= flag
 	}
 	return e
 }
 
-func (e {{$nspe}}) Clear(flags...{{$nspe}}) {{$nspe}} {
+func (e {{$ensp}}) Clear(flags...{{$ensp}}) {{$ensp}} {
 	for _, flag := range flags {
 		e &= ^flag
 	}
 	return e
 }
 
-func (e {{$nspe}}) Toggle(flags...{{$nspe}}) {{$nspe}} {
+func (e {{$ensp}}) Toggle(flags...{{$ensp}}) {{$ensp}} {
 	for _, flag := range flags {
 		e ^= flag
 	}
 	return e
 }
 
-func (e {{$nspe}}) ToggleAll() {{$nspe}} {
-	return e ^ {{$nspe}}Set({{range .Values -}}
-		{{$nspe}}{{.Name.Singular.Pascal}},
+func (e {{$ensp}}) ToggleAll() {{$ensp}} {
+	return e ^ {{$ensp}}Set({{range .Values -}}
+		{{$ensp}}{{.Name.Singular.Pascal}},
 	{{end}})
 }
 
-func (e {{$nspe}}) AllSet() (flags []{{$nspe}}) {
+func (e {{$ensp}}) AllSet() (flags []{{$ensp}}) {
 
 	{{range .Values -}}
-	if e & {{$nspe}}{{.Name.Singular.Pascal}} != 0 {
-		flags = append(flags, {{$nspe}}{{.Name.Singular.Pascal}})
+	if e & {{$ensp}}{{.Name.Singular.Pascal}} != 0 {
+		flags = append(flags, {{$ensp}}{{.Name.Singular.Pascal}})
 	}
 	{{end}}
 	return flags

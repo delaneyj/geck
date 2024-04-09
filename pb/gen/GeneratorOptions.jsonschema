@@ -10,6 +10,9 @@
                 "folderPath": {
                     "type": "string"
                 },
+                "version": {
+                    "type": "integer"
+                },
                 "enums": {
                     "items": {
                         "$ref": "#/definitions/geck.v1.Enum"

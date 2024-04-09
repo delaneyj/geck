@@ -14,6 +14,8 @@ import (
 	"text/template"
 	"time"
 
+	"golang.org/x/mod/modfile"
+
 	sprig "github.com/Masterminds/sprig/v3"
 	geckpb "github.com/delaneyj/geck/pb/gen/geck/v1"
 	"github.com/delaneyj/toolbelt"
@@ -35,30 +37,34 @@ type enumEntryTmplData struct {
 }
 
 type enumTmplData struct {
-	PackageName string
-	Name        InflectionString
-	Values      []*enumEntryTmplData
-	IsBitmask   bool
+	PackageName  string
+	PBImportPath string
+	Name         InflectionString
+	Values       []*enumEntryTmplData
+	IsBitmask    bool
 }
 type ecsTmplData struct {
 	PackageName   string
+	PBImportPath  string
 	FolderPath    string
 	Enums         []*enumTmplData
 	Components    []*componentTmplData
 	ComponentSets []*componentSetTmplData
 }
 type fieldTemplateData struct {
-	Name              InflectionString
-	Type              InflectionString
-	PBType            string
-	PBTypeSingular    string
-	Description       string
-	ResetValue        string
-	IsSlice, IsEntity bool
+	Name               InflectionString
+	Type               InflectionString
+	PBType, PBFromType string
+	PBTypeSingular     string
+	PBNeedsCast        bool
+	Description        string
+	ResetValue         string
+	IsSlice, IsEntity  bool
 }
 
 type componentTmplData struct {
 	PackageName                                        string
+	PBImportPath                                       string
 	BundleName                                         toolbelt.CasedString
 	Name                                               InflectionString
 	Description                                        string
@@ -92,17 +98,6 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 		[]*geckpb.BundleDefinition{builtinBundle},
 		opts.Bundles...,
 	)
-
-	// bd := &geckpb.BundleDefinitions{
-	// 	Bundles: opts.BundleDefs,
-	// }
-	// b, _ := protojson.MarshalOptions{
-	// 	UseEnumNumbers:  false,
-	// 	EmitUnpopulated: false,
-	// 	UseProtoNames:   false,
-	// 	Multiline:       true,
-	// }.Marshal(bd)
-	// os.WriteFile("ecs.bundle.json", b, 0644)
 
 	// Create the folder
 	if err := os.RemoveAll(opts.FolderPath); err != nil {
@@ -229,6 +224,43 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 		FolderPath:  opts.FolderPath,
 	}
 
+	startPath, err := filepath.Abs(".")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path: %w", err)
+	}
+	currPath, err := filepath.Abs(opts.FolderPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path: %w", err)
+	}
+	var goModPath, goModFolder string
+	for goModPath == "" || currPath != "/" {
+		goModPossiblePath := filepath.Join(currPath, "go.mod")
+		if _, err := os.Stat(goModPossiblePath); err == nil {
+			goModPath = goModPossiblePath
+			goModFolder = currPath
+			break
+		}
+		currPath = filepath.Dir(currPath)
+	}
+
+	goModBytes, err := os.ReadFile(goModPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read go.mod: %w", err)
+	}
+	modFile, err := modfile.Parse("go.mod", goModBytes, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse go.mod: %w", err)
+	}
+	genFolder := filepath.Join(startPath, opts.FolderPath)
+
+	pbFolder := filepath.Join(genFolder, "pb", "gen", opts.PackageName, fmt.Sprintf("v%d", opts.Version))
+	pbBasePath, err := filepath.Rel(goModFolder, pbFolder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get relative path: %w", err)
+	}
+
+	data.PBImportPath = filepath.Join(modFile.Module.Mod.Path, pbBasePath)
+
 	inflectionStrings := func(s string, shouldInflect bool) InflectionString {
 		singular, plural := s, s
 		if shouldInflect {
@@ -247,9 +279,10 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 		}
 
 		enum := &enumTmplData{
-			PackageName: opts.PackageName,
-			Name:        inflectionStrings(ed.Name, true),
-			IsBitmask:   ed.IsBitmask,
+			PackageName:  opts.PackageName,
+			PBImportPath: data.PBImportPath,
+			Name:         inflectionStrings(ed.Name, true),
+			IsBitmask:    ed.IsBitmask,
 			Values: lo.Map(ed.Values, func(v *geckpb.Enum_Value, i int) *enumEntryTmplData {
 				return &enumEntryTmplData{
 					Name:  inflectionStrings(v.Name, true),
@@ -270,7 +303,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 		if enum.Values[0].Value != 0 {
 			enum.Values = append([]*enumEntryTmplData{
 				{
-					Name:  inflectionStrings("Unknown", false),
+					Name:  inflectionStrings(enum.Name.Singular.Pascal+"_Unknown", false),
 					Value: 0,
 				},
 			}, enum.Values...)
@@ -288,6 +321,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 			component := &componentTmplData{
 				BundleName:       bundleName,
 				PackageName:      opts.PackageName,
+				PBImportPath:     data.PBImportPath,
 				Name:             inflectionStrings(cd.Name, !isTag && !cd.ShouldNotInflect),
 				Description:      cd.Description,
 				IsTag:            isTag,
@@ -323,10 +357,12 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 					typ = "uint8"
 					ftd.PBType = "uint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU8())
+					ftd.PBNeedsCast = true
 				case *geckpb.FieldDefinition_U16:
 					typ = "uint16"
 					ftd.PBType = "uint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU16())
+					ftd.PBNeedsCast = true
 				case *geckpb.FieldDefinition_U32:
 					typ = "uint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU32())
@@ -336,18 +372,24 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 				case *geckpb.FieldDefinition_I8:
 					typ = "int8"
 					ftd.PBType = "sint32"
+					ftd.PBFromType = "int32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI8())
+					ftd.PBNeedsCast = true
 				case *geckpb.FieldDefinition_I16:
 					typ = "int16"
 					ftd.PBType = "sint32"
+					ftd.PBFromType = "int32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI16())
+					ftd.PBNeedsCast = true
 				case *geckpb.FieldDefinition_I32:
 					typ = "int32"
 					ftd.PBType = "sint32"
+					ftd.PBFromType = "int32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI32())
 				case *geckpb.FieldDefinition_I64:
 					typ = "int64"
 					ftd.PBType = "sint64"
+					ftd.PBFromType = "int64"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI64())
 				case *geckpb.FieldDefinition_F32:
 					typ = "float32"

@@ -9,8 +9,9 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/btvoidx/mint"
-	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
+	{{.PackageName}}pb "{{.PBImportPath}}"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var empty = &emptypb.Empty{}
@@ -49,7 +50,7 @@ type World struct {
 	{{.Name.Singular.Pascal}} *{{.Name.Singular.Pascal}}
 	{{end}}
 
-	patch *ecspb.WorldPatch
+	patch *{{.PackageName}}pb.WorldPatch
 }
 
 func NewWorld() *World {
@@ -68,6 +69,8 @@ func NewWorld() *World {
 		{{range .Components -}}
 		{{.Name.Plural.Camel}}Store : NewSparseSet[{{.Name.Singular.Pascal}}](nil),
 		{{end }}
+
+		patch: NewWorldPatch(),
 	}
 
 	// setup built-in entities
@@ -84,6 +87,8 @@ func NewWorld() *World {
 }
 
 //# region Systems
+
+// AddSystems adds systems to the world. Systems are run in the order they are added.
 func (w *World) AddSystems(ss ... System) (err error) {
 	for _, s := range ss {
 		alreadyRegistered := false
@@ -133,6 +138,7 @@ func (w *World) AddSystems(ss ... System) (err error) {
 	return nil
 }
 
+// RemoveSystems removes systems from the world. Systems are removed in the order they are passed.
 func (w *World) RemoveSystems(ss ... System) error {
 	for _, sys := range ss {
 		name := sys.Name()
@@ -172,6 +178,7 @@ func (w *World) RemoveSystems(ss ... System) error {
 	return nil
 }
 
+// Tick runs all systems in the world. Systems are run in the order they were added.
 func (w *World) Tick(ctx context.Context) error {
 	// fill leftToRun
 	for _, sr := range w.systems {
@@ -222,6 +229,7 @@ func (w *World) Tick(ctx context.Context) error {
 	return nil
 }
 
+// DisableSystem disables systems from running. Systems are disabled in the order they are passed.
 func (w *World) DisableSystem(ss ... System) error {
 	for _, sys := range ss {
 		name := sys.Name()
@@ -242,6 +250,7 @@ func (w *World) DisableSystem(ss ... System) error {
 	return nil
 }
 
+// EnableSystem enables systems to run. Systems are enabled in the order they are passed.
 func (w *World) EnableSystem(ss ... System) error {
 	for _, sys := range ss {
 		name := sys.Name()
@@ -262,12 +271,14 @@ func (w *World) EnableSystem(ss ... System) error {
 	return nil
 }
 
+// TickCount returns the number of times the world has ticked.
 func (w *World) TickCount() int {
 	return w.tickCount
 }
 
 //# endregion
 
+// Entity returns a new (or try to reuse dead) entity.
 func (w *World) Entity() (e Entity) {
 	e.w = w
 
@@ -339,11 +350,14 @@ func (w *World) DestroyEntities(es ...Entity) {
 			continue
 		}
 
-		fireEvent(w, EntityDestroyedEvent{e})
 		w.liveEntitieIDs.Remove(e.val)
-		w.freeEntitieIDs.Add(e.val)
+
+		bumped := e.UpdateVersion()
+		w.freeEntitieIDs.Add(bumped.val)
 
 		w.patch.Entities[e.val] = nil
+
+		fireEvent(w, EntityDestroyedEvent{e})
 	}
 }
 
@@ -364,7 +378,7 @@ func(w *World) Reset(){
 	ResetWorldPatch(w.patch)
 }
 
-func NewWorldPatch() *ecspb.WorldPatch {
+func NewWorldPatch() *{{.PackageName}}pb.WorldPatch {
 	return &{{.PackageName}}pb.WorldPatch{
 		Entities: map[uint32]*emptypb.Empty{},
 		{{range .Components -}}
@@ -377,7 +391,7 @@ func NewWorldPatch() *ecspb.WorldPatch {
 	}
 }
 
-func ResetWorldPatch(patch *ecspb.WorldPatch) *ecspb.WorldPatch {
+func ResetWorldPatch(patch *{{.PackageName}}pb.WorldPatch) *{{.PackageName}}pb.WorldPatch {
 	clear(patch.Entities)
 	{{range .Components -}}
 	{{if .IsTag -}}
@@ -389,7 +403,7 @@ func ResetWorldPatch(patch *ecspb.WorldPatch) *ecspb.WorldPatch {
 	return patch
 }
 
-func MergeWorldWriteAheadLogs(patchs ...*ecspb.WorldPatch) *ecspb.WorldPatch {
+func MergeWorldWriteAheadLogs(patchs ...*{{.PackageName}}pb.WorldPatch) *{{.PackageName}}pb.WorldPatch {
 	merged := NewWorldPatch()
 	for _, patch := range patchs {
 		for k,v := range patch.Entities {
@@ -413,7 +427,7 @@ func MergeWorldWriteAheadLogs(patchs ...*ecspb.WorldPatch) *ecspb.WorldPatch {
 	return merged
 }
 
-func(w *World) ApplyPatches(patches ...*ecspb.WorldPatch){
+func(w *World) ApplyPatches(patches ...*{{.PackageName}}pb.WorldPatch){
 	for _, patch := range patches {
 		for k,v := range patch.Entities {
 			if v == nil {
@@ -435,4 +449,33 @@ func(w *World) ApplyPatches(patches ...*ecspb.WorldPatch){
 		}
 		{{end }}
 	}
+}
+
+func(w *World) MarshalPatch() ([]byte, error) {
+	return w.patch.MarshalVT()
+}
+
+func(w *World) MarshalPatchJSON() ([]byte, error) {
+	return w.patch.MarshalJSON()
+}
+
+func(w *World) MarshalPatchPrettyJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: false,
+		UseProtoNames:   false,
+		Indent:          "  ",
+	}.Marshal(w.patch)
+}
+
+func(w *World) UnmarshalPatch(data []byte) error {
+	return w.patch.UnmarshalVT(data)
+}
+
+func(w *World) UnmarshalPatchJSON(data []byte) error {
+	return w.patch.UnmarshalJSON(data)
+}
+
+func(w *World) ResetPatch(){
+	ResetWorldPatch(w.patch)
 }

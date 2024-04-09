@@ -43,14 +43,21 @@ func (e Entity) RemoveDockedTo() Entity {
 	return e
 }
 
-func (e Entity) WritableDockedTo() (*DockedTo, bool) {
-	return e.w.dockedTosStore.Writeable(e)
+func (e Entity) WritableDockedTo() (c *DockedTo, done func()) {
+	var ok bool
+	c, ok = e.w.dockedTosStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.DockedToComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetDockedTo(other Entity) Entity {
 	e.w.dockedTosStore.Set(DockedTo(other), e)
 
-	e.w.patch.DockedToComponents[e.w.resourceEntity.val] = DockedTo(other).ToPB()
+	e.w.patch.DockedToComponents[e.val] = DockedTo(other).ToPB()
 	return e
 }
 
@@ -71,23 +78,23 @@ func (w *World) RemoveDockedTos(entities ...Entity) {
 
 //#region Resources
 
-// HasDockedTo checks if the world has a DockedTo}}
+// HasDockedToResource checks if the world has a DockedTo}}
 func (w *World) HasDockedToResource() bool {
 	return w.resourceEntity.HasDockedTo()
 }
 
-// Retrieve the DockedTo resource from the world
+// DockedToResource Retrieve the  resource from the world
 func (w *World) DockedToResource() (Entity, bool) {
 	return w.resourceEntity.ReadDockedTo()
 }
 
-// Set the DockedTo resource in the world
+// SetDockedToResource set the resource in the world
 func (w *World) SetDockedToResource(e Entity) Entity {
 	w.resourceEntity.SetDockedTo(e)
 	return w.resourceEntity
 }
 
-// Remove the DockedTo resource from the world
+// RemoveDockedToResource removes the resource from the world
 func (w *World) RemoveDockedToResource() Entity {
 	w.resourceEntity.RemoveDockedTo()
 
@@ -151,12 +158,15 @@ func (iter *DockedToWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *DockedToWriteIterator) NextDockedTo() (Entity, *DockedTo) {
+func (iter *DockedToWriteIterator) NextDockedTo() (Entity, *DockedTo, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.DockedToComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *DockedToWriteIterator) Reset() {

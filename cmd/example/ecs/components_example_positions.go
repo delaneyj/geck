@@ -36,15 +36,22 @@ func (e Entity) RemovePosition() Entity {
 	return e
 }
 
-func (e Entity) WritablePosition() (*Position, bool) {
-	return e.w.positionsStore.Writeable(e)
+func (e Entity) WritablePosition() (c *Position, done func()) {
+	var ok bool
+	c, ok = e.w.positionsStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.PositionComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetPosition(other Position) Entity {
 	e.w.positionsStore.Set(other, e)
 
 	e.w.PositionVelocitySet.PossibleUpdate(e)
-	e.w.patch.PositionComponents[e.w.resourceEntity.val] = Position(other).ToPB()
+	e.w.patch.PositionComponents[e.val] = Position(other).ToPB()
 	return e
 }
 
@@ -89,17 +96,17 @@ func (w *World) RemovePositions(entities ...Entity) {
 
 //#region Resources
 
-// HasPosition checks if the world has a Position}}
+// HasPositionResource checks if the world has a Position}}
 func (w *World) HasPositionResource() bool {
 	return w.resourceEntity.HasPosition()
 }
 
-// Retrieve the Position resource from the world
+// PositionResource Retrieve the  resource from the world
 func (w *World) PositionResource() (Position, bool) {
 	return w.resourceEntity.ReadPosition()
 }
 
-// Set the Position resource in the world
+// SetPositionResource set the resource in the world
 func (w *World) SetPositionResource(c Position) Entity {
 	w.resourceEntity.SetPosition(c)
 	return w.resourceEntity
@@ -117,7 +124,7 @@ func (w *World) SetPositionResourceValues(
 	return w.resourceEntity
 }
 
-// Remove the Position resource from the world
+// RemovePositionResource removes the resource from the world
 func (w *World) RemovePositionResource() Entity {
 	w.resourceEntity.RemovePosition()
 
@@ -182,12 +189,15 @@ func (iter *PositionWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *PositionWriteIterator) NextPosition() (Entity, *Position) {
+func (iter *PositionWriteIterator) NextPosition() (Entity, *Position, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.PositionComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *PositionWriteIterator) Reset() {

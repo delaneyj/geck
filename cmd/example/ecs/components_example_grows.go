@@ -88,14 +88,21 @@ func (e Entity) RemoveAllGrows() Entity {
 	return e
 }
 
-func (e Entity) WritableGrows() (*Grows, bool) {
-	return e.w.growsStore.Writeable(e)
+func (e Entity) WritableGrows() (c *Grows, done func()) {
+	var ok bool
+	c, ok = e.w.growsStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.GrowsComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetGrows(other ...Entity) Entity {
 	e.w.growsStore.Set(Grows(other), e)
 
-	e.w.patch.GrowsComponents[e.w.resourceEntity.val] = Grows(other).ToPB()
+	e.w.patch.GrowsComponents[e.val] = Grows(other).ToPB()
 	return e
 }
 
@@ -116,23 +123,23 @@ func (w *World) RemoveGrows(entities ...Entity) {
 
 //#region Resources
 
-// HasGrows checks if the world has a Grows}}
+// HasGrowsResource checks if the world has a Grows}}
 func (w *World) HasGrowsResource() bool {
 	return w.resourceEntity.HasGrows()
 }
 
-// Retrieve the Grows resource from the world
+// GrowsResource Retrieve the  resource from the world
 func (w *World) GrowsResource() ([]Entity, bool) {
 	return w.resourceEntity.ReadGrows()
 }
 
-// Set the Grows resource in the world
+// SetGrowsResource set the resource in the world
 func (w *World) SetGrowsResource(e ...Entity) Entity {
 	w.resourceEntity.SetGrows(e...)
 	return w.resourceEntity
 }
 
-// Remove the Grows resource from the world
+// RemoveGrowsResource removes the resource from the world
 func (w *World) RemoveGrowsResource() Entity {
 	w.resourceEntity.RemoveGrows()
 
@@ -196,12 +203,15 @@ func (iter *GrowsWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *GrowsWriteIterator) NextGrows() (Entity, *Grows) {
+func (iter *GrowsWriteIterator) NextGrows() (Entity, *Grows, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.GrowsComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *GrowsWriteIterator) Reset() {

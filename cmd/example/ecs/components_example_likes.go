@@ -88,14 +88,21 @@ func (e Entity) RemoveAllLikes() Entity {
 	return e
 }
 
-func (e Entity) WritableLikes() (*Likes, bool) {
-	return e.w.likesStore.Writeable(e)
+func (e Entity) WritableLikes() (c *Likes, done func()) {
+	var ok bool
+	c, ok = e.w.likesStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.LikesComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetLikes(other ...Entity) Entity {
 	e.w.likesStore.Set(Likes(other), e)
 
-	e.w.patch.LikesComponents[e.w.resourceEntity.val] = Likes(other).ToPB()
+	e.w.patch.LikesComponents[e.val] = Likes(other).ToPB()
 	return e
 }
 
@@ -116,23 +123,23 @@ func (w *World) RemoveLikes(entities ...Entity) {
 
 //#region Resources
 
-// HasLikes checks if the world has a Likes}}
+// HasLikesResource checks if the world has a Likes}}
 func (w *World) HasLikesResource() bool {
 	return w.resourceEntity.HasLikes()
 }
 
-// Retrieve the Likes resource from the world
+// LikesResource Retrieve the  resource from the world
 func (w *World) LikesResource() ([]Entity, bool) {
 	return w.resourceEntity.ReadLikes()
 }
 
-// Set the Likes resource in the world
+// SetLikesResource set the resource in the world
 func (w *World) SetLikesResource(e ...Entity) Entity {
 	w.resourceEntity.SetLikes(e...)
 	return w.resourceEntity
 }
 
-// Remove the Likes resource from the world
+// RemoveLikesResource removes the resource from the world
 func (w *World) RemoveLikesResource() Entity {
 	w.resourceEntity.RemoveLikes()
 
@@ -196,12 +203,15 @@ func (iter *LikesWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *LikesWriteIterator) NextLikes() (Entity, *Likes) {
+func (iter *LikesWriteIterator) NextLikes() (Entity, *Likes, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.LikesComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *LikesWriteIterator) Reset() {

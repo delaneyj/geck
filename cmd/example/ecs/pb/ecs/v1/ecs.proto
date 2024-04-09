@@ -8,7 +8,7 @@ import "google/protobuf/empty.proto";
 
 // Enums
 enum DirectionEnum {
-  UNKNOWN = 0;
+  DIRECTION_UNKNOWN = 0;
   NORTH = 1;
   SOUTH = 2;
   EAST = 4;

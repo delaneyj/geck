@@ -27,3 +27,9 @@ tasks:
       - git push origin --tags
       - git push --tags
       - GOPROXY=proxy.golang.org go list -m github.com/delaneyj/geck@v{{.VERSION}}
+
+  profile:
+    dir: ./cmd/geckgen
+    cmds:
+      - go run main.go
+      - go tool pprof -http=localhost:5432 cpu.prof

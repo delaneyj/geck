@@ -43,14 +43,21 @@ func (e Entity) RemoveRuledBy() Entity {
 	return e
 }
 
-func (e Entity) WritableRuledBy() (*RuledBy, bool) {
-	return e.w.ruledBysStore.Writeable(e)
+func (e Entity) WritableRuledBy() (c *RuledBy, done func()) {
+	var ok bool
+	c, ok = e.w.ruledBysStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.RuledByComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetRuledBy(other Entity) Entity {
 	e.w.ruledBysStore.Set(RuledBy(other), e)
 
-	e.w.patch.RuledByComponents[e.w.resourceEntity.val] = RuledBy(other).ToPB()
+	e.w.patch.RuledByComponents[e.val] = RuledBy(other).ToPB()
 	return e
 }
 
@@ -71,23 +78,23 @@ func (w *World) RemoveRuledBys(entities ...Entity) {
 
 //#region Resources
 
-// HasRuledBy checks if the world has a RuledBy}}
+// HasRuledByResource checks if the world has a RuledBy}}
 func (w *World) HasRuledByResource() bool {
 	return w.resourceEntity.HasRuledBy()
 }
 
-// Retrieve the RuledBy resource from the world
+// RuledByResource Retrieve the  resource from the world
 func (w *World) RuledByResource() (Entity, bool) {
 	return w.resourceEntity.ReadRuledBy()
 }
 
-// Set the RuledBy resource in the world
+// SetRuledByResource set the resource in the world
 func (w *World) SetRuledByResource(e Entity) Entity {
 	w.resourceEntity.SetRuledBy(e)
 	return w.resourceEntity
 }
 
-// Remove the RuledBy resource from the world
+// RemoveRuledByResource removes the resource from the world
 func (w *World) RemoveRuledByResource() Entity {
 	w.resourceEntity.RemoveRuledBy()
 
@@ -151,12 +158,15 @@ func (iter *RuledByWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *RuledByWriteIterator) NextRuledBy() (Entity, *RuledBy) {
+func (iter *RuledByWriteIterator) NextRuledBy() (Entity, *RuledBy, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.RuledByComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *RuledByWriteIterator) Reset() {

@@ -43,14 +43,21 @@ func (e Entity) RemoveChildOf() Entity {
 	return e
 }
 
-func (e Entity) WritableChildOf() (*ChildOf, bool) {
-	return e.w.childOfStore.Writeable(e)
+func (e Entity) WritableChildOf() (c *ChildOf, done func()) {
+	var ok bool
+	c, ok = e.w.childOfStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.ChildOfComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetChildOf(other Entity) Entity {
 	e.w.childOfStore.Set(ChildOf(other), e)
 
-	e.w.patch.ChildOfComponents[e.w.resourceEntity.val] = ChildOf(other).ToPB()
+	e.w.patch.ChildOfComponents[e.val] = ChildOf(other).ToPB()
 	return e
 }
 
@@ -71,23 +78,23 @@ func (w *World) RemoveChildOf(entities ...Entity) {
 
 //#region Resources
 
-// HasChildOf checks if the world has a ChildOf}}
+// HasChildOfResource checks if the world has a ChildOf}}
 func (w *World) HasChildOfResource() bool {
 	return w.resourceEntity.HasChildOf()
 }
 
-// Retrieve the ChildOf resource from the world
+// ChildOfResource Retrieve the  resource from the world
 func (w *World) ChildOfResource() (Entity, bool) {
 	return w.resourceEntity.ReadChildOf()
 }
 
-// Set the ChildOf resource in the world
+// SetChildOfResource set the resource in the world
 func (w *World) SetChildOfResource(e Entity) Entity {
 	w.resourceEntity.SetChildOf(e)
 	return w.resourceEntity
 }
 
-// Remove the ChildOf resource from the world
+// RemoveChildOfResource removes the resource from the world
 func (w *World) RemoveChildOfResource() Entity {
 	w.resourceEntity.RemoveChildOf()
 
@@ -151,12 +158,15 @@ func (iter *ChildOfWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *ChildOfWriteIterator) NextChildOf() (Entity, *ChildOf) {
+func (iter *ChildOfWriteIterator) NextChildOf() (Entity, *ChildOf, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.ChildOfComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *ChildOfWriteIterator) Reset() {

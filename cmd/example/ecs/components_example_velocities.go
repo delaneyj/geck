@@ -36,15 +36,22 @@ func (e Entity) RemoveVelocity() Entity {
 	return e
 }
 
-func (e Entity) WritableVelocity() (*Velocity, bool) {
-	return e.w.velocitiesStore.Writeable(e)
+func (e Entity) WritableVelocity() (c *Velocity, done func()) {
+	var ok bool
+	c, ok = e.w.velocitiesStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.VelocityComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetVelocity(other Velocity) Entity {
 	e.w.velocitiesStore.Set(other, e)
 
 	e.w.PositionVelocitySet.PossibleUpdate(e)
-	e.w.patch.VelocityComponents[e.w.resourceEntity.val] = Velocity(other).ToPB()
+	e.w.patch.VelocityComponents[e.val] = Velocity(other).ToPB()
 	return e
 }
 
@@ -89,17 +96,17 @@ func (w *World) RemoveVelocities(entities ...Entity) {
 
 //#region Resources
 
-// HasVelocity checks if the world has a Velocity}}
+// HasVelocityResource checks if the world has a Velocity}}
 func (w *World) HasVelocityResource() bool {
 	return w.resourceEntity.HasVelocity()
 }
 
-// Retrieve the Velocity resource from the world
+// VelocityResource Retrieve the  resource from the world
 func (w *World) VelocityResource() (Velocity, bool) {
 	return w.resourceEntity.ReadVelocity()
 }
 
-// Set the Velocity resource in the world
+// SetVelocityResource set the resource in the world
 func (w *World) SetVelocityResource(c Velocity) Entity {
 	w.resourceEntity.SetVelocity(c)
 	return w.resourceEntity
@@ -117,7 +124,7 @@ func (w *World) SetVelocityResourceValues(
 	return w.resourceEntity
 }
 
-// Remove the Velocity resource from the world
+// RemoveVelocityResource removes the resource from the world
 func (w *World) RemoveVelocityResource() Entity {
 	w.resourceEntity.RemoveVelocity()
 
@@ -182,12 +189,15 @@ func (iter *VelocityWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *VelocityWriteIterator) NextVelocity() (Entity, *Velocity) {
+func (iter *VelocityWriteIterator) NextVelocity() (Entity, *Velocity, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.VelocityComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *VelocityWriteIterator) Reset() {

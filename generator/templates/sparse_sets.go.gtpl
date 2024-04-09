@@ -74,8 +74,7 @@ func (ss *SparseSet[T]) Read(e Entity) (c T, versionMatched bool) {
 	_, _, denseIdx, storedEntity := ss.lookup(e)
 	if storedEntity != e {
 		// wrong version
-		var zero T
-		return zero, false
+		return ss.zero, false
 	}
 	return ss.components[denseIdx], true
 }

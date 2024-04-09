@@ -20,6 +20,7 @@ func main() {
 }
 
 func run(ctx context.Context) error {
+
 	opts := &geckpb.GeneratorOptions{}
 	b, err := os.ReadFile("./geckgen.json")
 	if err != nil {

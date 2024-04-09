@@ -43,14 +43,21 @@ func (e Entity) RemoveIsA() Entity {
 	return e
 }
 
-func (e Entity) WritableIsA() (*IsA, bool) {
-	return e.w.isAStore.Writeable(e)
+func (e Entity) WritableIsA() (c *IsA, done func()) {
+	var ok bool
+	c, ok = e.w.isAStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.IsAComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetIsA(other Entity) Entity {
 	e.w.isAStore.Set(IsA(other), e)
 
-	e.w.patch.IsAComponents[e.w.resourceEntity.val] = IsA(other).ToPB()
+	e.w.patch.IsAComponents[e.val] = IsA(other).ToPB()
 	return e
 }
 
@@ -71,23 +78,23 @@ func (w *World) RemoveIsA(entities ...Entity) {
 
 //#region Resources
 
-// HasIsA checks if the world has a IsA}}
+// HasIsAResource checks if the world has a IsA}}
 func (w *World) HasIsAResource() bool {
 	return w.resourceEntity.HasIsA()
 }
 
-// Retrieve the IsA resource from the world
+// IsAResource Retrieve the  resource from the world
 func (w *World) IsAResource() (Entity, bool) {
 	return w.resourceEntity.ReadIsA()
 }
 
-// Set the IsA resource in the world
+// SetIsAResource set the resource in the world
 func (w *World) SetIsAResource(e Entity) Entity {
 	w.resourceEntity.SetIsA(e)
 	return w.resourceEntity
 }
 
-// Remove the IsA resource from the world
+// RemoveIsAResource removes the resource from the world
 func (w *World) RemoveIsAResource() Entity {
 	w.resourceEntity.RemoveIsA()
 
@@ -151,12 +158,15 @@ func (iter *IsAWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *IsAWriteIterator) NextIsA() (Entity, *IsA) {
+func (iter *IsAWriteIterator) NextIsA() (Entity, *IsA, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.IsAComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *IsAWriteIterator) Reset() {

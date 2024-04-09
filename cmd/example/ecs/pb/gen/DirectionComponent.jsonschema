@@ -6,7 +6,7 @@
             "properties": {
                 "values": {
                     "enum": [
-                        "UNKNOWN",
+                        "DIRECTION_UNKNOWN",
                         0,
                         "NORTH",
                         1,

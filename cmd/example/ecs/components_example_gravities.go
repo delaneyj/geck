@@ -36,14 +36,21 @@ func (e Entity) RemoveGravity() Entity {
 	return e
 }
 
-func (e Entity) WritableGravity() (*Gravity, bool) {
-	return e.w.gravitiesStore.Writeable(e)
+func (e Entity) WritableGravity() (c *Gravity, done func()) {
+	var ok bool
+	c, ok = e.w.gravitiesStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.GravityComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetGravity(other Gravity) Entity {
 	e.w.gravitiesStore.Set(other, e)
 
-	e.w.patch.GravityComponents[e.w.resourceEntity.val] = Gravity(other).ToPB()
+	e.w.patch.GravityComponents[e.val] = Gravity(other).ToPB()
 	return e
 }
 
@@ -64,23 +71,23 @@ func (w *World) RemoveGravities(entities ...Entity) {
 
 //#region Resources
 
-// HasGravity checks if the world has a Gravity}}
+// HasGravityResource checks if the world has a Gravity}}
 func (w *World) HasGravityResource() bool {
 	return w.resourceEntity.HasGravity()
 }
 
-// Retrieve the Gravity resource from the world
+// GravityResource Retrieve the  resource from the world
 func (w *World) GravityResource() (Gravity, bool) {
 	return w.resourceEntity.ReadGravity()
 }
 
-// Set the Gravity resource in the world
+// SetGravityResource set the resource in the world
 func (w *World) SetGravityResource(c Gravity) Entity {
 	w.resourceEntity.SetGravity(c)
 	return w.resourceEntity
 }
 
-// Remove the Gravity resource from the world
+// RemoveGravityResource removes the resource from the world
 func (w *World) RemoveGravityResource() Entity {
 	w.resourceEntity.RemoveGravity()
 
@@ -144,12 +151,15 @@ func (iter *GravityWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *GravityWriteIterator) NextGravity() (Entity, *Gravity) {
+func (iter *GravityWriteIterator) NextGravity() (Entity, *Gravity, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.GravityComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *GravityWriteIterator) Reset() {

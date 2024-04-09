@@ -350,6 +350,7 @@ func (m *GeneratorOptions) CloneVT() *GeneratorOptions {
 	r := &GeneratorOptions{
 		PackageName: m.PackageName,
 		FolderPath:  m.FolderPath,
+		Version:     m.Version,
 	}
 	if rhs := m.Enums; rhs != nil {
 		tmpContainer := make([]*Enum, len(rhs))
@@ -911,6 +912,9 @@ func (this *GeneratorOptions) EqualVT(that *GeneratorOptions) bool {
 		return false
 	}
 	if this.FolderPath != that.FolderPath {
+		return false
+	}
+	if this.Version != that.Version {
 		return false
 	}
 	if len(this.Enums) != len(that.Enums) {
@@ -1674,7 +1678,7 @@ func (m *GeneratorOptions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x2a
+			dAtA[i] = 0x32
 		}
 	}
 	if len(m.Bundles) > 0 {
@@ -1686,7 +1690,7 @@ func (m *GeneratorOptions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.Enums) > 0 {
@@ -1698,8 +1702,13 @@ func (m *GeneratorOptions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x22
 		}
+	}
+	if m.Version != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x18
 	}
 	if len(m.FolderPath) > 0 {
 		i -= len(m.FolderPath)
@@ -2518,7 +2527,7 @@ func (m *GeneratorOptions) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x2a
+			dAtA[i] = 0x32
 		}
 	}
 	if len(m.Bundles) > 0 {
@@ -2530,7 +2539,7 @@ func (m *GeneratorOptions) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.Enums) > 0 {
@@ -2542,8 +2551,13 @@ func (m *GeneratorOptions) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x22
 		}
+	}
+	if m.Version != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x18
 	}
 	if len(m.FolderPath) > 0 {
 		i -= len(m.FolderPath)
@@ -2882,6 +2896,9 @@ func (m *GeneratorOptions) SizeVT() (n int) {
 	l = len(m.FolderPath)
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
+	}
+	if m.Version != 0 {
+		n += 1 + sov(uint64(m.Version))
 	}
 	if len(m.Enums) > 0 {
 		for _, e := range m.Enums {
@@ -4382,6 +4399,25 @@ func (m *GeneratorOptions) UnmarshalVT(dAtA []byte) error {
 			m.FolderPath = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Enums", wireType)
 			}
@@ -4415,7 +4451,7 @@ func (m *GeneratorOptions) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Bundles", wireType)
 			}
@@ -4449,7 +4485,7 @@ func (m *GeneratorOptions) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ComponentSets", wireType)
 			}

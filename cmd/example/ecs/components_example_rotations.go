@@ -38,14 +38,21 @@ func (e Entity) RemoveRotation() Entity {
 	return e
 }
 
-func (e Entity) WritableRotation() (*Rotation, bool) {
-	return e.w.rotationsStore.Writeable(e)
+func (e Entity) WritableRotation() (c *Rotation, done func()) {
+	var ok bool
+	c, ok = e.w.rotationsStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.RotationComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetRotation(other Rotation) Entity {
 	e.w.rotationsStore.Set(other, e)
 
-	e.w.patch.RotationComponents[e.w.resourceEntity.val] = Rotation(other).ToPB()
+	e.w.patch.RotationComponents[e.val] = Rotation(other).ToPB()
 	return e
 }
 
@@ -91,17 +98,17 @@ func (w *World) RemoveRotations(entities ...Entity) {
 
 //#region Resources
 
-// HasRotation checks if the world has a Rotation}}
+// HasRotationResource checks if the world has a Rotation}}
 func (w *World) HasRotationResource() bool {
 	return w.resourceEntity.HasRotation()
 }
 
-// Retrieve the Rotation resource from the world
+// RotationResource Retrieve the  resource from the world
 func (w *World) RotationResource() (Rotation, bool) {
 	return w.resourceEntity.ReadRotation()
 }
 
-// Set the Rotation resource in the world
+// SetRotationResource set the resource in the world
 func (w *World) SetRotationResource(c Rotation) Entity {
 	w.resourceEntity.SetRotation(c)
 	return w.resourceEntity
@@ -121,7 +128,7 @@ func (w *World) SetRotationResourceValues(
 	return w.resourceEntity
 }
 
-// Remove the Rotation resource from the world
+// RemoveRotationResource removes the resource from the world
 func (w *World) RemoveRotationResource() Entity {
 	w.resourceEntity.RemoveRotation()
 
@@ -185,12 +192,15 @@ func (iter *RotationWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *RotationWriteIterator) NextRotation() (Entity, *Rotation) {
+func (iter *RotationWriteIterator) NextRotation() (Entity, *Rotation, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.RotationComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *RotationWriteIterator) Reset() {

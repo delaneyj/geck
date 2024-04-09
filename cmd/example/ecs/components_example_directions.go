@@ -36,14 +36,21 @@ func (e Entity) RemoveDirection() Entity {
 	return e
 }
 
-func (e Entity) WritableDirection() (*Direction, bool) {
-	return e.w.directionsStore.Writeable(e)
+func (e Entity) WritableDirection() (c *Direction, done func()) {
+	var ok bool
+	c, ok = e.w.directionsStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.DirectionComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetDirection(other Direction) Entity {
 	e.w.directionsStore.Set(other, e)
 
-	e.w.patch.DirectionComponents[e.w.resourceEntity.val] = Direction(other).ToPB()
+	e.w.patch.DirectionComponents[e.val] = Direction(other).ToPB()
 	return e
 }
 
@@ -64,23 +71,23 @@ func (w *World) RemoveDirections(entities ...Entity) {
 
 //#region Resources
 
-// HasDirection checks if the world has a Direction}}
+// HasDirectionResource checks if the world has a Direction}}
 func (w *World) HasDirectionResource() bool {
 	return w.resourceEntity.HasDirection()
 }
 
-// Retrieve the Direction resource from the world
+// DirectionResource Retrieve the  resource from the world
 func (w *World) DirectionResource() (Direction, bool) {
 	return w.resourceEntity.ReadDirection()
 }
 
-// Set the Direction resource in the world
+// SetDirectionResource set the resource in the world
 func (w *World) SetDirectionResource(c Direction) Entity {
 	w.resourceEntity.SetDirection(c)
 	return w.resourceEntity
 }
 
-// Remove the Direction resource from the world
+// RemoveDirectionResource removes the resource from the world
 func (w *World) RemoveDirectionResource() Entity {
 	w.resourceEntity.RemoveDirection()
 
@@ -144,12 +151,15 @@ func (iter *DirectionWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *DirectionWriteIterator) NextDirection() (Entity, *Direction) {
+func (iter *DirectionWriteIterator) NextDirection() (Entity, *Direction, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.DirectionComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *DirectionWriteIterator) Reset() {

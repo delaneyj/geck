@@ -70,7 +70,8 @@ message BundleDefinition {
 message GeneratorOptions {
   string package_name = 1;
   string folder_path = 2;
-  repeated Enum enums = 3;
-  repeated BundleDefinition bundles = 4;
-  repeated ComponentSetDefinition component_sets = 5;
+  uint32 version = 3;
+  repeated Enum enums = 4;
+  repeated BundleDefinition bundles = 5;
+  repeated ComponentSetDefinition component_sets = 6;
 }

@@ -34,14 +34,21 @@ func (e Entity) RemoveEats() Entity {
 	return e
 }
 
-func (e Entity) WritableEats() (*Eats, bool) {
-	return e.w.eatsStore.Writeable(e)
+func (e Entity) WritableEats() (c *Eats, done func()) {
+	var ok bool
+	c, ok = e.w.eatsStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.EatsComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetEats(other Eats) Entity {
 	e.w.eatsStore.Set(other, e)
 
-	e.w.patch.EatsComponents[e.w.resourceEntity.val] = Eats(other).ToPB()
+	e.w.patch.EatsComponents[e.val] = Eats(other).ToPB()
 	return e
 }
 
@@ -57,6 +64,7 @@ func (e Entity) SetEatsValues(
 		panic(err)
 	}
 	pb := &ecspb.EatsComponent{
+
 		Entities: EntitiesToU32s(entities0...),
 		Amounts:  make([]uint32, len(amounts1)),
 	}
@@ -84,17 +92,17 @@ func (w *World) RemoveEats(entities ...Entity) {
 
 //#region Resources
 
-// HasEats checks if the world has a Eats}}
+// HasEatsResource checks if the world has a Eats}}
 func (w *World) HasEatsResource() bool {
 	return w.resourceEntity.HasEats()
 }
 
-// Retrieve the Eats resource from the world
+// EatsResource Retrieve the  resource from the world
 func (w *World) EatsResource() (Eats, bool) {
 	return w.resourceEntity.ReadEats()
 }
 
-// Set the Eats resource in the world
+// SetEatsResource set the resource in the world
 func (w *World) SetEatsResource(c Eats) Entity {
 	w.resourceEntity.SetEats(c)
 	return w.resourceEntity
@@ -110,7 +118,7 @@ func (w *World) SetEatsResourceValues(
 	return w.resourceEntity
 }
 
-// Remove the Eats resource from the world
+// RemoveEatsResource removes the resource from the world
 func (w *World) RemoveEatsResource() Entity {
 	w.resourceEntity.RemoveEats()
 
@@ -174,12 +182,15 @@ func (iter *EatsWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *EatsWriteIterator) NextEats() (Entity, *Eats) {
+func (iter *EatsWriteIterator) NextEats() (Entity, *Eats, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.EatsComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *EatsWriteIterator) Reset() {
@@ -223,8 +234,14 @@ func (w *World) ApplyEatsPatch(e Entity, patch *ecspb.EatsComponent) Entity {
 
 func (c Eats) ToPB() *ecspb.EatsComponent {
 	pb := &ecspb.EatsComponent{
-		Entities: make([]uint32, len(c.Entities)),
+		Entities: EntitiesToU32s(c.Entities...),
 		Amounts:  make([]uint32, len(c.Amounts)),
+	}
+	for i, v := range c.Entities {
+		pb.Entities[i] = v.val
+	}
+	for i, v := range c.Amounts {
+		pb.Amounts[i] = uint32(v)
 	}
 	return pb
 }

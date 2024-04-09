@@ -43,14 +43,21 @@ func (e Entity) RemoveFaction() Entity {
 	return e
 }
 
-func (e Entity) WritableFaction() (*Faction, bool) {
-	return e.w.factionsStore.Writeable(e)
+func (e Entity) WritableFaction() (c *Faction, done func()) {
+	var ok bool
+	c, ok = e.w.factionsStore.Writeable(e)
+	if !ok {
+		return nil, nil
+	}
+	return c, func() {
+		e.w.patch.FactionComponents[e.val] = c.ToPB()
+	}
 }
 
 func (e Entity) SetFaction(other Entity) Entity {
 	e.w.factionsStore.Set(Faction(other), e)
 
-	e.w.patch.FactionComponents[e.w.resourceEntity.val] = Faction(other).ToPB()
+	e.w.patch.FactionComponents[e.val] = Faction(other).ToPB()
 	return e
 }
 
@@ -71,23 +78,23 @@ func (w *World) RemoveFactions(entities ...Entity) {
 
 //#region Resources
 
-// HasFaction checks if the world has a Faction}}
+// HasFactionResource checks if the world has a Faction}}
 func (w *World) HasFactionResource() bool {
 	return w.resourceEntity.HasFaction()
 }
 
-// Retrieve the Faction resource from the world
+// FactionResource Retrieve the  resource from the world
 func (w *World) FactionResource() (Entity, bool) {
 	return w.resourceEntity.ReadFaction()
 }
 
-// Set the Faction resource in the world
+// SetFactionResource set the resource in the world
 func (w *World) SetFactionResource(e Entity) Entity {
 	w.resourceEntity.SetFaction(e)
 	return w.resourceEntity
 }
 
-// Remove the Faction resource from the world
+// RemoveFactionResource removes the resource from the world
 func (w *World) RemoveFactionResource() Entity {
 	w.resourceEntity.RemoveFaction()
 
@@ -151,12 +158,15 @@ func (iter *FactionWriteIterator) NextEntity() Entity {
 	return e
 }
 
-func (iter *FactionWriteIterator) NextFaction() (Entity, *Faction) {
+func (iter *FactionWriteIterator) NextFaction() (Entity, *Faction, func()) {
 	e := iter.store.dense[iter.currIdx]
 	c := &iter.store.components[iter.currIdx]
 	iter.currIdx--
+	done := func() {
+		iter.w.patch.FactionComponents[e.val] = c.ToPB()
+	}
 
-	return e, c
+	return e, c, done
 }
 
 func (iter *FactionWriteIterator) Reset() {
