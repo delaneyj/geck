@@ -10,6 +10,13 @@
                 "description": {
                     "type": "string"
                 },
+                "enums": {
+                    "items": {
+                        "$ref": "#/definitions/geck.v1.Enum"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
                 "components": {
                     "items": {
                         "$ref": "#/definitions/geck.v1.ComponentDefinition"
@@ -56,6 +63,29 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Component Definition"
+        },
+        "geck.v1.Enum": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "values": {
+                    "items": {
+                        "$ref": "#/definitions/geck.v1.Enum.Value"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "isBitmask": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Enum"
         },
         "geck.v1.Enum.Value": {
             "properties": {

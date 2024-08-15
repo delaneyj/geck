@@ -33,3 +33,8 @@ tasks:
     cmds:
       - go run main.go
       - go tool pprof -http=localhost:5432 cpu.prof
+
+  install:
+    dir: ./cmd/geckgen
+    cmds:
+      - go install

@@ -2,22 +2,22 @@
   "packageName": "ecs",
   "version": 1,
   "folderPath": "../example/ecs",
-  "enums": [
-    {
-      "name": "Direction",
-      "values": [
-        { "name": "North", "value": "1" },
-        { "name": "South", "value": "2" },
-        { "name": "East", "value": "4" },
-        { "name": "West", "value": "8" }
-      ],
-      "isBitmask": true
-    }
-  ],
   "bundles": [
     {
       "name": "example",
       "description": "A test bundle",
+      "enums": [
+        {
+          "name": "Direction",
+          "values": [
+            { "name": "North", "value": 1 },
+            { "name": "South", "value": 2 },
+            { "name": "East", "value": 4 },
+            { "name": "West", "value": 8 }
+          ],
+          "isBitmask": true
+        }
+      ],
       "components": [
         {
           "name": "Position",

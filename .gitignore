@@ -1,3 +1,4 @@
 debug_*
 *.out
 *.prof
+.task

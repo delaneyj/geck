@@ -13,13 +13,6 @@
                 "version": {
                     "type": "integer"
                 },
-                "enums": {
-                    "items": {
-                        "$ref": "#/definitions/geck.v1.Enum"
-                    },
-                    "additionalProperties": false,
-                    "type": "array"
-                },
                 "bundles": {
                     "items": {
                         "$ref": "#/definitions/geck.v1.BundleDefinition"
@@ -46,6 +39,13 @@
                 },
                 "description": {
                     "type": "string"
+                },
+                "enums": {
+                    "items": {
+                        "$ref": "#/definitions/geck.v1.Enum"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
                 },
                 "components": {
                     "items": {

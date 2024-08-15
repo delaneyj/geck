@@ -325,6 +325,13 @@ func (m *BundleDefinition) CloneVT() *BundleDefinition {
 		Name:        m.Name,
 		Description: m.Description,
 	}
+	if rhs := m.Enums; rhs != nil {
+		tmpContainer := make([]*Enum, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.Enums = tmpContainer
+	}
 	if rhs := m.Components; rhs != nil {
 		tmpContainer := make([]*ComponentDefinition, len(rhs))
 		for k, v := range rhs {
@@ -351,13 +358,6 @@ func (m *GeneratorOptions) CloneVT() *GeneratorOptions {
 		PackageName: m.PackageName,
 		FolderPath:  m.FolderPath,
 		Version:     m.Version,
-	}
-	if rhs := m.Enums; rhs != nil {
-		tmpContainer := make([]*Enum, len(rhs))
-		for k, v := range rhs {
-			tmpContainer[k] = v.CloneVT()
-		}
-		r.Enums = tmpContainer
 	}
 	if rhs := m.Bundles; rhs != nil {
 		tmpContainer := make([]*BundleDefinition, len(rhs))
@@ -875,6 +875,23 @@ func (this *BundleDefinition) EqualVT(that *BundleDefinition) bool {
 	if this.Description != that.Description {
 		return false
 	}
+	if len(this.Enums) != len(that.Enums) {
+		return false
+	}
+	for i, vx := range this.Enums {
+		vy := that.Enums[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &Enum{}
+			}
+			if q == nil {
+				q = &Enum{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
+	}
 	if len(this.Components) != len(that.Components) {
 		return false
 	}
@@ -916,23 +933,6 @@ func (this *GeneratorOptions) EqualVT(that *GeneratorOptions) bool {
 	}
 	if this.Version != that.Version {
 		return false
-	}
-	if len(this.Enums) != len(that.Enums) {
-		return false
-	}
-	for i, vx := range this.Enums {
-		vy := that.Enums[i]
-		if p, q := vx, vy; p != q {
-			if p == nil {
-				p = &Enum{}
-			}
-			if q == nil {
-				q = &Enum{}
-			}
-			if !p.EqualVT(q) {
-				return false
-			}
-		}
 	}
 	if len(this.Bundles) != len(that.Bundles) {
 		return false
@@ -1619,6 +1619,18 @@ func (m *BundleDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Enums) > 0 {
+		for iNdEx := len(m.Enums) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Enums[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
 			dAtA[i] = 0x1a
 		}
 	}
@@ -1678,24 +1690,12 @@ func (m *GeneratorOptions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x32
+			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.Bundles) > 0 {
 		for iNdEx := len(m.Bundles) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Bundles[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.Enums) > 0 {
-		for iNdEx := len(m.Enums) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Enums[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2468,6 +2468,18 @@ func (m *BundleDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Enums) > 0 {
+		for iNdEx := len(m.Enums) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Enums[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
 			dAtA[i] = 0x1a
 		}
 	}
@@ -2527,24 +2539,12 @@ func (m *GeneratorOptions) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x32
+			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.Bundles) > 0 {
 		for iNdEx := len(m.Bundles) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Bundles[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.Enums) > 0 {
-		for iNdEx := len(m.Enums) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Enums[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2873,6 +2873,12 @@ func (m *BundleDefinition) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
+	if len(m.Enums) > 0 {
+		for _, e := range m.Enums {
+			l = e.SizeVT()
+			n += 1 + l + sov(uint64(l))
+		}
+	}
 	if len(m.Components) > 0 {
 		for _, e := range m.Components {
 			l = e.SizeVT()
@@ -2899,12 +2905,6 @@ func (m *GeneratorOptions) SizeVT() (n int) {
 	}
 	if m.Version != 0 {
 		n += 1 + sov(uint64(m.Version))
-	}
-	if len(m.Enums) > 0 {
-		for _, e := range m.Enums {
-			l = e.SizeVT()
-			n += 1 + l + sov(uint64(l))
-		}
 	}
 	if len(m.Bundles) > 0 {
 		for _, e := range m.Bundles {
@@ -4251,6 +4251,40 @@ func (m *BundleDefinition) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enums", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Enums = append(m.Enums, &Enum{})
+			if err := m.Enums[len(m.Enums)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Components", wireType)
 			}
 			var msglen int
@@ -4419,40 +4453,6 @@ func (m *GeneratorOptions) UnmarshalVT(dAtA []byte) error {
 			}
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Enums", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Enums = append(m.Enums, &Enum{})
-			if err := m.Enums[len(m.Enums)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Bundles", wireType)
 			}
 			var msglen int
@@ -4485,7 +4485,7 @@ func (m *GeneratorOptions) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ComponentSets", wireType)
 			}

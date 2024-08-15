@@ -273,48 +273,49 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 		}
 	}
 
-	for _, ed := range opts.Enums {
-		if len(ed.Values) == 0 {
-			return nil, fmt.Errorf("enum must have at least one value")
-		}
-
-		enum := &enumTmplData{
-			PackageName:  opts.PackageName,
-			PBImportPath: data.PBImportPath,
-			Name:         inflectionStrings(ed.Name, true),
-			IsBitmask:    ed.IsBitmask,
-			Values: lo.Map(ed.Values, func(v *geckpb.Enum_Value, i int) *enumEntryTmplData {
-				return &enumEntryTmplData{
-					Name:  inflectionStrings(v.Name, true),
-					Value: int(v.Value),
-				}
-			}),
-		}
-		slices.SortFunc(enum.Values, func(a, b *enumEntryTmplData) int {
-			return a.Value - b.Value
-		})
-
-		if len(enum.Values) != len(lo.UniqBy(enum.Values, func(e *enumEntryTmplData) int {
-			return e.Value
-		})) {
-			return nil, fmt.Errorf("enum values must be unique")
-		}
-
-		if enum.Values[0].Value != 0 {
-			enum.Values = append([]*enumEntryTmplData{
-				{
-					Name:  inflectionStrings(enum.Name.Singular.Pascal+"_Unknown", false),
-					Value: 0,
-				},
-			}, enum.Values...)
-		}
-
-		data.Enums = append(data.Enums, enum)
-	}
-
 	componentByNames := map[string]*componentTmplData{}
 	for _, bundleDef := range opts.Bundles {
 		bundleName := toolbelt.ToCasedString(bundleDef.Name)
+
+		for _, ed := range bundleDef.Enums {
+			if len(ed.Values) == 0 {
+				return nil, fmt.Errorf("enum must have at least one value")
+			}
+
+			enum := &enumTmplData{
+				PackageName:  opts.PackageName,
+				PBImportPath: data.PBImportPath,
+				Name:         inflectionStrings(ed.Name, true),
+				IsBitmask:    ed.IsBitmask,
+				Values: lo.Map(ed.Values, func(v *geckpb.Enum_Value, i int) *enumEntryTmplData {
+					return &enumEntryTmplData{
+						Name:  inflectionStrings(v.Name, true),
+						Value: int(v.Value),
+					}
+				}),
+			}
+			slices.SortFunc(enum.Values, func(a, b *enumEntryTmplData) int {
+				return a.Value - b.Value
+			})
+
+			if len(enum.Values) != len(lo.UniqBy(enum.Values, func(e *enumEntryTmplData) int {
+				return e.Value
+			})) {
+				return nil, fmt.Errorf("enum values must be unique")
+			}
+
+			if enum.Values[0].Value != 0 {
+				enum.Values = append([]*enumEntryTmplData{
+					{
+						Name:  inflectionStrings(enum.Name.Singular.Pascal+"_Unknown", false),
+						Value: 0,
+					},
+				}, enum.Values...)
+			}
+
+			data.Enums = append(data.Enums, enum)
+		}
+
 		for _, cd := range bundleDef.Components {
 			isTag := len(cd.Fields) == 0
 

@@ -5,7 +5,7 @@
     "json.schemas": [
         {
             "fileMatch": [
-                "/**/*.gen.json"
+                "/**/*gen.json"
             ],
             "url": "/pb/gen/GeneratorOptions.jsonschema"
         }
