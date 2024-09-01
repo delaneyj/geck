@@ -726,7 +726,3 @@ func (w *World) UnmarshalPatch(data []byte) error {
 func (w *World) UnmarshalPatchJSON(data []byte) error {
 	return w.patch.UnmarshalJSON(data)
 }
-
-func (w *World) ResetPatch() {
-	ResetWorldPatch(w.patch)
-}

@@ -51,6 +51,9 @@ func (e Entity) Raw() uint32 {
 }
 
 func (e Entity) IsAlive() bool {
+	if e.w == nil {
+		return false
+	}
 	return e.w.liveEntitieIDs.Contains(e.val)
 }
 
@@ -60,6 +63,22 @@ func (e Entity) IsResourceEntity() bool {
 
 func (e Entity) Destroy() {
 	e.w.DestroyEntities(e)
+}
+
+func (e Entity) Equals(other Entity) bool {
+	if e.w != other.w {
+		return false
+	}
+	return e.val == other.val
+}
+
+func (e Entity) In(entities ...Entity) bool {
+	for _, e := range entities {
+		if e.Equals(e) {
+			return true
+		}
+	}
+	return false
 }
 
 func EntitiesToU32s(entities ...Entity) []uint32 {

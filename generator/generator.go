@@ -39,6 +39,7 @@ type enumEntryTmplData struct {
 type enumTmplData struct {
 	PackageName  string
 	PBImportPath string
+	BundleName   toolbelt.CasedString
 	Name         InflectionString
 	Values       []*enumEntryTmplData
 	IsBitmask    bool
@@ -87,6 +88,7 @@ type componentSetTmplData struct {
 	HasWriteableComponents bool
 	OwnedComponents        []*componentSetEntryTmplData
 	BorrowedComponents     []*componentSetEntryTmplData
+	EmptyWildcardString    string
 }
 
 func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
@@ -178,7 +180,7 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 			cmds: []string{
 				"go install github.com/bufbuild/buf/cmd/buf@latest",
 				"clang-format -i ecs/v1/ecs.proto",
-				"buf mod update",
+				"buf dep update",
 				"buf generate",
 			},
 		},
@@ -285,6 +287,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 			enum := &enumTmplData{
 				PackageName:  opts.PackageName,
 				PBImportPath: data.PBImportPath,
+				BundleName:   bundleName,
 				Name:         inflectionStrings(ed.Name, true),
 				IsBitmask:    ed.IsBitmask,
 				Values: lo.Map(ed.Values, func(v *geckpb.Enum_Value, i int) *enumEntryTmplData {
@@ -335,13 +338,12 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 
 			if len(cd.Fields) == 1 {
 				component.IsOnlyOneField = true
+				if cd.Fields[0].HasMultiple {
+					component.IsFirstSlice = true
+				}
 				switch cd.Fields[0].ResetValue.(type) {
 				case *geckpb.FieldDefinition_Entity:
 					component.IsFirstFieldEntity = true
-
-					if cd.Fields[0].HasMultiple {
-						component.IsFirstSlice = true
-					}
 				}
 			}
 
@@ -519,6 +521,20 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 		name := strings.Join(componentNames, "_") + "_set"
 		set.Name = inflectionStrings(name, true)
 
+		sb := strings.Builder{}
+		sb.WriteString("e")
+		for i := 0; i < len(set.OwnedComponents)+len(set.BorrowedComponents); i++ {
+			if i == 0 {
+				sb.WriteString(", ")
+			}
+
+			sb.WriteString("_")
+			if i < len(set.OwnedComponents)-1 {
+				sb.WriteString(", ")
+			}
+		}
+		set.EmptyWildcardString = sb.String()
+
 		data.ComponentSets = append(data.ComponentSets, set)
 		for _, ce := range set.OwnedComponents {
 			c, ok := componentByNames[ce.Name.Singular.Original]
@@ -551,10 +567,13 @@ func generateFiles(tmpls *template.Template, data *ecsTmplData, templateNames ..
 }
 
 func generateEnum(tmpls *template.Template, data *ecsTmplData, enum *enumTmplData) error {
+	const prefix = "enums"
 	fp := filepath.Join(
 		data.FolderPath,
 		fmt.Sprintf(
-			"enums_%s.go",
+			"%s_%s_%s.go",
+			enum.BundleName.Camel,
+			prefix,
 			enum.Name.Plural.Snake,
 		),
 	)
@@ -576,8 +595,8 @@ func generateComponent(tmpls *template.Template, data *ecsTmplData, component *c
 		data.FolderPath,
 		fmt.Sprintf(
 			"%s_%s_%s.go",
-			prefix,
 			component.BundleName.Camel,
+			prefix,
 			component.Name.Plural.Snake,
 		),
 	)

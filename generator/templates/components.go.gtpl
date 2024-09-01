@@ -25,6 +25,18 @@ func {{$np}}From{{$fp}}(c {{ $fo }}) {{$np}} {
 func (c {{$np}}) To{{$fp}}() {{ $fo }} {
     return {{ $fo }}(c)
 }
+
+    {{ if not (contains "Enum" $fp) -}}
+        {{if .IsFirstFieldEntity -}}
+func {{$np}}FromPB(w *World, pb *{{.PackageName}}pb.{{$np}}Component) {{$np}} {
+    return {{$np}}(w.EntitiesFromU32s(pb.{{$f.Name.Singular.Pascal}}...))
+        {{else -}}
+func {{$np}}FromPB(pb *{{.PackageName}}pb.{{$np}}Component) {{$np}} {
+    return {{$np}}(pb.{{$f.Name.Singular.Pascal}})
+        {{end -}}
+}
+    {{ end -}}
+
 {{ else -}}
 func {{$np}}From{{$fp}}(c {{ $fo }}) {{$np}} {
     return {{$np}}(c)
@@ -44,6 +56,18 @@ type {{$np}} struct {
     {{- range .Fields }}
     {{.Name.Singular.Pascal}} {{.Type.Singular.Original}} `json:"{{.Name.Singular.Camel}}"`
     {{- end }}
+}
+
+func (w *World) New{{$np}}(
+    {{- range .Fields }}
+    {{.Name.Singular.Camel}}Field {{.Type.Singular.Original}},
+    {{- end }}
+) {{$np}} {
+    return {{$np}}{
+        {{- range .Fields }}
+        {{.Name.Singular.Pascal}}: {{.Name.Singular.Camel}}Field,
+        {{- end }}
+    }
 }
 
 func (w *World) Reset{{.Name.Singular.Pascal}}() {{.Name.Singular.Pascal}}{
@@ -73,6 +97,7 @@ func (c {{$np}}) ToU32s() []uint32 {
     }
     return u32s
 }
+
 
 func {{$np}}FromEntities(e ...Entity) {{$np}} {
     c := make({{$np}}, len(e))
@@ -118,7 +143,7 @@ func (w *World) On{{$np}}Removed(fn func({{$np}}RemovedEvent)) UnsubscribeFunc {
 {{if .ShouldGenChanged -}}
 type {{$np}}ChangedEvent struct {
     Entity Entity
-    {{$np}} {{$np}}
+    Old, New {{$np}}
 }
 func (w *World) On{{$np}}Changed(fn func({{$np}}ChangedEvent)) UnsubscribeFunc {
 	stopCh := mint.On(w.eventBus, fn)
@@ -138,6 +163,14 @@ func (e Entity) Has{{$np}}Tag() bool {
 {{if not .IsTag -}}
 {{ if and .IsOnlyOneField .IsFirstFieldEntity -}}
 {{ if .IsFirstSlice -}}
+func (e Entity) MustRead{{$np}}() {{$np}} {
+    c, ok := e.w.{{.Name.Plural.Camel}}Store.Read(e)
+    if !ok {
+        panic("{{$np}} not found")
+    }
+    return c
+}
+
 func (e Entity) Read{{$np}}() ([]Entity, bool) {
     entities, ok := e.w.{{.Name.Plural.Camel}}Store.Read(e)
     if !ok {
@@ -217,6 +250,14 @@ func (e Entity) Read{{$np}}() ({{$np}}, bool) {
     return e.w.{{.Name.Plural.Camel}}Store.Read(e)
 }
 
+func (e Entity) MustRead{{$np}}() {{$np}} {
+    c, ok := e.w.{{.Name.Plural.Camel}}Store.Read(e)
+    if !ok {
+        panic("{{$np}} not found")
+    }
+    return c
+}
+
 func (e Entity) Remove{{$np}}() Entity {
     e.w.{{.Name.Plural.Camel}}Store.Remove(e)
     {{if .ShouldGenRemoved}}
@@ -247,7 +288,8 @@ func (e Entity) Set{{$np}}(other {{$np}}) Entity {
     e.w.{{.Name.Plural.Camel}}Store.Set(other,e)
 {{ end -}}
     {{if .ShouldGenChanged}}
-    fireEvent(e.w, {{$np}}ChangedEvent{e, {{$np}}(other)})
+    old, _ := e.w.{{.Name.Plural.Camel}}Store.Read(e)
+    fireEvent(e.w, {{$np}}ChangedEvent{e, old, {{$np}}(other)})
     {{end}}
     {{if .OwnedBySet -}}
     e.w.{{.OwnedBySet.Name.Singular.Pascal}}.PossibleUpdate(e)
@@ -283,7 +325,7 @@ func (e Entity) Set{{$np}}Values(
                 {{end -}}
             {{else -}}
                 {{if .IsSlice -}}
-                    {{.Name.Singular.Pascal}}: make([]{{.PBTypeSingular}}, len({{.Name.Singular.Camel}}{{$i}})),
+                    {{.Name.Singular.Pascal}}: make([]{{$f.Type.Singular.Pascal}}, len({{.Name.Singular.Camel}}{{$i}})),
                 {{else -}}
                     {{if .PBNeedsCast -}}
                         // go cast "{{.PBFromType}}"
@@ -298,7 +340,7 @@ func (e Entity) Set{{$np}}Values(
     {{range $i,$f := .Fields -}}
     {{if and .IsSlice (not .IsEntity) -}}
     for i, v := range {{.Name.Singular.Camel}}{{$i}} {
-        pb.{{.Name.Singular.Pascal}}[i] = {{.PBTypeSingular}}(v)
+        pb.{{.Name.Singular.Pascal}}[i] = {{$f.Type.Singular.Pascal}}(v)
     }
     {{end -}}
     {{end -}}
@@ -313,8 +355,9 @@ func (w *World) Set{{.Name.Plural.Pascal}}(c {{$np}}, entities ...Entity) {
     }
     w.{{.Name.Plural.Camel}}Store.Set(c, entities...)
     {{if .ShouldGenChanged -}}
-    for _, entity := range entities {
-        fireEvent(w, {{$np}}ChangedEvent{entity, c})
+    for _, e := range entities {
+        old, _ := e.w.{{.Name.Plural.Camel}}Store.Read(e)
+        fireEvent(w, {{$np}}ChangedEvent{e, old, c})
     }
     {{end -}}
     {{if .OwnedBySet -}}
@@ -432,6 +475,12 @@ func (w *World) Remove{{$np}}Resource() Entity {
     return w.resourceEntity
 }
 
+// Writeable{{$np}}Resource returns a writable reference to the resource
+func (w *World) Writeable{{$np}}Resource() (c *{{$np}}, done func()) {
+    return w.resourceEntity.Writable{{$np}}()
+}
+
+
 //#endregion
 {{end }}
 
@@ -534,6 +583,7 @@ func (w *World) Sort{{.Name.Plural.Pascal}}() {
 }
 {{end }}
 
+
 {{if .IsTag -}}
 func(w *World) Apply{{.Name.Singular.Pascal}}Patch(e Entity, pb *emptypb.Empty) Entity {
     if pb == nil {
@@ -545,18 +595,26 @@ func(w *World) Apply{{.Name.Singular.Pascal}}Patch(e Entity, pb *emptypb.Empty) 
 {{else -}}
 func(w *World) Apply{{.Name.Singular.Pascal}}Patch(e Entity, patch *{{.PackageName}}pb.{{.Name.Singular.Pascal}}Component) Entity {
     {{if .IsOnlyOneField -}}
-    {{if .IsFirstFieldEntity -}}
-    {{$f := .Fields | first -}}
-    {{$fsp := $f.Type.Singular.Pascal -}}
-    {{if $f.IsSlice}}
-    c := {{.Name.Singular.Pascal}}(w.EntitiesFromU32s(patch.{{$fsp}}...))
-    {{else -}}
+        {{$f := .Fields | first -}}
+        {{$fsp := $f.Type.Singular.Pascal -}}
+        {{$fnsp := $f.Name.Singular.Pascal -}}
+        {{if .IsFirstFieldEntity -}}
+            {{if $f.IsSlice}}
+    c := {{.Name.Singular.Pascal}}(w.EntitiesFromU32s(patch.{{$fnsp}}...))
+            {{else -}}
     c := {{.Name.Singular.Pascal}}(w.EntityFromU32(patch.{{(.Fields | first).Name.Singular.Pascal}}))
-    {{end -}}
-    {{else -}}
+            {{end -}}
+        {{else if .IsFirstSlice -}}
+          {{if contains "Enum" $fsp -}}
+    c := {{.Name.Singular.Pascal}}({{$fsp}}SliceFromPB(patch.{{(.Fields | first).Name.Singular.Pascal}}))
+          {{else -}}
+    c := patch.{{(.Fields | first).Name.Singular.Pascal}}
+          {{end -}}
+        {{else -}}
     c := {{.Name.Singular.Pascal}}(patch.{{(.Fields | first).Name.Singular.Pascal}})
-    {{end -}}
+        {{end -}}
     {{else -}}
+
     c := {{.Name.Singular.Pascal}}{
         {{range .Fields -}}
             {{if contains "Entity" .Type.Singular.Pascal -}}
@@ -600,7 +658,7 @@ func (c {{.Name.Singular.Pascal}}) ToPB() *{{.PackageName}}pb.{{.Name.Singular.P
         {{$ftsp := $f.Type.Singular.Pascal -}}
         {{$fnsp := $f.Name.Singular.Pascal -}}
         {{if $f.IsSlice -}}
-        {{$ftsp}} : c.ToU32s(),
+        {{$fnsp}} : c.ToU32s(),
         {{else -}}
         {{$fnsp}}: c.val,
         {{end -}}
@@ -610,7 +668,11 @@ func (c {{.Name.Singular.Pascal}}) ToPB() *{{.PackageName}}pb.{{.Name.Singular.P
     {{ $fp := $f.Type.Singular.Pascal -}}
     pb := &{{.PackageName}}pb.{{.Name.Singular.Pascal}}Component{
         {{if contains "Enum" $fp -}}
+            {{if not .IsFirstSlice -}}
         {{$f.Name.Singular.Pascal}}: {{.PackageName}}pb.{{$f.PBType}}(c.To{{$fp}}()),
+            {{else -}}
+        {{$f.Name.Singular.Pascal}}: {{$fp}}SliceToPB(c),
+            {{end -}}
         {{else -}}
         {{$f.Name.Singular.Pascal}}: c.To{{$fp}}(),
         {{end -}}
@@ -619,9 +681,10 @@ func (c {{.Name.Singular.Pascal}}) ToPB() *{{.PackageName}}pb.{{.Name.Singular.P
     {{else -}}
     pb := &{{.PackageName}}pb.{{.Name.Singular.Pascal}}Component{
         {{range .Fields -}}
-            {{if contains "Enum" .Type.Singular.Pascal -}}
+            {{ $fp := .Type.Singular.Pascal -}}
+            {{if contains "Enum" $fp -}}
                 {{.Name.Singular.Pascal}}: c.{{.Name.Singular.Pascal}}.ToPB(),
-            {{else if contains "Entity" .Type.Singular.Pascal -}}
+            {{else if contains "Entity" $fp -}}
                 {{if .IsSlice -}}
                     {{.Name.Singular.Pascal}}: EntitiesToU32s(c.{{.Name.Singular.Pascal}}...),
                 {{else -}}
@@ -629,7 +692,7 @@ func (c {{.Name.Singular.Pascal}}) ToPB() *{{.PackageName}}pb.{{.Name.Singular.P
                 {{end -}}
             {{else -}}
                 {{if .IsSlice -}}
-                    {{.Name.Singular.Pascal}}: make([]{{.PBTypeSingular}}, len(c.{{.Name.Singular.Pascal}})),
+                    {{.Name.Singular.Pascal}}: make([]{{$fp}}, len(c.{{.Name.Singular.Pascal}})),
                 {{else -}}
                     {{if .PBNeedsCast -}}
                         {{.Name.Singular.Pascal}}: {{.PBType}}(c.{{.Name.Singular.Pascal}}),
@@ -646,7 +709,7 @@ func (c {{.Name.Singular.Pascal}}) ToPB() *{{.PackageName}}pb.{{.Name.Singular.P
                     {{if .IsEntity -}}
                     pb.{{.Name.Singular.Pascal}}[i] =  v.val
                     {{else -}}
-                    pb.{{.Name.Singular.Pascal}}[i] = {{.PBTypeSingular}}(v)
+                    pb.{{.Name.Singular.Pascal}}[i] = {{.Type.Singular.Pascal}}(v)
                     {{end -}}
                 }
             {{end -}}

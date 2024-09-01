@@ -1,6 +1,4 @@
 version: v1
-deps:
-  - buf.build/bufbuild/protovalidate
 
 breaking:
   use:

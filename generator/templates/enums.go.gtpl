@@ -7,7 +7,7 @@ import (
 {{$nsp := .Name.Singular.Pascal -}}
 {{$ensp := printf "Enum%s" $nsp -}}
 {{$nspe := printf "%sEnum" $nsp -}}
-type {{$ensp}} int
+type {{$ensp}} uint32
 
 const (
 	{{range .Values -}}
@@ -26,16 +26,30 @@ func (e {{$ensp}}) String() (string,bool) {
 	}
 }
 
-func (e {{$ensp}}) ToInt() int {
-	return int(e)
+func (e {{$ensp}}) ToU32() uint32 {
+	return uint32(e)
 }
 
-func {{$ensp}}FromInt(i int) {{$ensp}} {
+func {{$ensp}}FromU32(i uint32) {{$ensp}} {
 	return {{$ensp}}(i)
 }
 
 func (e {{$ensp}}) ToPB() ({{.PackageName}}pb.{{$nspe}}) {
-	return {{.PackageName}}pb.{{$nspe}}(e.ToInt())
+	return {{.PackageName}}pb.{{$nspe}}(e.ToU32())
+}
+
+func {{$ensp}}SliceToPB(e []{{$ensp}}) (pb []{{.PackageName}}pb.{{$nspe}}) {
+	for _, v := range e {
+		pb = append(pb, v.ToPB())
+	}
+	return pb
+}
+
+func {{$ensp}}SliceFromPB(pb []{{.PackageName}}pb.{{$nspe}}) (e []{{$ensp}}) {
+	for _, v := range pb {
+		e = append(e, {{$ensp}}(v))
+	}
+	return e
 }
 
 {{ if .IsBitmask -}}

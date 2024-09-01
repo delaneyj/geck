@@ -83,6 +83,17 @@ func (set *{{.Name.Singular.Pascal}}) Len() int {
     return set.lastIdx + 1
 }
 
+func (set *{{.Name.Singular.Pascal}}) All() []Entity {
+    entities := make([]Entity,0, set.Len())
+    iter := set.NewIterator()
+    for iter.HasNext() {
+        {{.EmptyWildcardString}} := iter.Next()
+        entities = append(entities, e)
+    }
+    return entities
+}
+
+
 func (set *{{.Name.Singular.Pascal}}) NewIterator() *{{.Name.Singular.Pascal}}Iter {
     iter := &{{.Name.Singular.Pascal}}Iter{ set: set }
     iter.Reset()
@@ -135,5 +146,3 @@ func (iter *{{.Name.Singular.Pascal}}Iter) Next() (
 
     return e, {{range $i, $c := .OwnedComponents}}{{if $i}},{{end}}{{$v := printf "comp%x" $i}}{{$v}}{{end}}
 }
-
-

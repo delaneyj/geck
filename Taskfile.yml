@@ -6,6 +6,10 @@ vars:
   VERSION: 0.2.0
 
 tasks:
+  tools:
+    cmds:
+      - go install github.com/bufbuild/buf/cmd/buf@latest
+      - go install github.com/google/pprof@latest
   pb:
     dir: pb
     sources:
@@ -36,5 +40,9 @@ tasks:
 
   install:
     dir: ./cmd/geckgen
+    sources:
+      - "**/*.go"
+      - "**/*.gtpl"
+
     cmds:
       - go install
