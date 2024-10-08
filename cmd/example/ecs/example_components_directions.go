@@ -29,6 +29,14 @@ func (e Entity) ReadDirection() (Direction, bool) {
 	return e.w.directionsStore.Read(e)
 }
 
+func (e Entity) MustReadDirection() Direction {
+	c, ok := e.w.directionsStore.Read(e)
+	if !ok {
+		panic("Direction not found")
+	}
+	return c
+}
+
 func (e Entity) RemoveDirection() Entity {
 	e.w.directionsStore.Remove(e)
 
@@ -92,6 +100,11 @@ func (w *World) RemoveDirectionResource() Entity {
 	w.resourceEntity.RemoveDirection()
 
 	return w.resourceEntity
+}
+
+// WriteableDirectionResource returns a writable reference to the resource
+func (w *World) WriteableDirectionResource() (c *Direction, done func()) {
+	return w.resourceEntity.WritableDirection()
 }
 
 //#endregion

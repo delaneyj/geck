@@ -101,6 +101,11 @@ func (w *World) RemoveRuledByResource() Entity {
 	return w.resourceEntity
 }
 
+// WriteableRuledByResource returns a writable reference to the resource
+func (w *World) WriteableRuledByResource() (c *RuledBy, done func()) {
+	return w.resourceEntity.WritableRuledBy()
+}
+
 //#endregion
 
 //#region Iterators

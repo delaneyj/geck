@@ -10,6 +10,18 @@ type Position struct {
 	Z float32 `json:"z"`
 }
 
+func (w *World) NewPosition(
+	xField float32,
+	yField float32,
+	zField float32,
+) Position {
+	return Position{
+		X: xField,
+		Y: yField,
+		Z: zField,
+	}
+}
+
 func (w *World) ResetPosition() Position {
 	return Position{
 		X: 0.000000,
@@ -27,6 +39,14 @@ func (e Entity) HasPosition() bool {
 
 func (e Entity) ReadPosition() (Position, bool) {
 	return e.w.positionsStore.Read(e)
+}
+
+func (e Entity) MustReadPosition() Position {
+	c, ok := e.w.positionsStore.Read(e)
+	if !ok {
+		panic("Position not found")
+	}
+	return c
 }
 
 func (e Entity) RemovePosition() Entity {
@@ -130,6 +150,11 @@ func (w *World) RemovePositionResource() Entity {
 
 	w.PositionVelocitySet.PossibleUpdate(w.resourceEntity)
 	return w.resourceEntity
+}
+
+// WriteablePositionResource returns a writable reference to the resource
+func (w *World) WriteablePositionResource() (c *Position, done func()) {
+	return w.resourceEntity.WritablePosition()
 }
 
 //#endregion

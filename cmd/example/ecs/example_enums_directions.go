@@ -4,7 +4,7 @@ import (
 	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
 )
 
-type EnumDirection int
+type EnumDirection uint32
 
 const (
 	EnumDirectionDirectionUnknown = 0
@@ -32,16 +32,30 @@ func (e EnumDirection) String() (string, bool) {
 	}
 }
 
-func (e EnumDirection) ToInt() int {
-	return int(e)
+func (e EnumDirection) ToU32() uint32 {
+	return uint32(e)
 }
 
-func EnumDirectionFromInt(i int) EnumDirection {
+func EnumDirectionFromU32(i uint32) EnumDirection {
 	return EnumDirection(i)
 }
 
 func (e EnumDirection) ToPB() ecspb.DirectionEnum {
-	return ecspb.DirectionEnum(e.ToInt())
+	return ecspb.DirectionEnum(e.ToU32())
+}
+
+func EnumDirectionSliceToPB(e []EnumDirection) (pb []ecspb.DirectionEnum) {
+	for _, v := range e {
+		pb = append(pb, v.ToPB())
+	}
+	return pb
+}
+
+func EnumDirectionSliceFromPB(pb []ecspb.DirectionEnum) (e []EnumDirection) {
+	for _, v := range pb {
+		e = append(e, EnumDirection(v))
+	}
+	return e
 }
 
 func EnumDirectionSet(flags ...EnumDirection) EnumDirection {

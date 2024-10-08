@@ -101,6 +101,11 @@ func (w *World) RemoveFactionResource() Entity {
 	return w.resourceEntity
 }
 
+// WriteableFactionResource returns a writable reference to the resource
+func (w *World) WriteableFactionResource() (c *Faction, done func()) {
+	return w.resourceEntity.WritableFaction()
+}
+
 //#endregion
 
 //#region Iterators

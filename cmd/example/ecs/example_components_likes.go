@@ -14,6 +14,10 @@ func (c Likes) ToEntity() []Entity {
 	return []Entity(c)
 }
 
+func LikesFromPB(w *World, pb *ecspb.LikesComponent) Likes {
+	return Likes(w.EntitiesFromU32s(pb.Entity...))
+}
+
 func (c Likes) ToEntities() []Entity {
 	entities := make([]Entity, len(c))
 	copy(entities, c)
@@ -39,6 +43,14 @@ func LikesFromEntities(e ...Entity) Likes {
 
 func (e Entity) HasLikes() bool {
 	return e.w.likesStore.Has(e)
+}
+
+func (e Entity) MustReadLikes() Likes {
+	c, ok := e.w.likesStore.Read(e)
+	if !ok {
+		panic("Likes not found")
+	}
+	return c
 }
 
 func (e Entity) ReadLikes() ([]Entity, bool) {
@@ -144,6 +156,11 @@ func (w *World) RemoveLikesResource() Entity {
 	w.resourceEntity.RemoveLikes()
 
 	return w.resourceEntity
+}
+
+// WriteableLikesResource returns a writable reference to the resource
+func (w *World) WriteableLikesResource() (c *Likes, done func()) {
+	return w.resourceEntity.WritableLikes()
 }
 
 //#endregion

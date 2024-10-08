@@ -101,6 +101,11 @@ func (w *World) RemoveIsAResource() Entity {
 	return w.resourceEntity
 }
 
+// WriteableIsAResource returns a writable reference to the resource
+func (w *World) WriteableIsAResource() (c *IsA, done func()) {
+	return w.resourceEntity.WritableIsA()
+}
+
 //#endregion
 
 //#region Iterators

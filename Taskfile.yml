@@ -3,7 +3,7 @@
 version: "3"
 
 vars:
-  VERSION: 0.2.0
+  VERSION: 0.2.1
 
 tasks:
   tools:
@@ -19,7 +19,7 @@ tasks:
       - "gen/**/*"
     cmds:
       - go install github.com/bufbuild/buf/cmd/buf@latest
-      - buf mod update
+      - buf dep update
       - rm -rf gen
       - buf generate
 

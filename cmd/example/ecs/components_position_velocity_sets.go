@@ -78,6 +78,16 @@ func (set *PositionVelocitySet) Len() int {
 	return set.lastIdx + 1
 }
 
+func (set *PositionVelocitySet) All() []Entity {
+	entities := make([]Entity, 0, set.Len())
+	iter := set.NewIterator()
+	for iter.HasNext() {
+		e, _, _ := iter.Next()
+		entities = append(entities, e)
+	}
+	return entities
+}
+
 func (set *PositionVelocitySet) NewIterator() *PositionVelocitySetIter {
 	iter := &PositionVelocitySetIter{set: set}
 	iter.Reset()

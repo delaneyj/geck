@@ -29,6 +29,14 @@ func (e Entity) ReadName() (Name, bool) {
 	return e.w.namesStore.Read(e)
 }
 
+func (e Entity) MustReadName() Name {
+	c, ok := e.w.namesStore.Read(e)
+	if !ok {
+		panic("Name not found")
+	}
+	return c
+}
+
 func (e Entity) RemoveName() Entity {
 	e.w.namesStore.Remove(e)
 
@@ -92,6 +100,11 @@ func (w *World) RemoveNameResource() Entity {
 	w.resourceEntity.RemoveName()
 
 	return w.resourceEntity
+}
+
+// WriteableNameResource returns a writable reference to the resource
+func (w *World) WriteableNameResource() (c *Name, done func()) {
+	return w.resourceEntity.WritableName()
 }
 
 //#endregion

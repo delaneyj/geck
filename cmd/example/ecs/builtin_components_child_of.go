@@ -101,6 +101,11 @@ func (w *World) RemoveChildOfResource() Entity {
 	return w.resourceEntity
 }
 
+// WriteableChildOfResource returns a writable reference to the resource
+func (w *World) WriteableChildOfResource() (c *ChildOf, done func()) {
+	return w.resourceEntity.WritableChildOf()
+}
+
 //#endregion
 
 //#region Iterators

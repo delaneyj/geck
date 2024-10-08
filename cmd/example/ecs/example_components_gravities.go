@@ -29,6 +29,14 @@ func (e Entity) ReadGravity() (Gravity, bool) {
 	return e.w.gravitiesStore.Read(e)
 }
 
+func (e Entity) MustReadGravity() Gravity {
+	c, ok := e.w.gravitiesStore.Read(e)
+	if !ok {
+		panic("Gravity not found")
+	}
+	return c
+}
+
 func (e Entity) RemoveGravity() Entity {
 	e.w.gravitiesStore.Remove(e)
 
@@ -92,6 +100,11 @@ func (w *World) RemoveGravityResource() Entity {
 	w.resourceEntity.RemoveGravity()
 
 	return w.resourceEntity
+}
+
+// WriteableGravityResource returns a writable reference to the resource
+func (w *World) WriteableGravityResource() (c *Gravity, done func()) {
+	return w.resourceEntity.WritableGravity()
 }
 
 //#endregion

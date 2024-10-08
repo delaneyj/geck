@@ -101,6 +101,11 @@ func (w *World) RemoveDockedToResource() Entity {
 	return w.resourceEntity
 }
 
+// WriteableDockedToResource returns a writable reference to the resource
+func (w *World) WriteableDockedToResource() (c *DockedTo, done func()) {
+	return w.resourceEntity.WritableDockedTo()
+}
+
 //#endregion
 
 //#region Iterators

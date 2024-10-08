@@ -10,6 +10,18 @@ type Velocity struct {
 	Z float32 `json:"z"`
 }
 
+func (w *World) NewVelocity(
+	xField float32,
+	yField float32,
+	zField float32,
+) Velocity {
+	return Velocity{
+		X: xField,
+		Y: yField,
+		Z: zField,
+	}
+}
+
 func (w *World) ResetVelocity() Velocity {
 	return Velocity{
 		X: 0.000000,
@@ -27,6 +39,14 @@ func (e Entity) HasVelocity() bool {
 
 func (e Entity) ReadVelocity() (Velocity, bool) {
 	return e.w.velocitiesStore.Read(e)
+}
+
+func (e Entity) MustReadVelocity() Velocity {
+	c, ok := e.w.velocitiesStore.Read(e)
+	if !ok {
+		panic("Velocity not found")
+	}
+	return c
 }
 
 func (e Entity) RemoveVelocity() Entity {
@@ -130,6 +150,11 @@ func (w *World) RemoveVelocityResource() Entity {
 
 	w.PositionVelocitySet.PossibleUpdate(w.resourceEntity)
 	return w.resourceEntity
+}
+
+// WriteableVelocityResource returns a writable reference to the resource
+func (w *World) WriteableVelocityResource() (c *Velocity, done func()) {
+	return w.resourceEntity.WritableVelocity()
 }
 
 //#endregion

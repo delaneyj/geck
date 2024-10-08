@@ -9,6 +9,16 @@ type Eats struct {
 	Amounts  []uint8  `json:"amounts"`
 }
 
+func (w *World) NewEats(
+	entitiesField []Entity,
+	amountsField []uint8,
+) Eats {
+	return Eats{
+		Entities: entitiesField,
+		Amounts:  amountsField,
+	}
+}
+
 func (w *World) ResetEats() Eats {
 	return Eats{
 		Entities: nil,
@@ -25,6 +35,14 @@ func (e Entity) HasEats() bool {
 
 func (e Entity) ReadEats() (Eats, bool) {
 	return e.w.eatsStore.Read(e)
+}
+
+func (e Entity) MustReadEats() Eats {
+	c, ok := e.w.eatsStore.Read(e)
+	if !ok {
+		panic("Eats not found")
+	}
+	return c
 }
 
 func (e Entity) RemoveEats() Entity {
@@ -66,10 +84,10 @@ func (e Entity) SetEatsValues(
 	pb := &ecspb.EatsComponent{
 
 		Entities: EntitiesToU32s(entities0...),
-		Amounts:  make([]uint32, len(amounts1)),
+		Amounts:  make([]uint8, len(amounts1)),
 	}
 	for i, v := range amounts1 {
-		pb.Amounts[i] = uint32(v)
+		pb.Amounts[i] = uint8(v)
 	}
 	e.w.patch.EatsComponents[e.w.resourceEntity.val] = pb
 	return e
@@ -123,6 +141,11 @@ func (w *World) RemoveEatsResource() Entity {
 	w.resourceEntity.RemoveEats()
 
 	return w.resourceEntity
+}
+
+// WriteableEatsResource returns a writable reference to the resource
+func (w *World) WriteableEatsResource() (c *Eats, done func()) {
+	return w.resourceEntity.WritableEats()
 }
 
 //#endregion
@@ -235,13 +258,13 @@ func (w *World) ApplyEatsPatch(e Entity, patch *ecspb.EatsComponent) Entity {
 func (c Eats) ToPB() *ecspb.EatsComponent {
 	pb := &ecspb.EatsComponent{
 		Entities: EntitiesToU32s(c.Entities...),
-		Amounts:  make([]uint32, len(c.Amounts)),
+		Amounts:  make([]uint8, len(c.Amounts)),
 	}
 	for i, v := range c.Entities {
 		pb.Entities[i] = v.val
 	}
 	for i, v := range c.Amounts {
-		pb.Amounts[i] = uint32(v)
+		pb.Amounts[i] = uint8(v)
 	}
 	return pb
 }

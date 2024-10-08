@@ -11,6 +11,20 @@ type Rotation struct {
 	W float32 `json:"w"`
 }
 
+func (w *World) NewRotation(
+	xField float32,
+	yField float32,
+	zField float32,
+	wField float32,
+) Rotation {
+	return Rotation{
+		X: xField,
+		Y: yField,
+		Z: zField,
+		W: wField,
+	}
+}
+
 func (w *World) ResetRotation() Rotation {
 	return Rotation{
 		X: 0.000000,
@@ -29,6 +43,14 @@ func (e Entity) HasRotation() bool {
 
 func (e Entity) ReadRotation() (Rotation, bool) {
 	return e.w.rotationsStore.Read(e)
+}
+
+func (e Entity) MustReadRotation() Rotation {
+	c, ok := e.w.rotationsStore.Read(e)
+	if !ok {
+		panic("Rotation not found")
+	}
+	return c
 }
 
 func (e Entity) RemoveRotation() Entity {
@@ -133,6 +155,11 @@ func (w *World) RemoveRotationResource() Entity {
 	w.resourceEntity.RemoveRotation()
 
 	return w.resourceEntity
+}
+
+// WriteableRotationResource returns a writable reference to the resource
+func (w *World) WriteableRotationResource() (c *Rotation, done func()) {
+	return w.resourceEntity.WritableRotation()
 }
 
 //#endregion

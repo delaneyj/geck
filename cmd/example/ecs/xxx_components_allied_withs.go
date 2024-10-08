@@ -14,6 +14,10 @@ func (c AlliedWith) ToEntity() []Entity {
 	return []Entity(c)
 }
 
+func AlliedWithFromPB(w *World, pb *ecspb.AlliedWithComponent) AlliedWith {
+	return AlliedWith(w.EntitiesFromU32s(pb.Entity...))
+}
+
 func (c AlliedWith) ToEntities() []Entity {
 	entities := make([]Entity, len(c))
 	copy(entities, c)
@@ -39,6 +43,14 @@ func AlliedWithFromEntities(e ...Entity) AlliedWith {
 
 func (e Entity) HasAlliedWith() bool {
 	return e.w.alliedWithsStore.Has(e)
+}
+
+func (e Entity) MustReadAlliedWith() AlliedWith {
+	c, ok := e.w.alliedWithsStore.Read(e)
+	if !ok {
+		panic("AlliedWith not found")
+	}
+	return c
 }
 
 func (e Entity) ReadAlliedWith() ([]Entity, bool) {
@@ -144,6 +156,11 @@ func (w *World) RemoveAlliedWithResource() Entity {
 	w.resourceEntity.RemoveAlliedWith()
 
 	return w.resourceEntity
+}
+
+// WriteableAlliedWithResource returns a writable reference to the resource
+func (w *World) WriteableAlliedWithResource() (c *AlliedWith, done func()) {
+	return w.resourceEntity.WritableAlliedWith()
 }
 
 //#endregion

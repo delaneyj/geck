@@ -14,6 +14,10 @@ func (c Grows) ToEntity() []Entity {
 	return []Entity(c)
 }
 
+func GrowsFromPB(w *World, pb *ecspb.GrowsComponent) Grows {
+	return Grows(w.EntitiesFromU32s(pb.Entity...))
+}
+
 func (c Grows) ToEntities() []Entity {
 	entities := make([]Entity, len(c))
 	copy(entities, c)
@@ -39,6 +43,14 @@ func GrowsFromEntities(e ...Entity) Grows {
 
 func (e Entity) HasGrows() bool {
 	return e.w.growsStore.Has(e)
+}
+
+func (e Entity) MustReadGrows() Grows {
+	c, ok := e.w.growsStore.Read(e)
+	if !ok {
+		panic("Grows not found")
+	}
+	return c
 }
 
 func (e Entity) ReadGrows() ([]Entity, bool) {
@@ -144,6 +156,11 @@ func (w *World) RemoveGrowsResource() Entity {
 	w.resourceEntity.RemoveGrows()
 
 	return w.resourceEntity
+}
+
+// WriteableGrowsResource returns a writable reference to the resource
+func (w *World) WriteableGrowsResource() (c *Grows, done func()) {
+	return w.resourceEntity.WritableGrows()
 }
 
 //#endregion
