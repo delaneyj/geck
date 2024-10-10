@@ -1,0 +1,45 @@
+package generator
+
+{% import "fmt" %}
+
+{% func enumTemplate(data *enumTmplData) %}
+package {%s data.PackageName %}
+    
+{% code
+enumName := fmt.Sprintf("Enum%s", data.Name.Singular.Pascal)
+%}
+type {%s enumName %} uint32
+
+const (
+    {%- for _, value := range data.Values -%}
+    {%s enumName %}{%s value.Name.Singular.Pascal %} {%s enumName %} = {%d value.Value %}
+    {%- endfor -%}
+)
+
+func {%s enumName %}FromString(value string) {%s enumName %} {
+    switch value {
+    {%- for _, value := range data.Values -%}
+    case "{%s value.Name.Singular.Snake %}":
+        return {%s enumName %}{%s value.Name.Singular.Pascal %}
+    {%- endfor -%}
+    default:
+        panic(fmt.Sprintf("Unknown value for {%s enumName %}: %s", value))
+    }
+}
+
+func (e {%s enumName %}) String() string {
+    switch e {
+    {%- for _, value := range data.Values -%}
+    case {%s enumName %}{%s value.Name.Singular.Pascal %}:
+        return "{%s value.Name.Singular.Snake %}"
+    {%- endfor -%}
+    default:
+        panic(fmt.Sprintf("Unknown value for {%s enumName %}: %d", e))
+    }
+}
+
+func (e {%s enumName %}) U32() uint32 {
+    return uint32(e)
+}
+
+{% endfunc %}

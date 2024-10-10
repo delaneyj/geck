@@ -1,6 +1,7 @@
-package ecs
+package generator
 
-import "slices"
+{% func entitiesTemplate(data *ecsTmplData) %}
+package {%s data.PackageName %}
 
 const (
 	indexBits      = 12
@@ -21,6 +22,7 @@ func NewEntity(index, generation int) Entity {
 func (e Entity) Index() int {
 	return int(e>>generationBits) & indexMask
 }
+
 
 func (e Entity) Generation() int {
 	return int(e) & generationMask
@@ -48,26 +50,26 @@ func SortEntities(fn func(yield func(entity Entity) bool)) []Entity {
 
 type EntityBuilderOption func(w *World, entity Entity)
 
-func (w *World) CreateEntities(count int, opts ...EntityBuilderOption) []Entity {
-	entities := make([]Entity, count)
-	for i := range entities {
-		var entity Entity
-
-		if w.freeEntities.IsEmpty() {
-			entity = Entity(w.nextEntityID)
-			w.nextEntityID++
-		} else {
-			entity = Entity(w.freeEntities.Minimum())
-			w.freeEntities.Remove(uint32(entity))
-		}
-		w.livingEntities.Add(uint32(entity))
-		entities[i] = entity
+func(w *World) CreateEntities(count int, opts ...EntityBuilderOption) []Entity{
+    entities := make([]Entity, count)
+    for i := range entities {
+        var entity Entity
+        
+        if w.freeEntities.IsEmpty() {
+            entity = Entity(w.nextEntityID)
+            w.nextEntityID++
+        } else {
+            entity = Entity(w.freeEntities.Minimum())
+            w.freeEntities.Remove(uint32(entity))
+        }
+        w.livingEntities.Add(uint32(entity))
+        entities[i] = entity
 
 		for _, opt := range opts {
 			opt(w, entity)
 		}
-	}
-	return entities
+    }
+    return entities
 }
 
 func (w *World) CreateEntity(opts ...EntityBuilderOption) Entity {
@@ -92,3 +94,5 @@ func (w *World) All(yield func(entity Entity) bool) {
 		}
 	}
 }
+
+{% endfunc %}   

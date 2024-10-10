@@ -1,106 +1,54 @@
 package ecs
 
-import "google.golang.org/protobuf/types/known/emptypb"
+func (w *World) UpsertSpacestationTag(entities ...Entity) (anyUpdated bool) {
+	for _, e := range entities {
+		if _, updated := w.spacestationTags.Upsert(e, empty{}); updated {
+			anyUpdated = true
+		}
+	}
 
-type Spacestation struct{}
-
-//#region Events
-//#endregion
-
-func (e Entity) HasSpacestationTag() bool {
-	return e.w.spacestationStore.Has(e)
+	return anyUpdated
 }
 
-func (e Entity) TagWithSpacestation() Entity {
-	e.w.spacestationStore.Set(e.w.spacestationStore.zero, e)
-	e.w.patch.SpacestationTags[e.val] = empty
-	return e
+func (w *World) RemoveSpacestationTag(entities ...Entity) (anyRemoved bool) {
+	for _, e := range entities {
+		if removed := w.spacestationTags.Remove(e); removed {
+			anyRemoved = true
+		}
+	}
+	return anyRemoved
 }
 
-func (e Entity) RemoveSpacestationTag() Entity {
-	e.w.spacestationStore.Remove(e)
-	e.w.patch.SpacestationTags[e.val] = nil
-	return e
+func (w *World) HasSpacestationTag(entity Entity) bool {
+	return w.spacestationTags.Contains(entity)
 }
 
-func (w *World) RemoveSpacestationTags(entities ...Entity) {
-	w.spacestationStore.Remove(entities...)
-	for _, entity := range entities {
-		w.patch.SpacestationTags[entity.val] = nil
+func (w *World) AllSpacestationTags(yield func(e Entity) bool) {
+	for e := range w.spacestationTags.All {
+		if !yield(e) {
+			break
+		}
 	}
 }
 
-//#region Iterators
-
-type SpacestationReadIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Spacestation]
-}
-
-func (iter *SpacestationReadIterator) HasNext() bool {
-	return iter.currIdx < iter.store.Len()
-}
-
-func (iter *SpacestationReadIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx++
-	return e
-}
-
-func (iter *SpacestationReadIterator) Reset() {
-	iter.currIdx = 0
-}
-
-func (w *World) SpacestationReadIter() *SpacestationReadIterator {
-	iter := &SpacestationReadIterator{
-		w:     w,
-		store: w.spacestationStore,
+// SpacestationBuilder
+func WithSpacestationTag() EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.spacestationTags.Upsert(e, empty{})
 	}
-	iter.Reset()
-	return iter
 }
 
-type SpacestationWriteIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Spacestation]
+// Resource
+func (w *World) ResourceUpsertSpacestationTag() {
+	w.spacestationTags.Upsert(w.resourceEntity, empty{})
 }
 
-func (iter *SpacestationWriteIterator) HasNext() bool {
-	return iter.currIdx >= 0
+func (w *World) ResourceRemoveSpacestationTag() {
+	w.spacestationTags.Remove(w.resourceEntity)
 }
 
-func (iter *SpacestationWriteIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx--
-
-	return e
+func (w *World) ResourceHasSpacestationTag() bool {
+	return w.spacestationTags.Contains(w.resourceEntity)
 }
 
-func (iter *SpacestationWriteIterator) Reset() {
-	iter.currIdx = iter.store.Len() - 1
-}
-
-func (w *World) SpacestationWriteIter() *SpacestationWriteIterator {
-	iter := &SpacestationWriteIterator{
-		w:     w,
-		store: w.spacestationStore,
-	}
-	iter.Reset()
-	return iter
-}
-
-//#endregion
-
-func (w *World) SpacestationEntities() []Entity {
-	return w.spacestationStore.entities()
-}
-
-func (w *World) ApplySpacestationPatch(e Entity, pb *emptypb.Empty) Entity {
-	if pb == nil {
-		e.RemoveSpacestationTag()
-	}
-	e.TagWithSpacestation()
-	return e
-}
+// Events

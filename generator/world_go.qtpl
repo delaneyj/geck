@@ -1,0 +1,102 @@
+package generator
+
+
+{%- func worldTemplate(data *ecsTmplData) -%}
+package {%s data.PackageName %}
+
+import (
+    "github.com/RoaringBitmap/roaring"
+    "github.com/btvoidx/mint"
+)
+
+type empty struct{}
+
+type World struct{
+    nextEntityID uint32
+    livingEntities,freeEntities *roaring.Bitmap
+    resourceEntity Entity
+    systems []SystemTicker
+    eventBus *mint.Emitter
+
+    // Tags
+    {%- for _, c := range data.Components -%}
+    {%- if c.IsTag -%}
+    {%s c.Name.Singular.Camel %}Tags *SparseSet[empty]
+    {%- endif -%}
+    {%- endfor -%}
+
+    // Components
+    {%- for _, c := range data.Components -%}
+    {%- if !c.IsTag -%}
+    {%s c.Name.Singular.Camel %}Components *SparseSet[{%s c.Name.Singular.Pascal %}]
+    {%- endif -%}
+    {%- endfor -%}
+}
+
+func NewWorld() *World{
+    w := &World{
+        nextEntityID: 0,
+        livingEntities: roaring.New(),
+        freeEntities: roaring.New(),
+        eventBus: &mint.Emitter{},
+
+        // Initialize tags
+        {%- for _, c := range data.Components -%}
+            {%- if c.IsTag -%}
+                {%s c.Name.Singular.Camel %}Tags : NewSparseSet[empty](),
+            {%- endif -%}
+        {%- endfor -%}
+
+
+        // Initialize components
+        {%- for _, c := range data.Components -%}
+            {%- if !c.IsTag -%}
+                {%s c.Name.Singular.Camel %}Components: NewSparseSet[{%s c.Name.Singular.Pascal %}](),
+            {%- endif -%}
+        {%- endfor -%}
+    }
+    w.resourceEntity = w.CreateEntity()
+
+    
+
+
+    return w
+}
+
+func(w *World)  AddSystems(systems ...System) error{
+    for _, s := range systems{
+        if err := s.Initialize(w); err != nil{
+            return fmt.Errorf("failed to initialize system: %w", err)
+        }
+
+        sysTicker, ok := s.(SystemTicker)
+        if !ok{
+            continue
+        }
+
+        w.systems = append(w.systems, sysTicker)
+    }
+
+    return nil
+}
+
+func (w *World) Tick() error{
+    for _, s := range w.systems{
+        if err := s.Tick(w); err != nil{
+            return err
+        }
+    }
+    return nil
+}
+
+type System interface{
+    Initialize(w *World) error
+    ReliesOn( func(reliedOn System) bool)
+}
+
+type SystemTicker interface{
+    System
+    Tick(w *World) error
+}
+
+{%- endfunc -%}

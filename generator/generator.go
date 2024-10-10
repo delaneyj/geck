@@ -2,29 +2,21 @@ package generator
 
 import (
 	"context"
-	"embed"
+	"errors"
 	"fmt"
-	"io/fs"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
-	"text/template"
 	"time"
 
-	"golang.org/x/mod/modfile"
-
-	sprig "github.com/Masterminds/sprig/v3"
 	geckpb "github.com/delaneyj/geck/pb/gen/geck/v1"
 	"github.com/delaneyj/toolbelt"
 	"github.com/go-openapi/inflect"
 	"github.com/samber/lo"
 )
-
-//go:embed templates/*
-var templatesFS embed.FS
 
 type InflectionString struct {
 	Singular toolbelt.CasedString
@@ -37,58 +29,56 @@ type enumEntryTmplData struct {
 }
 
 type enumTmplData struct {
-	PackageName  string
-	PBImportPath string
-	BundleName   toolbelt.CasedString
-	Name         InflectionString
-	Values       []*enumEntryTmplData
-	IsBitmask    bool
+	PackageName string
+	Folder      string
+	BundleName  toolbelt.CasedString
+	Name        InflectionString
+	Values      []*enumEntryTmplData
+	IsBitmask   bool
 }
 type ecsTmplData struct {
-	PackageName   string
-	PBImportPath  string
-	FolderPath    string
-	Enums         []*enumTmplData
-	Components    []*componentTmplData
-	ComponentSets []*componentSetTmplData
+	PackageName string
+	FolderPath  string
+	Enums       []*enumTmplData
+	Components  []*componentTmplData
+	Queries     []*queryTmplData
 }
 type fieldTemplateData struct {
-	Name               InflectionString
-	Type               InflectionString
-	PBType, PBFromType string
-	PBTypeSingular     string
-	PBNeedsCast        bool
-	Description        string
-	ResetValue         string
-	IsSlice, IsEntity  bool
+	Name              InflectionString
+	Type              InflectionString
+	Description       string
+	ResetValue        string
+	IsSlice, IsEntity bool
 }
 
 type componentTmplData struct {
 	PackageName                                        string
-	PBImportPath                                       string
+	Folder                                             string
 	BundleName                                         toolbelt.CasedString
+	PBImportPath                                       string
 	Name                                               InflectionString
 	Description                                        string
 	Fields                                             []fieldTemplateData
 	IsTag                                              bool
 	IsOnlyOneField, IsFirstFieldEntity, IsFirstSlice   bool
 	ShouldGenAdded, ShouldGenRemoved, ShouldGenChanged bool
+	HasAnyEvents                                       bool
 	ResetValue                                         string
-	OwnedBySet                                         *componentSetTmplData
+	OwnedBySet                                         *queryTmplData
 }
 
-type componentSetEntryTmplData struct {
-	Name       InflectionString
-	IsWritable bool
+type queryEntryTmplData struct {
+	BundleName     toolbelt.CasedString
+	Name           InflectionString
+	IsMutable      bool
+	ComponentOrTag *componentTmplData
 }
 
-type componentSetTmplData struct {
-	PackageName            string
-	Name                   InflectionString
-	HasWriteableComponents bool
-	OwnedComponents        []*componentSetEntryTmplData
-	BorrowedComponents     []*componentSetEntryTmplData
-	EmptyWildcardString    string
+type queryTmplData struct {
+	PackageName string
+	Folder      string
+	Name        InflectionString
+	Entries     []*queryEntryTmplData
 }
 
 func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
@@ -110,18 +100,6 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 		return fmt.Errorf("failed to create folder: %w", err)
 	}
 
-	templatesSubFS, err := fs.Sub(templatesFS, "templates")
-	if err != nil {
-		return fmt.Errorf("failed to access templates: %w", err)
-	}
-	tmpls, err := template.New("root").
-		Funcs(sprig.FuncMap()).
-		ParseFS(templatesSubFS, "*.gtpl")
-	if err != nil {
-		return fmt.Errorf("failed to parse templates: %w", err)
-	}
-	tmpls.Funcs(sprig.FuncMap())
-
 	log.Printf("Converting options to data")
 	data, err := optsToData(opts)
 	if err != nil {
@@ -129,44 +107,35 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 	}
 
 	log.Printf("Generating universal files")
-	if err := generateFiles(tmpls, data,
-		"entities.go",
-		"events.go",
-		"sparse_sets.go",
-		"sparse_sets_test.go",
-		"sparse_sets_timsort.go",
-		"world.go",
+	if err := errors.Join(
+		generateFile("world.go", data, worldTemplate),
+		generateFile("sparse_set.go", data, sparseSetTemplate),
+		generateFile("entities.go", data, entitiesTemplate),
+		generateFile("events.go", data, eventsTemplate),
 	); err != nil {
+
 		return fmt.Errorf("failed to generate top level files: %w", err)
 	}
 
 	log.Printf("Generating enum files")
 	for _, enum := range data.Enums {
-		log.Printf("\t%s", enum.Name.Plural.Pascal)
-		if err := generateEnum(tmpls, data, enum); err != nil {
-			return fmt.Errorf("failed to generate bundle: %w", err)
+		if err := generateEnum(enum); err != nil {
+			return fmt.Errorf("failed to generate enum: %w", err)
 		}
 	}
 
 	log.Printf("Generating component files")
 	for _, component := range data.Components {
-		log.Printf("\t%s", component.Name.Plural.Pascal)
-		if err := generateComponent(tmpls, data, component); err != nil {
-			return fmt.Errorf("failed to generate bundle: %w", err)
+		if err := generateComponent(component); err != nil {
+			return fmt.Errorf("failed to generate component: %w", err)
 		}
 	}
 
-	log.Printf("Generating component set files")
-	for _, set := range data.ComponentSets {
-		log.Printf("\t%s", set.Name.Plural.Pascal)
-		if err := generateComponentSet(tmpls, data, set); err != nil {
-			return fmt.Errorf("failed to generate bundle: %w", err)
+	log.Printf("Generating query files")
+	for _, query := range data.Queries {
+		if err := generateQueries(query); err != nil {
+			return fmt.Errorf("failed to generate query: %w", err)
 		}
-	}
-
-	log.Printf("Generate protobufs")
-	if err := generateProtobufs(tmpls, data); err != nil {
-		return fmt.Errorf("failed to generate protobufs: %w", err)
 	}
 
 	log.Printf("Running post generation commands")
@@ -175,15 +144,6 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 		cmds   []string
 	}
 	postGenCmds := []postGenCmdSet{
-		{
-			subdir: "pb",
-			cmds: []string{
-				"go install github.com/bufbuild/buf/cmd/buf@latest",
-				"clang-format -i ecs/v1/ecs.proto",
-				"buf dep update",
-				"buf generate",
-			},
-		},
 		{
 			subdir: "",
 			cmds: []string{
@@ -226,43 +186,6 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 		FolderPath:  opts.FolderPath,
 	}
 
-	startPath, err := filepath.Abs(".")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get absolute path: %w", err)
-	}
-	currPath, err := filepath.Abs(opts.FolderPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get absolute path: %w", err)
-	}
-	var goModPath, goModFolder string
-	for goModPath == "" || currPath != "/" {
-		goModPossiblePath := filepath.Join(currPath, "go.mod")
-		if _, err := os.Stat(goModPossiblePath); err == nil {
-			goModPath = goModPossiblePath
-			goModFolder = currPath
-			break
-		}
-		currPath = filepath.Dir(currPath)
-	}
-
-	goModBytes, err := os.ReadFile(goModPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read go.mod: %w", err)
-	}
-	modFile, err := modfile.Parse("go.mod", goModBytes, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse go.mod: %w", err)
-	}
-	genFolder := filepath.Join(startPath, opts.FolderPath)
-
-	pbFolder := filepath.Join(genFolder, "pb", "gen", opts.PackageName, fmt.Sprintf("v%d", opts.Version))
-	pbBasePath, err := filepath.Rel(goModFolder, pbFolder)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get relative path: %w", err)
-	}
-
-	data.PBImportPath = filepath.Join(modFile.Module.Mod.Path, pbBasePath)
-
 	inflectionStrings := func(s string, shouldInflect bool) InflectionString {
 		singular, plural := s, s
 		if shouldInflect {
@@ -275,7 +198,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 		}
 	}
 
-	componentByNames := map[string]*componentTmplData{}
+	componentByNames := map[string]map[string]*componentTmplData{}
 	for _, bundleDef := range opts.Bundles {
 		bundleName := toolbelt.ToCasedString(bundleDef.Name)
 
@@ -285,11 +208,11 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 			}
 
 			enum := &enumTmplData{
-				PackageName:  opts.PackageName,
-				PBImportPath: data.PBImportPath,
-				BundleName:   bundleName,
-				Name:         inflectionStrings(ed.Name, true),
-				IsBitmask:    ed.IsBitmask,
+				PackageName: data.PackageName,
+				Folder:      opts.FolderPath,
+				BundleName:  bundleName,
+				Name:        inflectionStrings(ed.Name, true),
+				IsBitmask:   ed.IsBitmask,
 				Values: lo.Map(ed.Values, func(v *geckpb.Enum_Value, i int) *enumEntryTmplData {
 					return &enumEntryTmplData{
 						Name:  inflectionStrings(v.Name, true),
@@ -310,7 +233,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 			if enum.Values[0].Value != 0 {
 				enum.Values = append([]*enumEntryTmplData{
 					{
-						Name:  inflectionStrings(enum.Name.Singular.Pascal+"_Unknown", false),
+						Name:  inflectionStrings("Unknown", false),
 						Value: 0,
 					},
 				}, enum.Values...)
@@ -319,13 +242,14 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 			data.Enums = append(data.Enums, enum)
 		}
 
+		bundleComponentNames := map[string]*componentTmplData{}
 		for _, cd := range bundleDef.Components {
 			isTag := len(cd.Fields) == 0
 
 			component := &componentTmplData{
+				PackageName:      data.PackageName,
+				Folder:           opts.FolderPath,
 				BundleName:       bundleName,
-				PackageName:      opts.PackageName,
-				PBImportPath:     data.PBImportPath,
 				Name:             inflectionStrings(cd.Name, !isTag && !cd.ShouldNotInflect),
 				Description:      cd.Description,
 				IsTag:            isTag,
@@ -334,7 +258,11 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 				ShouldGenChanged: cd.ShouldGenerateChangedEvent,
 			}
 
-			componentByNames[cd.Name] = component
+			if component.ShouldGenAdded || component.ShouldGenRemoved || component.ShouldGenChanged {
+				component.HasAnyEvents = true
+			}
+
+			bundleComponentNames[cd.Name] = component
 
 			if len(cd.Fields) == 1 {
 				component.IsOnlyOneField = true
@@ -358,14 +286,10 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 				switch f.ResetValue.(type) {
 				case *geckpb.FieldDefinition_U8:
 					typ = "uint8"
-					ftd.PBType = "uint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU8())
-					ftd.PBNeedsCast = true
 				case *geckpb.FieldDefinition_U16:
 					typ = "uint16"
-					ftd.PBType = "uint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU16())
-					ftd.PBNeedsCast = true
 				case *geckpb.FieldDefinition_U32:
 					typ = "uint32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU32())
@@ -374,44 +298,30 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetU64())
 				case *geckpb.FieldDefinition_I8:
 					typ = "int8"
-					ftd.PBType = "sint32"
-					ftd.PBFromType = "int32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI8())
-					ftd.PBNeedsCast = true
 				case *geckpb.FieldDefinition_I16:
 					typ = "int16"
-					ftd.PBType = "sint32"
-					ftd.PBFromType = "int32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI16())
-					ftd.PBNeedsCast = true
 				case *geckpb.FieldDefinition_I32:
 					typ = "int32"
-					ftd.PBType = "sint32"
-					ftd.PBFromType = "int32"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI32())
 				case *geckpb.FieldDefinition_I64:
 					typ = "int64"
-					ftd.PBType = "sint64"
-					ftd.PBFromType = "int64"
 					ftd.ResetValue = fmt.Sprintf("%d", f.GetI64())
 				case *geckpb.FieldDefinition_F32:
 					typ = "float32"
-					ftd.PBType = "float"
 					ftd.ResetValue = fmt.Sprintf("%f", f.GetF32())
 				case *geckpb.FieldDefinition_F64:
 					typ = "float64"
-					ftd.PBType = "double"
 					ftd.ResetValue = fmt.Sprintf("%f", f.GetF64())
 				case *geckpb.FieldDefinition_Txt:
 					typ = "string"
 					ftd.ResetValue = fmt.Sprintf(`"%s"`, f.GetTxt())
 				case *geckpb.FieldDefinition_Bin:
 					typ = "[]byte"
-					ftd.PBType = "bytes"
 					ftd.ResetValue = fmt.Sprintf("[]byte(%v)", f.GetBin())
 				case *geckpb.FieldDefinition_Entity:
 					typ = "Entity"
-					ftd.PBType = "uint32"
 					ftd.ResetValue = "w.EntityFromU32(0)"
 					ftd.IsEntity = true
 				case *geckpb.FieldDefinition_Enum:
@@ -428,7 +338,6 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 					if enum == nil {
 						return nil, fmt.Errorf("enum not found: %s", f.Name)
 					}
-					ftd.PBType = typ + "Enum"
 					typ = "Enum" + typ
 					ftd.ResetValue = fmt.Sprintf("%s(%d)", typ, e.Value)
 
@@ -436,15 +345,9 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 					return nil, fmt.Errorf("unknown field type: %T", f.ResetValue)
 				}
 
-				if ftd.PBType == "" {
-					ftd.PBType = typ
-				}
-				ftd.PBTypeSingular = ftd.PBType
-
 				if f.HasMultiple {
 					typ = "[]" + typ
 					ftd.ResetValue = "nil"
-					ftd.PBType = "repeated " + ftd.PBType
 				}
 
 				ftd.Type = inflectionStrings(typ, cd.ShouldNotInflect)
@@ -476,154 +379,177 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 			}
 			data.Components = append(data.Components, component)
 		}
+
+		componentByNames[bundleName.Pascal] = bundleComponentNames
 	}
 
-	for _, sd := range opts.ComponentSets {
-		set := &componentSetTmplData{
-			PackageName: opts.PackageName,
+	log.Printf("%+v", componentByNames)
+
+	for _, queryDef := range opts.Queries {
+		if len(queryDef.Entries) == 0 {
+			return nil, fmt.Errorf("query must have at least one component or tag")
 		}
 
-		componentNames := []string{}
-		componentEntry := func(cd *geckpb.ComponentSetDefinition_Component) (*componentSetEntryTmplData, error) {
-			componentNames = append(componentNames, cd.Name)
-			c, ok := componentByNames[cd.Name]
+		query := &queryTmplData{
+			PackageName: opts.PackageName,
+			Folder:      opts.FolderPath,
+		}
+
+		type Name struct {
+			Bundle string
+			Name   string
+		}
+		names := []Name{}
+		componentOrTagEntry := func(cd *geckpb.QueryDefinition_ComponentOrTag) (*queryEntryTmplData, error) {
+			bundleName := toolbelt.ToCasedString(cd.BundleName)
+			bundleNames := componentByNames[bundleName.Pascal]
+			if bundleNames == nil {
+				return nil, fmt.Errorf("bundle not found: %s", cd.BundleName)
+			}
+
+			c, ok := bundleNames[cd.Name]
 			if !ok {
 				return nil, fmt.Errorf("component not found: %s", cd.Name)
 			}
-			ce := &componentSetEntryTmplData{
-				Name:       c.Name,
-				IsWritable: cd.IsWriteable,
+
+			if cd.IsMutable && c.IsTag {
+				return nil, fmt.Errorf("tags cannot be mutable")
 			}
 
-			if cd.IsWriteable {
-				set.HasWriteableComponents = true
+			names = append(names, Name{
+				Bundle: bundleName.Pascal,
+				Name:   c.Name.Singular.Original,
+			})
+			ce := &queryEntryTmplData{
+				BundleName:     bundleName,
+				Name:           c.Name,
+				IsMutable:      cd.IsMutable,
+				ComponentOrTag: c,
 			}
 
 			return ce, nil
 		}
 
-		for _, ed := range sd.Owned {
-			componentEntry, err := componentEntry(ed)
+		for _, def := range queryDef.Entries {
+			componentEntry, err := componentOrTagEntry(def)
 			if err != nil {
 				return nil, err
 			}
-			set.OwnedComponents = append(set.OwnedComponents, componentEntry)
+			query.Entries = append(query.Entries, componentEntry)
 		}
-		for _, ed := range sd.Borrowed {
-			componentEntry, err := componentEntry(ed)
-			if err != nil {
-				return nil, err
+
+		if queryDef.Alias != "" {
+			query.Name = inflectionStrings(queryDef.Alias, true)
+		} else {
+			names = lo.Uniq(names)
+			slices.SortFunc(names, func(a, b Name) int {
+				bundle := strings.Compare(a.Bundle, b.Bundle)
+				if bundle != 0 {
+					return bundle
+				}
+
+				return strings.Compare(a.Name, b.Name)
+			})
+
+			currentBundle := ""
+			nameBuilder := strings.Builder{}
+			for i, n := range names {
+				if n.Bundle != currentBundle {
+					if i > 0 {
+						nameBuilder.WriteString("_")
+					}
+					nameBuilder.WriteString(n.Bundle)
+					currentBundle = n.Bundle
+				}
+
+				if i > 0 {
+					nameBuilder.WriteString("_")
+				}
+				nameBuilder.WriteString(n.Name)
 			}
-			set.OwnedComponents = append(set.OwnedComponents, componentEntry)
+			name := nameBuilder.String()
+			query.Name = inflectionStrings(name, true)
 		}
-		componentNames = lo.Uniq(componentNames)
-		slices.Sort(componentNames)
-		name := strings.Join(componentNames, "_") + "_set"
-		set.Name = inflectionStrings(name, true)
 
-		sb := strings.Builder{}
-		sb.WriteString("e")
-		for i := 0; i < len(set.OwnedComponents)+len(set.BorrowedComponents); i++ {
-			if i == 0 {
-				sb.WriteString(", ")
-			}
-
-			sb.WriteString("_")
-			if i < len(set.OwnedComponents)-1 {
-				sb.WriteString(", ")
-			}
-		}
-		set.EmptyWildcardString = sb.String()
-
-		data.ComponentSets = append(data.ComponentSets, set)
-		for _, ce := range set.OwnedComponents {
-			c, ok := componentByNames[ce.Name.Singular.Original]
-			if !ok {
-				return nil, fmt.Errorf("component not found: %s", ce.Name.Singular.Original)
-			}
-
-			c.OwnedBySet = set
-		}
+		data.Queries = append(data.Queries, query)
 	}
 
 	return data, nil
 }
 
-func generateFiles(tmpls *template.Template, data *ecsTmplData, templateNames ...string) error {
-	for _, templateName := range templateNames {
-		fn := fmt.Sprintf("ecs_%s", templateName)
-		fp := filepath.Join(data.FolderPath, fn)
-		f, err := os.Create(fp)
-		if err != nil {
-			return fmt.Errorf("failed to create world.go: %w", err)
-		}
-		defer f.Close()
+func generateFile(templateName string, data *ecsTmplData, templates func(data *ecsTmplData) string) error {
+	fn := fmt.Sprintf("ecs_%s", templateName)
+	fp := filepath.Join(data.FolderPath, fn)
 
-		if err := tmpls.ExecuteTemplate(f, templateName+".gtpl", data); err != nil {
-			return fmt.Errorf("failed to execute template: %w", err)
-		}
+	contents := templates(data)
+
+	if err := os.WriteFile(fp, []byte(contents), 0644); err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
 	}
+
 	return nil
 }
 
-func generateEnum(tmpls *template.Template, data *ecsTmplData, enum *enumTmplData) error {
-	const prefix = "enums"
+func generateEnum(enum *enumTmplData) error {
 	fp := filepath.Join(
-		data.FolderPath,
+		enum.Folder,
 		fmt.Sprintf(
-			"%s_%s_%s.go",
-			enum.BundleName.Camel,
-			prefix,
+			"%s_enums_%s.go",
+			enum.BundleName.Snake,
 			enum.Name.Plural.Snake,
 		),
 	)
-	enumFile, err := os.Create(fp)
-	if err != nil {
-		return fmt.Errorf("failed to create enum file: %w", err)
+	contents := enumTemplate(enum)
+	if err := os.WriteFile(fp, []byte(contents), 0644); err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
 	}
-	defer enumFile.Close()
 
-	return tmpls.ExecuteTemplate(enumFile, "enums.go.gtpl", enum)
+	return nil
 }
 
-func generateComponent(tmpls *template.Template, data *ecsTmplData, component *componentTmplData) error {
-	prefix := "components"
+func generateComponent(component *componentTmplData) error {
+
+	var prefix, contents string
 	if component.IsTag {
 		prefix = "tags"
+		contents = tagTemplate(component)
+	} else {
+		prefix = "components"
+		contents = componentTemplate(component)
 	}
+
 	fp := filepath.Join(
-		data.FolderPath,
+		component.Folder,
 		fmt.Sprintf(
 			"%s_%s_%s.go",
-			component.BundleName.Camel,
+			component.BundleName.Snake,
 			prefix,
 			component.Name.Plural.Snake,
 		),
 	)
-	componentFile, err := os.Create(fp)
-	if err != nil {
-		return fmt.Errorf("failed to create component file: %w", err)
-	}
-	defer componentFile.Close()
 
-	return tmpls.ExecuteTemplate(componentFile, "components.go.gtpl", component)
+	if err := os.WriteFile(fp, []byte(contents), 0644); err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
+	}
+
+	return nil
 }
 
-func generateComponentSet(tmpls *template.Template, data *ecsTmplData, componentSet *componentSetTmplData) error {
+func generateQueries(query *queryTmplData) error {
 	fp := filepath.Join(
-		data.FolderPath,
+		query.Folder,
 		fmt.Sprintf(
-			"components_%s.go",
-			toolbelt.Snake(componentSet.Name.Plural.Snake),
+			"queries_%s.go",
+			query.Name.Plural.Snake,
 		),
 	)
-	setFile, err := os.Create(fp)
-	if err != nil {
-		return fmt.Errorf("failed to create component set file: %w", err)
-	}
-	defer setFile.Close()
 
-	return tmpls.ExecuteTemplate(setFile, "component_sets.go.gtpl", componentSet)
+	contents := queryTemplate(query)
+	if err := os.WriteFile(fp, []byte(contents), 0644); err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
+	}
+
+	return nil
 }
 
 var builtinBundle = &geckpb.BundleDefinition{
@@ -663,50 +589,4 @@ var builtinBundle = &geckpb.BundleDefinition{
 			},
 		},
 	},
-}
-
-func generateProtobufs(tmpls *template.Template, data *ecsTmplData) error {
-	pbFolder := filepath.Join(data.FolderPath, "pb")
-	if err := os.MkdirAll(pbFolder, 0755); err != nil {
-		return fmt.Errorf("failed to create pb folder: %w", err)
-	}
-
-	topLevelFiles := []string{
-		"buf.gen.yaml",
-		"buf.yaml",
-	}
-
-	for _, filename := range topLevelFiles {
-		fp := filepath.Join(
-			pbFolder,
-			filename,
-		)
-		f, err := os.Create(fp)
-		if err != nil {
-			return fmt.Errorf("failed to create protobuf file: %w", err)
-		}
-		defer f.Close()
-
-		if err := tmpls.ExecuteTemplate(f, filename+".gtpl", data); err != nil {
-			return fmt.Errorf("failed to execute template: %w", err)
-		}
-	}
-
-	// Generate the protobuf files
-	protoPath := filepath.Join(pbFolder, data.PackageName, "v1")
-	if err := os.MkdirAll(protoPath, 0755); err != nil {
-		return fmt.Errorf("failed to create proto folder: %w", err)
-	}
-
-	ecsProto := filepath.Join(protoPath, "ecs.proto")
-	ecsProtoFile, err := os.Create(ecsProto)
-	if err != nil {
-		return fmt.Errorf("failed to create ecs.proto: %w", err)
-	}
-
-	if err := tmpls.ExecuteTemplate(ecsProtoFile, "ecs.proto.gtpl", data); err != nil {
-		return fmt.Errorf("failed to execute template: %w", err)
-	}
-
-	return nil
 }

@@ -1,106 +1,54 @@
 package ecs
 
-import "google.golang.org/protobuf/types/known/emptypb"
+func (w *World) UpsertPlanetTag(entities ...Entity) (anyUpdated bool) {
+	for _, e := range entities {
+		if _, updated := w.planetTags.Upsert(e, empty{}); updated {
+			anyUpdated = true
+		}
+	}
 
-type Planet struct{}
-
-//#region Events
-//#endregion
-
-func (e Entity) HasPlanetTag() bool {
-	return e.w.planetStore.Has(e)
+	return anyUpdated
 }
 
-func (e Entity) TagWithPlanet() Entity {
-	e.w.planetStore.Set(e.w.planetStore.zero, e)
-	e.w.patch.PlanetTags[e.val] = empty
-	return e
+func (w *World) RemovePlanetTag(entities ...Entity) (anyRemoved bool) {
+	for _, e := range entities {
+		if removed := w.planetTags.Remove(e); removed {
+			anyRemoved = true
+		}
+	}
+	return anyRemoved
 }
 
-func (e Entity) RemovePlanetTag() Entity {
-	e.w.planetStore.Remove(e)
-	e.w.patch.PlanetTags[e.val] = nil
-	return e
+func (w *World) HasPlanetTag(entity Entity) bool {
+	return w.planetTags.Contains(entity)
 }
 
-func (w *World) RemovePlanetTags(entities ...Entity) {
-	w.planetStore.Remove(entities...)
-	for _, entity := range entities {
-		w.patch.PlanetTags[entity.val] = nil
+func (w *World) AllPlanetTags(yield func(e Entity) bool) {
+	for e := range w.planetTags.All {
+		if !yield(e) {
+			break
+		}
 	}
 }
 
-//#region Iterators
-
-type PlanetReadIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Planet]
-}
-
-func (iter *PlanetReadIterator) HasNext() bool {
-	return iter.currIdx < iter.store.Len()
-}
-
-func (iter *PlanetReadIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx++
-	return e
-}
-
-func (iter *PlanetReadIterator) Reset() {
-	iter.currIdx = 0
-}
-
-func (w *World) PlanetReadIter() *PlanetReadIterator {
-	iter := &PlanetReadIterator{
-		w:     w,
-		store: w.planetStore,
+// PlanetBuilder
+func WithPlanetTag() EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.planetTags.Upsert(e, empty{})
 	}
-	iter.Reset()
-	return iter
 }
 
-type PlanetWriteIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Planet]
+// Resource
+func (w *World) ResourceUpsertPlanetTag() {
+	w.planetTags.Upsert(w.resourceEntity, empty{})
 }
 
-func (iter *PlanetWriteIterator) HasNext() bool {
-	return iter.currIdx >= 0
+func (w *World) ResourceRemovePlanetTag() {
+	w.planetTags.Remove(w.resourceEntity)
 }
 
-func (iter *PlanetWriteIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx--
-
-	return e
+func (w *World) ResourceHasPlanetTag() bool {
+	return w.planetTags.Contains(w.resourceEntity)
 }
 
-func (iter *PlanetWriteIterator) Reset() {
-	iter.currIdx = iter.store.Len() - 1
-}
-
-func (w *World) PlanetWriteIter() *PlanetWriteIterator {
-	iter := &PlanetWriteIterator{
-		w:     w,
-		store: w.planetStore,
-	}
-	iter.Reset()
-	return iter
-}
-
-//#endregion
-
-func (w *World) PlanetEntities() []Entity {
-	return w.planetStore.entities()
-}
-
-func (w *World) ApplyPlanetPatch(e Entity, pb *emptypb.Empty) Entity {
-	if pb == nil {
-		e.RemovePlanetTag()
-	}
-	e.TagWithPlanet()
-	return e
-}
+// Events

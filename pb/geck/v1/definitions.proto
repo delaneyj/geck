@@ -52,15 +52,6 @@ message ComponentDefinition {
   repeated FieldDefinition fields = 8;
 }
 
-message ComponentSetDefinition {
-  message Component {
-    string name = 1;
-    bool is_writeable = 2;
-  }
-  repeated Component owned = 1;
-  repeated Component borrowed = 2;
-}
-
 message BundleDefinition {
   string name = 1;
   string description = 2;
@@ -68,10 +59,21 @@ message BundleDefinition {
   repeated ComponentDefinition components = 4;
 }
 
+message QueryDefinition {
+  message ComponentOrTag {
+    string bundle_name = 1;
+    string name = 2;
+    bool is_mutable = 3;
+  }
+
+  string alias = 1;
+  repeated ComponentOrTag entries = 2;
+}
+
 message GeneratorOptions {
   string package_name = 1;
   string folder_path = 2;
   uint32 version = 3;
   repeated BundleDefinition bundles = 4;
-  repeated ComponentSetDefinition component_sets = 5;
+  repeated QueryDefinition queries = 5;
 }

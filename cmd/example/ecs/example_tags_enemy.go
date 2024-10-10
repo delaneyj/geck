@@ -1,106 +1,54 @@
 package ecs
 
-import "google.golang.org/protobuf/types/known/emptypb"
+func (w *World) UpsertEnemyTag(entities ...Entity) (anyUpdated bool) {
+	for _, e := range entities {
+		if _, updated := w.enemyTags.Upsert(e, empty{}); updated {
+			anyUpdated = true
+		}
+	}
 
-type Enemy struct{}
-
-//#region Events
-//#endregion
-
-func (e Entity) HasEnemyTag() bool {
-	return e.w.enemyStore.Has(e)
+	return anyUpdated
 }
 
-func (e Entity) TagWithEnemy() Entity {
-	e.w.enemyStore.Set(e.w.enemyStore.zero, e)
-	e.w.patch.EnemyTags[e.val] = empty
-	return e
+func (w *World) RemoveEnemyTag(entities ...Entity) (anyRemoved bool) {
+	for _, e := range entities {
+		if removed := w.enemyTags.Remove(e); removed {
+			anyRemoved = true
+		}
+	}
+	return anyRemoved
 }
 
-func (e Entity) RemoveEnemyTag() Entity {
-	e.w.enemyStore.Remove(e)
-	e.w.patch.EnemyTags[e.val] = nil
-	return e
+func (w *World) HasEnemyTag(entity Entity) bool {
+	return w.enemyTags.Contains(entity)
 }
 
-func (w *World) RemoveEnemyTags(entities ...Entity) {
-	w.enemyStore.Remove(entities...)
-	for _, entity := range entities {
-		w.patch.EnemyTags[entity.val] = nil
+func (w *World) AllEnemyTags(yield func(e Entity) bool) {
+	for e := range w.enemyTags.All {
+		if !yield(e) {
+			break
+		}
 	}
 }
 
-//#region Iterators
-
-type EnemyReadIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Enemy]
-}
-
-func (iter *EnemyReadIterator) HasNext() bool {
-	return iter.currIdx < iter.store.Len()
-}
-
-func (iter *EnemyReadIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx++
-	return e
-}
-
-func (iter *EnemyReadIterator) Reset() {
-	iter.currIdx = 0
-}
-
-func (w *World) EnemyReadIter() *EnemyReadIterator {
-	iter := &EnemyReadIterator{
-		w:     w,
-		store: w.enemyStore,
+// EnemyBuilder
+func WithEnemyTag() EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.enemyTags.Upsert(e, empty{})
 	}
-	iter.Reset()
-	return iter
 }
 
-type EnemyWriteIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Enemy]
+// Resource
+func (w *World) ResourceUpsertEnemyTag() {
+	w.enemyTags.Upsert(w.resourceEntity, empty{})
 }
 
-func (iter *EnemyWriteIterator) HasNext() bool {
-	return iter.currIdx >= 0
+func (w *World) ResourceRemoveEnemyTag() {
+	w.enemyTags.Remove(w.resourceEntity)
 }
 
-func (iter *EnemyWriteIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx--
-
-	return e
+func (w *World) ResourceHasEnemyTag() bool {
+	return w.enemyTags.Contains(w.resourceEntity)
 }
 
-func (iter *EnemyWriteIterator) Reset() {
-	iter.currIdx = iter.store.Len() - 1
-}
-
-func (w *World) EnemyWriteIter() *EnemyWriteIterator {
-	iter := &EnemyWriteIterator{
-		w:     w,
-		store: w.enemyStore,
-	}
-	iter.Reset()
-	return iter
-}
-
-//#endregion
-
-func (w *World) EnemyEntities() []Entity {
-	return w.enemyStore.entities()
-}
-
-func (w *World) ApplyEnemyPatch(e Entity, pb *emptypb.Empty) Entity {
-	if pb == nil {
-		e.RemoveEnemyTag()
-	}
-	e.TagWithEnemy()
-	return e
-}
+// Events

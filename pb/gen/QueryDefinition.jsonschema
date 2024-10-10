@@ -1,19 +1,15 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "$ref": "#/definitions/ComponentSetDefinition",
+    "$ref": "#/definitions/QueryDefinition",
     "definitions": {
-        "ComponentSetDefinition": {
+        "QueryDefinition": {
             "properties": {
-                "owned": {
-                    "items": {
-                        "$ref": "#/definitions/geck.v1.ComponentSetDefinition.Component"
-                    },
-                    "additionalProperties": false,
-                    "type": "array"
+                "alias": {
+                    "type": "string"
                 },
-                "borrowed": {
+                "entries": {
                     "items": {
-                        "$ref": "#/definitions/geck.v1.ComponentSetDefinition.Component"
+                        "$ref": "#/definitions/geck.v1.QueryDefinition.ComponentOrTag"
                     },
                     "additionalProperties": false,
                     "type": "array"
@@ -21,20 +17,23 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Component Set Definition"
+            "title": "Query Definition"
         },
-        "geck.v1.ComponentSetDefinition.Component": {
+        "geck.v1.QueryDefinition.ComponentOrTag": {
             "properties": {
+                "bundleName": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
-                "isWriteable": {
+                "isMutable": {
                     "type": "boolean"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Component"
+            "title": "Component Or Tag"
         }
     }
 }

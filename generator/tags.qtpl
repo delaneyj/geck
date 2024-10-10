@@ -1,0 +1,94 @@
+package generator
+
+{% func tagTemplate(data *componentTmplData) %}
+package {%s data.PackageName %}
+
+{% code
+nsp := data.Name.Singular.Pascal
+nsc := data.Name.Singular.Camel
+ss := nsc + "Tags"
+%}
+
+func (w *World) Upsert{%s nsp %}Tag(entities ...Entity) (anyUpdated bool) {
+    for _, e := range entities {
+        if _, updated := w.{%s ss %}.Upsert(e, empty{}); updated{
+            anyUpdated = true
+            {%- if data.ShouldGenAdded -%}
+            fireEvent(w, {%s nsp %}AddedEvent{Entities: []Entity{e}})
+            {%- endif -%}
+        }
+    }
+
+    return anyUpdated
+}
+
+func (w *World) Remove{%s nsp %}Tag(entities ...Entity) (anyRemoved bool) {
+    for _, e := range entities {
+        if removed := w.{%s ss %}.Remove(e); removed {
+            anyRemoved = true
+            {%- if data.ShouldGenRemoved -%}
+            fireEvent(w, {%s nsp %}RemovedEvent{Entities: []Entity{e}})
+            {%- endif -%}
+        }
+    }
+    return anyRemoved
+}
+
+func (w *World) Has{%s nsp %}Tag(entity Entity) bool {
+    return w.{%s ss %}.Contains(entity)
+}
+
+func (w *World) All{%s nsp %}Tags(yield func(e Entity) bool) {
+    for e := range w.{%s ss %}.All {
+        if !yield(e) {
+            break
+        }
+    }
+}
+
+// {%s nsp %}Builder
+func With{%s nsp %}Tag() EntityBuilderOption {
+    return func(w *World, e Entity) {
+        w.{%s ss %}.Upsert(e, empty{})
+    }
+}
+
+// Resource
+func (w *World) ResourceUpsert{%s nsp %}Tag() {
+    w.{%s nsc %}Tags.Upsert(w.resourceEntity, empty{})
+}
+
+func (w *World) ResourceRemove{%s nsp %}Tag() {
+    w.{%s nsc %}Tags.Remove(w.resourceEntity)
+}
+
+func (w *World) ResourceHas{%s nsp %}Tag() bool {
+    return w.{%s nsc %}Tags.Contains(w.resourceEntity)
+}
+
+// Events 
+{%- if data.ShouldGenAdded -%}
+type {%s nsp %}AddedEvent struct {
+    Entities []Entity
+}
+func (w *World) On{%s nsp %}Added(fn func(evt {%s nsp %}AddedEvent)) UnsubscribeFunc {
+    unsub := mint.On(w.eventBus, fn)
+    return func() {
+        unsub()
+    }
+}
+{%- endif -%}
+
+{%- if data.ShouldGenRemoved -%}
+type {%s nsp %}RemovedEvent struct {
+    Entities []Entity
+}
+func (w *World) On{%s nsp %}Removed(fn func(evt {%s nsp %}RemovedEvent)) UnsubscribeFunc {
+    unsub := mint.On(w.eventBus, fn)
+    return func() {
+        unsub()
+    }
+}
+{%- endif -%}
+
+{% endfunc %}

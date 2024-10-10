@@ -1,216 +1,127 @@
 package ecs
 
-import (
-	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
-)
-
-type Name string
-
-func NameFromString(c string) Name {
-	return Name(c)
+type Name struct {
+	Value string
 }
 
-func (c Name) ToString() string {
-	return string(c)
+func (w *World) SetName(e Entity, c Name) (old Name, wasAdded bool) {
+	old, wasAdded = w.nameComponents.Upsert(e, c)
+
+	// depending on the generation flags, these might be unused
+	_, _ = old, wasAdded
+
+	return old, wasAdded
 }
 
-func (w *World) ResetName() string {
-	return ""
+func (w *World) SetNameFromValues(
+	e Entity,
+	valueArg string,
+) {
+	old, _ := w.SetName(e, Name{
+		Value: valueArg,
+	})
+
+	// depending on the generation flags, these might be unused
+	_ = old
+
 }
 
-//#region Events
-//#endregion
-
-func (e Entity) HasName() bool {
-	return e.w.namesStore.Has(e)
+func (w *World) Name(e Entity) (c Name, ok bool) {
+	return w.nameComponents.Data(e)
 }
 
-func (e Entity) ReadName() (Name, bool) {
-	return e.w.namesStore.Read(e)
+func (w *World) MutableName(e Entity) (c *Name, ok bool) {
+	return w.nameComponents.DataMutable(e)
 }
 
-func (e Entity) MustReadName() Name {
-	c, ok := e.w.namesStore.Read(e)
+func (w *World) MustName(e Entity) Name {
+	c, ok := w.nameComponents.Data(e)
 	if !ok {
-		panic("Name not found")
+		panic("entity does not have Name")
 	}
 	return c
 }
 
-func (e Entity) RemoveName() Entity {
-	e.w.namesStore.Remove(e)
+func (w *World) RemoveName(e Entity) {
+	wasRemoved := w.nameComponents.Remove(e)
 
-	e.w.patch.NameComponents[e.val] = nil
-	return e
+	// depending on the generation flags, these might be unused
+	_ = wasRemoved
+
 }
 
-func (e Entity) WritableName() (c *Name, done func()) {
-	var ok bool
-	c, ok = e.w.namesStore.Writeable(e)
-	if !ok {
-		return nil, nil
-	}
-	return c, func() {
-		e.w.patch.NameComponents[e.val] = c.ToPB()
-	}
+func (w *World) HasName(e Entity) bool {
+	return w.nameComponents.Contains(e)
 }
 
-func (e Entity) SetName(other Name) Entity {
-	e.w.namesStore.Set(other, e)
-
-	e.w.patch.NameComponents[e.val] = Name(other).ToPB()
-	return e
-}
-
-func (w *World) SetNames(c Name, entities ...Entity) {
-	if len(entities) == 0 {
-		panic("no entities provided, are you sure you didn't mean to call SetNameResource?")
-	}
-	w.namesStore.Set(c, entities...)
-	w.patch.NameComponents[w.resourceEntity.val] = c.ToPB()
-}
-
-func (w *World) RemoveNames(entities ...Entity) {
-	w.namesStore.Remove(entities...)
-	for _, entity := range entities {
-		w.patch.NameComponents[entity.val] = nil
+func (w *World) AllNames(yield func(e Entity, c Name) bool) {
+	for e, c := range w.nameComponents.All {
+		if yield(e, c) {
+			break
+		}
 	}
 }
 
-//#region Resources
-
-// HasNameResource checks if the world has a Name}}
-func (w *World) HasNameResource() bool {
-	return w.resourceEntity.HasName()
+func (w *World) AllMutableNames(yield func(e Entity, c *Name) bool) {
+	for e, c := range w.nameComponents.AllMutable {
+		if yield(e, c) {
+			break
+		}
+	}
 }
 
-// NameResource Retrieve the  resource from the world
+func (w *World) AllNamesEntities(yield func(e Entity) bool) {
+	for e := range w.nameComponents.AllEntities {
+		if yield(e) {
+			break
+		}
+	}
+}
+
+// NameBuilder
+func WithName(c Name) EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.nameComponents.Upsert(e, c)
+	}
+}
+
+func WithNameFromValues(
+	valueArg string,
+) EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.SetNameFromValues(e,
+			valueArg,
+		)
+	}
+}
+
+// Events
+
+// Resource methods
+func (w *World) SetNameResource(c Name) {
+	w.nameComponents.Upsert(w.resourceEntity, c)
+}
+
+func (w *World) SetNameResourceFromValues(
+	valueArg string,
+) {
+	w.SetNameResource(Name{
+		Value: valueArg,
+	})
+}
+
 func (w *World) NameResource() (Name, bool) {
-	return w.resourceEntity.ReadName()
+	return w.nameComponents.Data(w.resourceEntity)
 }
 
-// SetNameResource set the resource in the world
-func (w *World) SetNameResource(c Name) Entity {
-	w.resourceEntity.SetName(c)
-	return w.resourceEntity
-}
-
-// RemoveNameResource removes the resource from the world
-func (w *World) RemoveNameResource() Entity {
-	w.resourceEntity.RemoveName()
-
-	return w.resourceEntity
-}
-
-// WriteableNameResource returns a writable reference to the resource
-func (w *World) WriteableNameResource() (c *Name, done func()) {
-	return w.resourceEntity.WritableName()
-}
-
-//#endregion
-
-//#region Iterators
-
-type NameReadIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Name]
-}
-
-func (iter *NameReadIterator) HasNext() bool {
-	return iter.currIdx < iter.store.Len()
-}
-
-func (iter *NameReadIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx++
-	return e
-}
-
-func (iter *NameReadIterator) NextName() (Entity, Name) {
-	e := iter.store.dense[iter.currIdx]
-	c := iter.store.components[iter.currIdx]
-	iter.currIdx++
-	return e, c
-}
-
-func (iter *NameReadIterator) Reset() {
-	iter.currIdx = 0
-}
-
-func (w *World) NameReadIter() *NameReadIterator {
-	iter := &NameReadIterator{
-		w:     w,
-		store: w.namesStore,
+func (w *World) MustNameResource() Name {
+	c, ok := w.NameResource()
+	if !ok {
+		panic("resource entity does not have Name")
 	}
-	iter.Reset()
-	return iter
+	return c
 }
 
-type NameWriteIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Name]
-}
-
-func (iter *NameWriteIterator) HasNext() bool {
-	return iter.currIdx >= 0
-}
-
-func (iter *NameWriteIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx--
-
-	return e
-}
-
-func (iter *NameWriteIterator) NextName() (Entity, *Name, func()) {
-	e := iter.store.dense[iter.currIdx]
-	c := &iter.store.components[iter.currIdx]
-	iter.currIdx--
-	done := func() {
-		iter.w.patch.NameComponents[e.val] = c.ToPB()
-	}
-
-	return e, c, done
-}
-
-func (iter *NameWriteIterator) Reset() {
-	iter.currIdx = iter.store.Len() - 1
-}
-
-func (w *World) NameWriteIter() *NameWriteIterator {
-	iter := &NameWriteIterator{
-		w:     w,
-		store: w.namesStore,
-	}
-	iter.Reset()
-	return iter
-}
-
-//#endregion
-
-func (w *World) NameEntities() []Entity {
-	return w.namesStore.entities()
-}
-
-func (w *World) SetNameSortFn(lessThan func(a, b Entity) bool) {
-	w.namesStore.LessThan = lessThan
-}
-
-func (w *World) SortNames() {
-	w.namesStore.Sort()
-}
-
-func (w *World) ApplyNamePatch(e Entity, patch *ecspb.NameComponent) Entity {
-	c := Name(patch.Value)
-	e.w.namesStore.Set(c, e)
-	return e
-}
-
-func (c Name) ToPB() *ecspb.NameComponent {
-	pb := &ecspb.NameComponent{
-		Value: c.ToString(),
-	}
-	return pb
+func (w *World) RemoveNameResource() {
+	w.nameComponents.Remove(w.resourceEntity)
 }

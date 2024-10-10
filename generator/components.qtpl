@@ -1,0 +1,212 @@
+package generator
+
+{% func componentTemplate(data *componentTmplData) %}
+package {%s data.PackageName -%}
+
+{% if data.HasAnyEvents %}
+import "github.com/btvoidx/mint"
+{% endif %}
+
+{%- code
+npp := data.Name.Plural.Pascal
+nsp := data.Name.Singular.Pascal
+nsc := data.Name.Singular.Camel
+ss := nsc + "Components"
+-%}
+
+type {%s nsp %} struct {
+    {%- for _, f := range data.Fields -%}
+    {%s f.Name.Singular.Pascal %} {%s f.Type.Singular.Original %}
+    {%- endfor -%}
+}
+
+func (w *World) Set{%s nsp %}(e Entity, c {%s nsp %}) (old {%s nsp %}, wasAdded bool) {
+    old, wasAdded = w.{%s ss %}.Upsert(e, c);
+
+    // depending on the generation flags, these might be unused
+    _, _ = old, wasAdded
+
+    {%- if data.ShouldGenAdded -%}
+    if wasAdded {
+        fireEvent(w, {%s nsp %}AddedEvent{Entity: e, Component: c})
+    }
+    {%- endif -%}
+    {%- if data.ShouldGenChanged -%}
+    fireEvent(w, {%s nsp %}ChangedEvent{Entity: e, Old: old, New: c})
+    {%- endif -%}
+
+    return old, wasAdded
+}
+
+func (w *World) Set{%s nsp %}FromValues(
+    e Entity,
+    {%- for _, f := range data.Fields -%}
+    {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
+    {%- endfor -%}
+) {
+    old, _ := w.Set{%s nsp %}(e, {%s nsp %}{
+        {%- for _, f := range data.Fields -%}
+        {%s f.Name.Singular.Pascal %}: {%s f.Name.Singular.Camel %}Arg,
+        {%- endfor -%}
+    })
+
+    // depending on the generation flags, these might be unused
+    _ = old
+
+    {%- if data.ShouldGenChanged -%}
+    fireEvent(w, {%s nsp %}ChangedEvent{Entity: e, Old: old, New: w.Must{%s nsp %}(e)})
+    {%- endif -%}
+}
+
+func (w *World) {%s nsp %}(e Entity) (c {%s nsp %}, ok bool) {
+    return w.{%s ss %}.Data(e)
+}
+
+func (w *World) Mutable{%s nsp %}(e Entity) (c *{%s nsp %}, ok bool) {
+    return w.{%s ss %}.DataMutable(e)
+}
+
+func (w *World) Must{%s nsp %}(e Entity) {%s nsp %} {
+    c, ok := w.{%s ss %}.Data(e)
+    if !ok {
+        panic("entity does not have {%s nsp %}")
+    }
+    return c
+}
+
+func (w *World) Remove{%s nsp %}(e Entity) {
+    wasRemoved := w.{%s ss %}.Remove(e)
+
+    // depending on the generation flags, these might be unused
+    _ = wasRemoved
+
+    {%- if data.ShouldGenRemoved -%}
+    if wasRemoved {
+        fireEvent(w, {%s nsp %}RemovedEvent{Entity: e})
+    }
+    {%- endif -%}
+}
+
+func (w *World) Has{%s nsp %}(e Entity) bool {
+    return w.{%s ss %}.Contains(e)
+}
+
+func (w *World) All{%s npp %}(yield func(e Entity, c {%s nsp %}) bool) {
+    for e, c := range w.{%s ss %}.All {
+        if yield(e, c) {
+            break
+        }
+    }
+}
+
+func (w *World) AllMutable{%s npp %}(yield func(e Entity, c *{%s nsp %}) bool) {
+    for e, c := range w.{%s ss %}.AllMutable {
+        if yield(e, c) {
+            break
+        }
+    }
+}
+
+func (w *World) All{%s npp %}Entities(yield func(e Entity) bool) {
+    for e := range w.{%s ss %}.AllEntities {
+        if yield(e) {
+            break
+        }
+    }
+}
+
+// {%s nsp %}Builder
+func With{%s nsp %}(c {%s nsp %}) EntityBuilderOption {
+    return func(w *World, e Entity) {
+        w.{%s ss %}.Upsert(e, c)
+    }
+}
+
+func With{%s nsp %}FromValues(
+    {%- for _, f := range data.Fields -%}
+    {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
+    {%- endfor -%}
+) EntityBuilderOption {
+    return func(w *World, e Entity) {
+        w.Set{%s nsp %}FromValues(e,
+            {%- for _, f := range data.Fields -%}
+            {%s f.Name.Singular.Camel %}Arg,
+            {%- endfor -%}
+        )
+    }
+}
+
+// Events
+{%- if data.ShouldGenAdded -%}
+type {%s nsp %}AddedEvent struct {
+    Entity Entity
+    Component {%s nsp %}
+}
+func (w *World) On{%s nsp %}Added(fn func(evt {%s nsp %}AddedEvent)) UnsubscribeFunc {
+    unsub := mint.On(w.eventBus, fn)
+    return func() {
+        unsub()
+    }
+}
+{%- endif -%}
+
+{%- if data.ShouldGenRemoved -%}
+type {%s nsp %}RemovedEvent struct {
+    Entity Entity
+    Component {%s nsp %}
+}
+func (w *World) On{%s nsp %}Removed(fn func(evt {%s nsp %}RemovedEvent)) UnsubscribeFunc {
+    unsub := mint.On(w.eventBus, fn)
+    return func() {
+        unsub()
+    }
+}
+{%- endif -%}
+
+{%- if data.ShouldGenChanged -%}
+type {%s nsp %}ChangedEvent struct {
+    Entity Entity
+    Old, New {%s nsp %}
+}
+func (w *World) On{%s nsp %}Changed(fn func(evt {%s nsp %}ChangedEvent)) UnsubscribeFunc {
+	unsub := mint.On(w.eventBus, fn)
+	return func() {
+		unsub()
+	}
+}
+{%- endif -%}
+
+// Resource methods
+func (w *World) Set{%s nsp %}Resource(c {%s nsp %}) {
+    w.{%s ss %}.Upsert(w.resourceEntity, c)
+}
+
+func (w *World) Set{%s nsp %}ResourceFromValues(
+    {%- for _, f := range data.Fields -%}
+    {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
+    {%- endfor -%}
+) {
+   w.Set{%s nsp %}Resource({%s nsp %}{
+        {%- for _, f := range data.Fields -%}
+        {%s f.Name.Singular.Pascal %}: {%s f.Name.Singular.Camel %}Arg,
+        {%- endfor -%}
+    })
+}
+
+func (w *World) {%s nsp %}Resource() ({%s nsp %},bool) {
+    return w.{%s ss %}.Data(w.resourceEntity)
+}
+
+func (w *World) Must{%s nsp %}Resource() {%s nsp %} {
+    c, ok := w.{%s nsp %}Resource()
+    if !ok {
+        panic("resource entity does not have {%s nsp %}")
+    }
+    return c
+}
+
+func (w *World) Remove{%s nsp %}Resource() {
+    w.{%s ss %}.Remove(w.resourceEntity)
+}
+
+{%- endfunc -%}

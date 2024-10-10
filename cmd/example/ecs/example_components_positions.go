@@ -1,272 +1,141 @@
 package ecs
 
-import (
-	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
-)
-
 type Position struct {
-	X float32 `json:"x"`
-	Y float32 `json:"y"`
-	Z float32 `json:"z"`
+	X float32
+	Y float32
+	Z float32
 }
 
-func (w *World) NewPosition(
-	xField float32,
-	yField float32,
-	zField float32,
-) Position {
-	return Position{
-		X: xField,
-		Y: yField,
-		Z: zField,
-	}
+func (w *World) SetPosition(e Entity, c Position) (old Position, wasAdded bool) {
+	old, wasAdded = w.positionComponents.Upsert(e, c)
+
+	// depending on the generation flags, these might be unused
+	_, _ = old, wasAdded
+
+	return old, wasAdded
 }
 
-func (w *World) ResetPosition() Position {
-	return Position{
-		X: 0.000000,
-		Y: 0.000000,
-		Z: 0.000000,
-	}
+func (w *World) SetPositionFromValues(
+	e Entity,
+	xArg float32,
+	yArg float32,
+	zArg float32,
+) {
+	old, _ := w.SetPosition(e, Position{
+		X: xArg,
+		Y: yArg,
+		Z: zArg,
+	})
+
+	// depending on the generation flags, these might be unused
+	_ = old
+
 }
 
-//#region Events
-//#endregion
-
-func (e Entity) HasPosition() bool {
-	return e.w.positionsStore.Has(e)
+func (w *World) Position(e Entity) (c Position, ok bool) {
+	return w.positionComponents.Data(e)
 }
 
-func (e Entity) ReadPosition() (Position, bool) {
-	return e.w.positionsStore.Read(e)
+func (w *World) MutablePosition(e Entity) (c *Position, ok bool) {
+	return w.positionComponents.DataMutable(e)
 }
 
-func (e Entity) MustReadPosition() Position {
-	c, ok := e.w.positionsStore.Read(e)
+func (w *World) MustPosition(e Entity) Position {
+	c, ok := w.positionComponents.Data(e)
 	if !ok {
-		panic("Position not found")
+		panic("entity does not have Position")
 	}
 	return c
 }
 
-func (e Entity) RemovePosition() Entity {
-	e.w.positionsStore.Remove(e)
+func (w *World) RemovePosition(e Entity) {
+	wasRemoved := w.positionComponents.Remove(e)
 
-	e.w.patch.PositionComponents[e.val] = nil
-	return e
+	// depending on the generation flags, these might be unused
+	_ = wasRemoved
+
 }
 
-func (e Entity) WritablePosition() (c *Position, done func()) {
-	var ok bool
-	c, ok = e.w.positionsStore.Writeable(e)
-	if !ok {
-		return nil, nil
-	}
-	return c, func() {
-		e.w.patch.PositionComponents[e.val] = c.ToPB()
-	}
+func (w *World) HasPosition(e Entity) bool {
+	return w.positionComponents.Contains(e)
 }
 
-func (e Entity) SetPosition(other Position) Entity {
-	e.w.positionsStore.Set(other, e)
-
-	e.w.PositionVelocitySet.PossibleUpdate(e)
-	e.w.patch.PositionComponents[e.val] = Position(other).ToPB()
-	return e
-}
-
-func (e Entity) SetPositionValues(
-	x0 float32,
-	y1 float32,
-	z2 float32,
-) Entity {
-	err := e.w.positionsStore.Set(Position{
-		X: x0,
-		Y: y1,
-		Z: z2,
-	}, e)
-	if err != nil {
-		panic(err)
-	}
-	pb := &ecspb.PositionComponent{
-		X: x0,
-		Y: y1,
-		Z: z2,
-	}
-	e.w.patch.PositionComponents[e.w.resourceEntity.val] = pb
-	return e
-}
-
-func (w *World) SetPositions(c Position, entities ...Entity) {
-	if len(entities) == 0 {
-		panic("no entities provided, are you sure you didn't mean to call SetPositionResource?")
-	}
-	w.positionsStore.Set(c, entities...)
-	w.PositionVelocitySet.PossibleUpdate(entities...)
-	w.patch.PositionComponents[w.resourceEntity.val] = c.ToPB()
-}
-
-func (w *World) RemovePositions(entities ...Entity) {
-	w.positionsStore.Remove(entities...)
-	w.PositionVelocitySet.PossibleUpdate(entities...)
-	for _, entity := range entities {
-		w.patch.PositionComponents[entity.val] = nil
+func (w *World) AllPositions(yield func(e Entity, c Position) bool) {
+	for e, c := range w.positionComponents.All {
+		if yield(e, c) {
+			break
+		}
 	}
 }
 
-//#region Resources
-
-// HasPositionResource checks if the world has a Position}}
-func (w *World) HasPositionResource() bool {
-	return w.resourceEntity.HasPosition()
+func (w *World) AllMutablePositions(yield func(e Entity, c *Position) bool) {
+	for e, c := range w.positionComponents.AllMutable {
+		if yield(e, c) {
+			break
+		}
+	}
 }
 
-// PositionResource Retrieve the  resource from the world
+func (w *World) AllPositionsEntities(yield func(e Entity) bool) {
+	for e := range w.positionComponents.AllEntities {
+		if yield(e) {
+			break
+		}
+	}
+}
+
+// PositionBuilder
+func WithPosition(c Position) EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.positionComponents.Upsert(e, c)
+	}
+}
+
+func WithPositionFromValues(
+	xArg float32,
+	yArg float32,
+	zArg float32,
+) EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.SetPositionFromValues(e,
+			xArg,
+			yArg,
+			zArg,
+		)
+	}
+}
+
+// Events
+
+// Resource methods
+func (w *World) SetPositionResource(c Position) {
+	w.positionComponents.Upsert(w.resourceEntity, c)
+}
+
+func (w *World) SetPositionResourceFromValues(
+	xArg float32,
+	yArg float32,
+	zArg float32,
+) {
+	w.SetPositionResource(Position{
+		X: xArg,
+		Y: yArg,
+		Z: zArg,
+	})
+}
+
 func (w *World) PositionResource() (Position, bool) {
-	return w.resourceEntity.ReadPosition()
+	return w.positionComponents.Data(w.resourceEntity)
 }
 
-// SetPositionResource set the resource in the world
-func (w *World) SetPositionResource(c Position) Entity {
-	w.resourceEntity.SetPosition(c)
-	return w.resourceEntity
-}
-func (w *World) SetPositionResourceValues(
-	x0 float32,
-	y1 float32,
-	z2 float32,
-) Entity {
-	w.resourceEntity.SetPositionValues(
-		x0,
-		y1,
-		z2,
-	)
-	return w.resourceEntity
-}
-
-// RemovePositionResource removes the resource from the world
-func (w *World) RemovePositionResource() Entity {
-	w.resourceEntity.RemovePosition()
-
-	w.PositionVelocitySet.PossibleUpdate(w.resourceEntity)
-	return w.resourceEntity
-}
-
-// WriteablePositionResource returns a writable reference to the resource
-func (w *World) WriteablePositionResource() (c *Position, done func()) {
-	return w.resourceEntity.WritablePosition()
-}
-
-//#endregion
-
-//#region Iterators
-
-type PositionReadIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Position]
-}
-
-func (iter *PositionReadIterator) HasNext() bool {
-	return iter.currIdx < iter.store.Len()
-}
-
-func (iter *PositionReadIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx++
-	return e
-}
-
-func (iter *PositionReadIterator) NextPosition() (Entity, Position) {
-	e := iter.store.dense[iter.currIdx]
-	c := iter.store.components[iter.currIdx]
-	iter.currIdx++
-	return e, c
-}
-
-func (iter *PositionReadIterator) Reset() {
-	iter.currIdx = 0
-}
-
-func (w *World) PositionReadIter() *PositionReadIterator {
-	iter := &PositionReadIterator{
-		w:     w,
-		store: w.positionsStore,
+func (w *World) MustPositionResource() Position {
+	c, ok := w.PositionResource()
+	if !ok {
+		panic("resource entity does not have Position")
 	}
-	iter.Reset()
-	return iter
+	return c
 }
 
-type PositionWriteIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Position]
-}
-
-func (iter *PositionWriteIterator) HasNext() bool {
-	return iter.currIdx >= 0
-}
-
-func (iter *PositionWriteIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx--
-
-	return e
-}
-
-func (iter *PositionWriteIterator) NextPosition() (Entity, *Position, func()) {
-	e := iter.store.dense[iter.currIdx]
-	c := &iter.store.components[iter.currIdx]
-	iter.currIdx--
-	done := func() {
-		iter.w.patch.PositionComponents[e.val] = c.ToPB()
-	}
-
-	return e, c, done
-}
-
-func (iter *PositionWriteIterator) Reset() {
-	iter.currIdx = iter.store.Len() - 1
-}
-
-func (w *World) PositionWriteIter() *PositionWriteIterator {
-	iter := &PositionWriteIterator{
-		w:     w,
-		store: w.positionsStore,
-	}
-	iter.Reset()
-	return iter
-}
-
-//#endregion
-
-func (w *World) PositionEntities() []Entity {
-	return w.positionsStore.entities()
-}
-
-func (w *World) SetPositionSortFn(lessThan func(a, b Entity) bool) {
-	w.positionsStore.LessThan = lessThan
-}
-
-func (w *World) SortPositions() {
-	w.positionsStore.Sort()
-}
-
-func (w *World) ApplyPositionPatch(e Entity, patch *ecspb.PositionComponent) Entity {
-	c := Position{
-		X: patch.X,
-		Y: patch.Y,
-		Z: patch.Z,
-	}
-	e.w.positionsStore.Set(c, e)
-	return e
-}
-
-func (c Position) ToPB() *ecspb.PositionComponent {
-	pb := &ecspb.PositionComponent{
-		X: c.X,
-		Y: c.Y,
-		Z: c.Z,
-	}
-	return pb
+func (w *World) RemovePositionResource() {
+	w.positionComponents.Remove(w.resourceEntity)
 }

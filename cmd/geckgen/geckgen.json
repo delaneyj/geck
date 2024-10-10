@@ -187,16 +187,12 @@
       ]
     }
   ],
-  "componentSets": [
+  "queries": [
     {
-      "owned": [
-        {
-          "name": "Velocity"
-        },
-        {
-          "name": "Position",
-          "isWriteable": true
-        }
+      "entries": [
+        {"bundleName" :"example", "name": "Velocity" },
+        {"bundleName" :"example","name": "Position", "isMutable": true }
+
       ]
     }
   ]
