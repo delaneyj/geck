@@ -56,7 +56,7 @@ func (w *World) HasRuledBy(e Entity) bool {
 
 func (w *World) AllRuledBys(yield func(e Entity, c RuledBy) bool) {
 	for e, c := range w.ruledByComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllRuledBys(yield func(e Entity, c RuledBy) bool) {
 
 func (w *World) AllMutableRuledBys(yield func(e Entity, c *RuledBy) bool) {
 	for e, c := range w.ruledByComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableRuledBys(yield func(e Entity, c *RuledBy) bool) {
 
 func (w *World) AllRuledBysEntities(yield func(e Entity) bool) {
 	for e := range w.ruledByComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

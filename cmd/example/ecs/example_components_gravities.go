@@ -56,7 +56,7 @@ func (w *World) HasGravity(e Entity) bool {
 
 func (w *World) AllGravities(yield func(e Entity, c Gravity) bool) {
 	for e, c := range w.gravityComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllGravities(yield func(e Entity, c Gravity) bool) {
 
 func (w *World) AllMutableGravities(yield func(e Entity, c *Gravity) bool) {
 	for e, c := range w.gravityComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableGravities(yield func(e Entity, c *Gravity) bool) {
 
 func (w *World) AllGravitiesEntities(yield func(e Entity) bool) {
 	for e := range w.gravityComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

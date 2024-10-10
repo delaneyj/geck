@@ -56,7 +56,7 @@ func (w *World) HasName(e Entity) bool {
 
 func (w *World) AllNames(yield func(e Entity, c Name) bool) {
 	for e, c := range w.nameComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllNames(yield func(e Entity, c Name) bool) {
 
 func (w *World) AllMutableNames(yield func(e Entity, c *Name) bool) {
 	for e, c := range w.nameComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableNames(yield func(e Entity, c *Name) bool) {
 
 func (w *World) AllNamesEntities(yield func(e Entity) bool) {
 	for e := range w.nameComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

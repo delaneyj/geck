@@ -65,7 +65,7 @@ func (w *World) HasRotation(e Entity) bool {
 
 func (w *World) AllRotations(yield func(e Entity, c Rotation) bool) {
 	for e, c := range w.rotationComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -73,7 +73,7 @@ func (w *World) AllRotations(yield func(e Entity, c Rotation) bool) {
 
 func (w *World) AllMutableRotations(yield func(e Entity, c *Rotation) bool) {
 	for e, c := range w.rotationComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -81,7 +81,7 @@ func (w *World) AllMutableRotations(yield func(e Entity, c *Rotation) bool) {
 
 func (w *World) AllRotationsEntities(yield func(e Entity) bool) {
 	for e := range w.rotationComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

@@ -15,15 +15,15 @@ var Tombstone = Entity(maxEntities)
 type Entity uint32
 
 func NewEntity(index, generation int) Entity {
-	return Entity((generation & generationMask) | ((index & indexMask) << generationBits))
+	return Entity((generation << generationBits) | index)
 }
 
 func (e Entity) Index() int {
-	return int(e>>generationBits) & indexMask
+	return int(e) & indexMask
 }
 
 func (e Entity) Generation() int {
-	return int(e) & generationMask
+	return int(e) >> indexBits
 }
 
 func (e Entity) In(entities ...Entity) bool {

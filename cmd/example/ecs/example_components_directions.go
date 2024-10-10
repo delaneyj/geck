@@ -56,7 +56,7 @@ func (w *World) HasDirection(e Entity) bool {
 
 func (w *World) AllDirections(yield func(e Entity, c Direction) bool) {
 	for e, c := range w.directionComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllDirections(yield func(e Entity, c Direction) bool) {
 
 func (w *World) AllMutableDirections(yield func(e Entity, c *Direction) bool) {
 	for e, c := range w.directionComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableDirections(yield func(e Entity, c *Direction) bool) {
 
 func (w *World) AllDirectionsEntities(yield func(e Entity) bool) {
 	for e := range w.directionComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

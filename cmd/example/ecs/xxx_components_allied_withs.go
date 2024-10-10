@@ -56,7 +56,7 @@ func (w *World) HasAlliedWith(e Entity) bool {
 
 func (w *World) AllAlliedWiths(yield func(e Entity, c AlliedWith) bool) {
 	for e, c := range w.alliedWithComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllAlliedWiths(yield func(e Entity, c AlliedWith) bool) {
 
 func (w *World) AllMutableAlliedWiths(yield func(e Entity, c *AlliedWith) bool) {
 	for e, c := range w.alliedWithComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableAlliedWiths(yield func(e Entity, c *AlliedWith) bool) 
 
 func (w *World) AllAlliedWithsEntities(yield func(e Entity) bool) {
 	for e := range w.alliedWithComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

@@ -56,7 +56,7 @@ func (w *World) HasDockedTo(e Entity) bool {
 
 func (w *World) AllDockedTos(yield func(e Entity, c DockedTo) bool) {
 	for e, c := range w.dockedToComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllDockedTos(yield func(e Entity, c DockedTo) bool) {
 
 func (w *World) AllMutableDockedTos(yield func(e Entity, c *DockedTo) bool) {
 	for e, c := range w.dockedToComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableDockedTos(yield func(e Entity, c *DockedTo) bool) {
 
 func (w *World) AllDockedTosEntities(yield func(e Entity) bool) {
 	for e := range w.dockedToComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

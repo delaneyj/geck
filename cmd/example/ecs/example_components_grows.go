@@ -56,7 +56,7 @@ func (w *World) HasGrows(e Entity) bool {
 
 func (w *World) AllGrows(yield func(e Entity, c Grows) bool) {
 	for e, c := range w.growsComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllGrows(yield func(e Entity, c Grows) bool) {
 
 func (w *World) AllMutableGrows(yield func(e Entity, c *Grows) bool) {
 	for e, c := range w.growsComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableGrows(yield func(e Entity, c *Grows) bool) {
 
 func (w *World) AllGrowsEntities(yield func(e Entity) bool) {
 	for e := range w.growsComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

@@ -62,7 +62,7 @@ func (w *World) HasVelocity(e Entity) bool {
 
 func (w *World) AllVelocities(yield func(e Entity, c Velocity) bool) {
 	for e, c := range w.velocityComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -70,7 +70,7 @@ func (w *World) AllVelocities(yield func(e Entity, c Velocity) bool) {
 
 func (w *World) AllMutableVelocities(yield func(e Entity, c *Velocity) bool) {
 	for e, c := range w.velocityComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -78,7 +78,7 @@ func (w *World) AllMutableVelocities(yield func(e Entity, c *Velocity) bool) {
 
 func (w *World) AllVelocitiesEntities(yield func(e Entity) bool) {
 	for e := range w.velocityComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

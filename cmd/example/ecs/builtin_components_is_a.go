@@ -56,7 +56,7 @@ func (w *World) HasIsA(e Entity) bool {
 
 func (w *World) AllIsA(yield func(e Entity, c IsA) bool) {
 	for e, c := range w.isAComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllIsA(yield func(e Entity, c IsA) bool) {
 
 func (w *World) AllMutableIsA(yield func(e Entity, c *IsA) bool) {
 	for e, c := range w.isAComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableIsA(yield func(e Entity, c *IsA) bool) {
 
 func (w *World) AllIsAEntities(yield func(e Entity) bool) {
 	for e := range w.isAComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

@@ -59,7 +59,7 @@ func (w *World) HasEats(e Entity) bool {
 
 func (w *World) AllEats(yield func(e Entity, c Eats) bool) {
 	for e, c := range w.eatsComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -67,7 +67,7 @@ func (w *World) AllEats(yield func(e Entity, c Eats) bool) {
 
 func (w *World) AllMutableEats(yield func(e Entity, c *Eats) bool) {
 	for e, c := range w.eatsComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -75,7 +75,7 @@ func (w *World) AllMutableEats(yield func(e Entity, c *Eats) bool) {
 
 func (w *World) AllEatsEntities(yield func(e Entity) bool) {
 	for e := range w.eatsComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

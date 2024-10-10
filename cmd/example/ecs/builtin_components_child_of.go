@@ -56,7 +56,7 @@ func (w *World) HasChildOf(e Entity) bool {
 
 func (w *World) AllChildOf(yield func(e Entity, c ChildOf) bool) {
 	for e, c := range w.childOfComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllChildOf(yield func(e Entity, c ChildOf) bool) {
 
 func (w *World) AllMutableChildOf(yield func(e Entity, c *ChildOf) bool) {
 	for e, c := range w.childOfComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableChildOf(yield func(e Entity, c *ChildOf) bool) {
 
 func (w *World) AllChildOfEntities(yield func(e Entity) bool) {
 	for e := range w.childOfComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

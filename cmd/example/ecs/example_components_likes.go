@@ -56,7 +56,7 @@ func (w *World) HasLikes(e Entity) bool {
 
 func (w *World) AllLikes(yield func(e Entity, c Likes) bool) {
 	for e, c := range w.likesComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllLikes(yield func(e Entity, c Likes) bool) {
 
 func (w *World) AllMutableLikes(yield func(e Entity, c *Likes) bool) {
 	for e, c := range w.likesComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableLikes(yield func(e Entity, c *Likes) bool) {
 
 func (w *World) AllLikesEntities(yield func(e Entity) bool) {
 	for e := range w.likesComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

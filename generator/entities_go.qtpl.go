@@ -43,16 +43,15 @@ var Tombstone = Entity(maxEntities)
 type Entity uint32
 
 func NewEntity(index, generation int) Entity {
-	return Entity((generation & generationMask) | ((index & indexMask) << generationBits))
+	return Entity((generation << generationBits) | index)
 }
 
 func (e Entity) Index() int {
-	return int(e>>generationBits) & indexMask
+	return int(e) & indexMask
 }
 
-
 func (e Entity) Generation() int {
-	return int(e) & generationMask
+	return int(e) >> indexBits
 }
 
 func (e Entity) In(entities ...Entity) bool {
@@ -81,7 +80,7 @@ func(w *World) CreateEntities(count int, opts ...EntityBuilderOption) []Entity{
     entities := make([]Entity, count)
     for i := range entities {
         var entity Entity
-        
+
         if w.freeEntities.IsEmpty() {
             entity = Entity(w.nextEntityID)
             w.nextEntityID++
@@ -123,31 +122,31 @@ func (w *World) All(yield func(entity Entity) bool) {
 }
 
 `)
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 }
 
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 func writeentitiesTemplate(qq422016 qtio422016.Writer, data *ecsTmplData) {
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 	streamentitiesTemplate(qw422016, data)
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 	qt422016.ReleaseWriter(qw422016)
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 }
 
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 func entitiesTemplate(data *ecsTmplData) string {
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 	writeentitiesTemplate(qb422016, data)
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 	qs422016 := string(qb422016.B)
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 	return qs422016
-//line generator/entities_go.qtpl:98
+//line generator/entities_go.qtpl:97
 }

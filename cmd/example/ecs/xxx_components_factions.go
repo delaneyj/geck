@@ -56,7 +56,7 @@ func (w *World) HasFaction(e Entity) bool {
 
 func (w *World) AllFactions(yield func(e Entity, c Faction) bool) {
 	for e, c := range w.factionComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -64,7 +64,7 @@ func (w *World) AllFactions(yield func(e Entity, c Faction) bool) {
 
 func (w *World) AllMutableFactions(yield func(e Entity, c *Faction) bool) {
 	for e, c := range w.factionComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -72,7 +72,7 @@ func (w *World) AllMutableFactions(yield func(e Entity, c *Faction) bool) {
 
 func (w *World) AllFactionsEntities(yield func(e Entity) bool) {
 	for e := range w.factionComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}

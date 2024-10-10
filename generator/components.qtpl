@@ -93,7 +93,7 @@ func (w *World) Has{%s nsp %}(e Entity) bool {
 
 func (w *World) All{%s npp %}(yield func(e Entity, c {%s nsp %}) bool) {
     for e, c := range w.{%s ss %}.All {
-        if yield(e, c) {
+        if !yield(e, c) {
             break
         }
     }
@@ -101,7 +101,7 @@ func (w *World) All{%s npp %}(yield func(e Entity, c {%s nsp %}) bool) {
 
 func (w *World) AllMutable{%s npp %}(yield func(e Entity, c *{%s nsp %}) bool) {
     for e, c := range w.{%s ss %}.AllMutable {
-        if yield(e, c) {
+        if !yield(e, c) {
             break
         }
     }
@@ -109,7 +109,7 @@ func (w *World) AllMutable{%s npp %}(yield func(e Entity, c *{%s nsp %}) bool) {
 
 func (w *World) All{%s npp %}Entities(yield func(e Entity) bool) {
     for e := range w.{%s ss %}.AllEntities {
-        if yield(e) {
+        if !yield(e) {
             break
         }
     }

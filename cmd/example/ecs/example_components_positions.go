@@ -62,7 +62,7 @@ func (w *World) HasPosition(e Entity) bool {
 
 func (w *World) AllPositions(yield func(e Entity, c Position) bool) {
 	for e, c := range w.positionComponents.All {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -70,7 +70,7 @@ func (w *World) AllPositions(yield func(e Entity, c Position) bool) {
 
 func (w *World) AllMutablePositions(yield func(e Entity, c *Position) bool) {
 	for e, c := range w.positionComponents.AllMutable {
-		if yield(e, c) {
+		if !yield(e, c) {
 			break
 		}
 	}
@@ -78,7 +78,7 @@ func (w *World) AllMutablePositions(yield func(e Entity, c *Position) bool) {
 
 func (w *World) AllPositionsEntities(yield func(e Entity) bool) {
 	for e := range w.positionComponents.AllEntities {
-		if yield(e) {
+		if !yield(e) {
 			break
 		}
 	}
