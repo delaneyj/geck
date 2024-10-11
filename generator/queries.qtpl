@@ -28,7 +28,7 @@ if first.ComponentOrTag.IsTag {
 type {%s argsName %} struct {
     {% for _, arg := range data.Entries -%}
     {% if !arg.ComponentOrTag.IsTag %}
-    {%s arg.Name.Singular.Pascal %} {%if arg.IsMutable %}*{% endif %}{%s arg.Name.Singular.Pascal %}
+    {%s arg.Name.Singular.Pascal %} {%if arg.IsMutable %}*{% endif %}{%s arg.Name.Singular.Pascal %}Component
     {% endif %}
     {% endfor %}
 }

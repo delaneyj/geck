@@ -81,14 +81,14 @@ func(w *World) CreateEntities(count int, opts ...EntityBuilderOption) []Entity{
     for i := range entities {
         var entity Entity
 
-        if w.freeEntities.IsEmpty() {
+        if w.freeEntities.Len() == 0 {
             entity = Entity(w.nextEntityID)
             w.nextEntityID++
         } else {
-            entity = Entity(w.freeEntities.Minimum())
-            w.freeEntities.Remove(uint32(entity))
+            entity = w.freeEntities.dense[0]
+            w.freeEntities.Remove(entity)
         }
-        w.livingEntities.Add(uint32(entity))
+        w.livingEntities.Upsert(entity, empty{})
         entities[i] = entity
 
 		for _, opt := range opts {
@@ -104,49 +104,76 @@ func (w *World) CreateEntity(opts ...EntityBuilderOption) Entity {
 
 func (w *World) DestroyEntities(entities ...Entity) {
 	for _, entity := range entities {
-		w.livingEntities.Remove(uint32(entity))
-		w.freeEntities.Add(uint32(entity))
+		w.livingEntities.Remove(entity)
+		w.freeEntities.Upsert(entity,empty{})
+
+`)
+//line generator/entities_go.qtpl:83
+	for _, c := range data.Components {
+//line generator/entities_go.qtpl:84
+		if c.IsTag {
+//line generator/entities_go.qtpl:84
+			qw422016.N().S(`		w.`)
+//line generator/entities_go.qtpl:85
+			qw422016.E().S(c.Name.Singular.Camel)
+//line generator/entities_go.qtpl:85
+			qw422016.N().S(`Tags.Remove(entity)
+`)
+//line generator/entities_go.qtpl:86
+		} else {
+//line generator/entities_go.qtpl:86
+			qw422016.N().S(`		w.`)
+//line generator/entities_go.qtpl:87
+			qw422016.E().S(c.Name.Singular.Camel)
+//line generator/entities_go.qtpl:87
+			qw422016.N().S(`Components.Remove(entity)
+`)
+//line generator/entities_go.qtpl:88
+		}
+//line generator/entities_go.qtpl:89
 	}
+//line generator/entities_go.qtpl:89
+	qw422016.N().S(`	}
 }
 
 func (w *World) IsAlive(entity Entity) bool {
-	return w.livingEntities.Contains(uint32(entity))
+	return w.livingEntities.Contains(entity)
 }
 
 func (w *World) All(yield func(entity Entity) bool) {
-	for _, entity := range w.livingEntities.ToArray() {
-		if !yield(Entity(entity)) {
+	for e := range  w.livingEntities.AllEntities {
+		if !yield(e) {
 			break
 		}
 	}
 }
 
 `)
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 }
 
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 func writeentitiesTemplate(qq422016 qtio422016.Writer, data *ecsTmplData) {
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 	streamentitiesTemplate(qw422016, data)
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 	qt422016.ReleaseWriter(qw422016)
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 }
 
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 func entitiesTemplate(data *ecsTmplData) string {
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 	writeentitiesTemplate(qb422016, data)
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 	qs422016 := string(qb422016.B)
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 	return qs422016
-//line generator/entities_go.qtpl:97
+//line generator/entities_go.qtpl:105
 }

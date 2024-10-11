@@ -1,10 +1,10 @@
 package ecs
 
-type DockedTo struct {
+type DockedToComponent struct {
 	Entity Entity
 }
 
-func (w *World) SetDockedTo(e Entity, c DockedTo) (old DockedTo, wasAdded bool) {
+func (w *World) SetDockedTo(e Entity, c DockedToComponent) (old DockedToComponent, wasAdded bool) {
 	old, wasAdded = w.dockedToComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -17,7 +17,7 @@ func (w *World) SetDockedToFromValues(
 	e Entity,
 	entityArg Entity,
 ) {
-	old, _ := w.SetDockedTo(e, DockedTo{
+	old, _ := w.SetDockedTo(e, DockedToComponent{
 		Entity: entityArg,
 	})
 
@@ -26,15 +26,15 @@ func (w *World) SetDockedToFromValues(
 
 }
 
-func (w *World) DockedTo(e Entity) (c DockedTo, ok bool) {
+func (w *World) DockedTo(e Entity) (c DockedToComponent, ok bool) {
 	return w.dockedToComponents.Data(e)
 }
 
-func (w *World) MutableDockedTo(e Entity) (c *DockedTo, ok bool) {
+func (w *World) MutableDockedTo(e Entity) (c *DockedToComponent, ok bool) {
 	return w.dockedToComponents.DataMutable(e)
 }
 
-func (w *World) MustDockedTo(e Entity) DockedTo {
+func (w *World) MustDockedTo(e Entity) DockedToComponent {
 	c, ok := w.dockedToComponents.Data(e)
 	if !ok {
 		panic("entity does not have DockedTo")
@@ -54,7 +54,7 @@ func (w *World) HasDockedTo(e Entity) bool {
 	return w.dockedToComponents.Contains(e)
 }
 
-func (w *World) AllDockedTos(yield func(e Entity, c DockedTo) bool) {
+func (w *World) AllDockedTos(yield func(e Entity, c DockedToComponent) bool) {
 	for e, c := range w.dockedToComponents.All {
 		if !yield(e, c) {
 			break
@@ -62,7 +62,7 @@ func (w *World) AllDockedTos(yield func(e Entity, c DockedTo) bool) {
 	}
 }
 
-func (w *World) AllMutableDockedTos(yield func(e Entity, c *DockedTo) bool) {
+func (w *World) AllMutableDockedTos(yield func(e Entity, c *DockedToComponent) bool) {
 	for e, c := range w.dockedToComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -79,7 +79,7 @@ func (w *World) AllDockedTosEntities(yield func(e Entity) bool) {
 }
 
 // DockedToBuilder
-func WithDockedTo(c DockedTo) EntityBuilderOption {
+func WithDockedTo(c DockedToComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.dockedToComponents.Upsert(e, c)
 	}
@@ -98,23 +98,23 @@ func WithDockedToFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetDockedToResource(c DockedTo) {
-	w.dockedToComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetDockedToResource(c DockedToComponent) {
+	w.SetDockedTo(w.resourceEntity, c)
 }
 
 func (w *World) SetDockedToResourceFromValues(
 	entityArg Entity,
 ) {
-	w.SetDockedToResource(DockedTo{
+	w.SetDockedToResource(DockedToComponent{
 		Entity: entityArg,
 	})
 }
 
-func (w *World) DockedToResource() (DockedTo, bool) {
+func (w *World) DockedToResource() (DockedToComponent, bool) {
 	return w.dockedToComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustDockedToResource() DockedTo {
+func (w *World) MustDockedToResource() DockedToComponent {
 	c, ok := w.DockedToResource()
 	if !ok {
 		panic("resource entity does not have DockedTo")

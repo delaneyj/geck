@@ -1,6 +1,6 @@
 package ecs
 
-func (w *World) UpsertSpacestationTag(entities ...Entity) (anyUpdated bool) {
+func (w *World) TagWithSpacestation(entities ...Entity) (anyUpdated bool) {
 	for _, e := range entities {
 		if _, updated := w.spacestationTags.Upsert(e, empty{}); updated {
 			anyUpdated = true

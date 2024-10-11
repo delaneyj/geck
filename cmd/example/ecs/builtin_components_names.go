@@ -1,10 +1,10 @@
 package ecs
 
-type Name struct {
+type NameComponent struct {
 	Value string
 }
 
-func (w *World) SetName(e Entity, c Name) (old Name, wasAdded bool) {
+func (w *World) SetName(e Entity, c NameComponent) (old NameComponent, wasAdded bool) {
 	old, wasAdded = w.nameComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -17,7 +17,7 @@ func (w *World) SetNameFromValues(
 	e Entity,
 	valueArg string,
 ) {
-	old, _ := w.SetName(e, Name{
+	old, _ := w.SetName(e, NameComponent{
 		Value: valueArg,
 	})
 
@@ -26,15 +26,15 @@ func (w *World) SetNameFromValues(
 
 }
 
-func (w *World) Name(e Entity) (c Name, ok bool) {
+func (w *World) Name(e Entity) (c NameComponent, ok bool) {
 	return w.nameComponents.Data(e)
 }
 
-func (w *World) MutableName(e Entity) (c *Name, ok bool) {
+func (w *World) MutableName(e Entity) (c *NameComponent, ok bool) {
 	return w.nameComponents.DataMutable(e)
 }
 
-func (w *World) MustName(e Entity) Name {
+func (w *World) MustName(e Entity) NameComponent {
 	c, ok := w.nameComponents.Data(e)
 	if !ok {
 		panic("entity does not have Name")
@@ -54,7 +54,7 @@ func (w *World) HasName(e Entity) bool {
 	return w.nameComponents.Contains(e)
 }
 
-func (w *World) AllNames(yield func(e Entity, c Name) bool) {
+func (w *World) AllNames(yield func(e Entity, c NameComponent) bool) {
 	for e, c := range w.nameComponents.All {
 		if !yield(e, c) {
 			break
@@ -62,7 +62,7 @@ func (w *World) AllNames(yield func(e Entity, c Name) bool) {
 	}
 }
 
-func (w *World) AllMutableNames(yield func(e Entity, c *Name) bool) {
+func (w *World) AllMutableNames(yield func(e Entity, c *NameComponent) bool) {
 	for e, c := range w.nameComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -79,7 +79,7 @@ func (w *World) AllNamesEntities(yield func(e Entity) bool) {
 }
 
 // NameBuilder
-func WithName(c Name) EntityBuilderOption {
+func WithName(c NameComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.nameComponents.Upsert(e, c)
 	}
@@ -98,23 +98,23 @@ func WithNameFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetNameResource(c Name) {
-	w.nameComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetNameResource(c NameComponent) {
+	w.SetName(w.resourceEntity, c)
 }
 
 func (w *World) SetNameResourceFromValues(
 	valueArg string,
 ) {
-	w.SetNameResource(Name{
+	w.SetNameResource(NameComponent{
 		Value: valueArg,
 	})
 }
 
-func (w *World) NameResource() (Name, bool) {
+func (w *World) NameResource() (NameComponent, bool) {
 	return w.nameComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustNameResource() Name {
+func (w *World) MustNameResource() NameComponent {
 	c, ok := w.NameResource()
 	if !ok {
 		panic("resource entity does not have Name")

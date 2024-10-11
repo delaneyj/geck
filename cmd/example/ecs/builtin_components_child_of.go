@@ -1,10 +1,10 @@
 package ecs
 
-type ChildOf struct {
+type ChildOfComponent struct {
 	Parent Entity
 }
 
-func (w *World) SetChildOf(e Entity, c ChildOf) (old ChildOf, wasAdded bool) {
+func (w *World) SetChildOf(e Entity, c ChildOfComponent) (old ChildOfComponent, wasAdded bool) {
 	old, wasAdded = w.childOfComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -17,7 +17,7 @@ func (w *World) SetChildOfFromValues(
 	e Entity,
 	parentArg Entity,
 ) {
-	old, _ := w.SetChildOf(e, ChildOf{
+	old, _ := w.SetChildOf(e, ChildOfComponent{
 		Parent: parentArg,
 	})
 
@@ -26,15 +26,15 @@ func (w *World) SetChildOfFromValues(
 
 }
 
-func (w *World) ChildOf(e Entity) (c ChildOf, ok bool) {
+func (w *World) ChildOf(e Entity) (c ChildOfComponent, ok bool) {
 	return w.childOfComponents.Data(e)
 }
 
-func (w *World) MutableChildOf(e Entity) (c *ChildOf, ok bool) {
+func (w *World) MutableChildOf(e Entity) (c *ChildOfComponent, ok bool) {
 	return w.childOfComponents.DataMutable(e)
 }
 
-func (w *World) MustChildOf(e Entity) ChildOf {
+func (w *World) MustChildOf(e Entity) ChildOfComponent {
 	c, ok := w.childOfComponents.Data(e)
 	if !ok {
 		panic("entity does not have ChildOf")
@@ -54,7 +54,7 @@ func (w *World) HasChildOf(e Entity) bool {
 	return w.childOfComponents.Contains(e)
 }
 
-func (w *World) AllChildOf(yield func(e Entity, c ChildOf) bool) {
+func (w *World) AllChildOf(yield func(e Entity, c ChildOfComponent) bool) {
 	for e, c := range w.childOfComponents.All {
 		if !yield(e, c) {
 			break
@@ -62,7 +62,7 @@ func (w *World) AllChildOf(yield func(e Entity, c ChildOf) bool) {
 	}
 }
 
-func (w *World) AllMutableChildOf(yield func(e Entity, c *ChildOf) bool) {
+func (w *World) AllMutableChildOf(yield func(e Entity, c *ChildOfComponent) bool) {
 	for e, c := range w.childOfComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -79,7 +79,7 @@ func (w *World) AllChildOfEntities(yield func(e Entity) bool) {
 }
 
 // ChildOfBuilder
-func WithChildOf(c ChildOf) EntityBuilderOption {
+func WithChildOf(c ChildOfComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.childOfComponents.Upsert(e, c)
 	}
@@ -98,23 +98,23 @@ func WithChildOfFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetChildOfResource(c ChildOf) {
-	w.childOfComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetChildOfResource(c ChildOfComponent) {
+	w.SetChildOf(w.resourceEntity, c)
 }
 
 func (w *World) SetChildOfResourceFromValues(
 	parentArg Entity,
 ) {
-	w.SetChildOfResource(ChildOf{
+	w.SetChildOfResource(ChildOfComponent{
 		Parent: parentArg,
 	})
 }
 
-func (w *World) ChildOfResource() (ChildOf, bool) {
+func (w *World) ChildOfResource() (ChildOfComponent, bool) {
 	return w.childOfComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustChildOfResource() ChildOf {
+func (w *World) MustChildOfResource() ChildOfComponent {
 	c, ok := w.ChildOfResource()
 	if !ok {
 		panic("resource entity does not have ChildOf")

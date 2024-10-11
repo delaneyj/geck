@@ -1,10 +1,10 @@
 package ecs
 
-type Grows struct {
+type GrowsComponent struct {
 	Entity []Entity
 }
 
-func (w *World) SetGrows(e Entity, c Grows) (old Grows, wasAdded bool) {
+func (w *World) SetGrows(e Entity, c GrowsComponent) (old GrowsComponent, wasAdded bool) {
 	old, wasAdded = w.growsComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -17,7 +17,7 @@ func (w *World) SetGrowsFromValues(
 	e Entity,
 	entityArg []Entity,
 ) {
-	old, _ := w.SetGrows(e, Grows{
+	old, _ := w.SetGrows(e, GrowsComponent{
 		Entity: entityArg,
 	})
 
@@ -26,15 +26,15 @@ func (w *World) SetGrowsFromValues(
 
 }
 
-func (w *World) Grows(e Entity) (c Grows, ok bool) {
+func (w *World) Grows(e Entity) (c GrowsComponent, ok bool) {
 	return w.growsComponents.Data(e)
 }
 
-func (w *World) MutableGrows(e Entity) (c *Grows, ok bool) {
+func (w *World) MutableGrows(e Entity) (c *GrowsComponent, ok bool) {
 	return w.growsComponents.DataMutable(e)
 }
 
-func (w *World) MustGrows(e Entity) Grows {
+func (w *World) MustGrows(e Entity) GrowsComponent {
 	c, ok := w.growsComponents.Data(e)
 	if !ok {
 		panic("entity does not have Grows")
@@ -54,7 +54,7 @@ func (w *World) HasGrows(e Entity) bool {
 	return w.growsComponents.Contains(e)
 }
 
-func (w *World) AllGrows(yield func(e Entity, c Grows) bool) {
+func (w *World) AllGrows(yield func(e Entity, c GrowsComponent) bool) {
 	for e, c := range w.growsComponents.All {
 		if !yield(e, c) {
 			break
@@ -62,7 +62,7 @@ func (w *World) AllGrows(yield func(e Entity, c Grows) bool) {
 	}
 }
 
-func (w *World) AllMutableGrows(yield func(e Entity, c *Grows) bool) {
+func (w *World) AllMutableGrows(yield func(e Entity, c *GrowsComponent) bool) {
 	for e, c := range w.growsComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -79,7 +79,7 @@ func (w *World) AllGrowsEntities(yield func(e Entity) bool) {
 }
 
 // GrowsBuilder
-func WithGrows(c Grows) EntityBuilderOption {
+func WithGrows(c GrowsComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.growsComponents.Upsert(e, c)
 	}
@@ -98,23 +98,23 @@ func WithGrowsFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetGrowsResource(c Grows) {
-	w.growsComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetGrowsResource(c GrowsComponent) {
+	w.SetGrows(w.resourceEntity, c)
 }
 
 func (w *World) SetGrowsResourceFromValues(
 	entityArg []Entity,
 ) {
-	w.SetGrowsResource(Grows{
+	w.SetGrowsResource(GrowsComponent{
 		Entity: entityArg,
 	})
 }
 
-func (w *World) GrowsResource() (Grows, bool) {
+func (w *World) GrowsResource() (GrowsComponent, bool) {
 	return w.growsComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustGrowsResource() Grows {
+func (w *World) MustGrowsResource() GrowsComponent {
 	c, ok := w.GrowsResource()
 	if !ok {
 		panic("resource entity does not have Grows")

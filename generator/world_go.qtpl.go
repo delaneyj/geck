@@ -39,7 +39,7 @@ type empty struct{}
 
 type World struct{
     nextEntityID uint32
-    livingEntities,freeEntities *roaring.Bitmap
+    livingEntities,freeEntities *SparseSet[empty]
     resourceEntity Entity
     systems []SystemTicker
     eventBus *mint.Emitter
@@ -78,7 +78,7 @@ type World struct{
 //line generator/world_go.qtpl:31
 			qw422016.E().S(c.Name.Singular.Pascal)
 //line generator/world_go.qtpl:31
-			qw422016.N().S(`]
+			qw422016.N().S(`Component]
 `)
 //line generator/world_go.qtpl:32
 		}
@@ -90,8 +90,8 @@ type World struct{
 func NewWorld() *World{
     w := &World{
         nextEntityID: 0,
-        livingEntities: roaring.New(),
-        freeEntities: roaring.New(),
+        livingEntities: NewSparseSet[empty](),
+        freeEntities: NewSparseSet[empty](),
         eventBus: &mint.Emitter{},
 
         // Initialize tags
@@ -129,7 +129,7 @@ func NewWorld() *World{
 //line generator/world_go.qtpl:54
 			qw422016.E().S(c.Name.Singular.Pascal)
 //line generator/world_go.qtpl:54
-			qw422016.N().S(`](),
+			qw422016.N().S(`Component](),
 `)
 //line generator/world_go.qtpl:55
 		}
@@ -139,7 +139,7 @@ func NewWorld() *World{
 	qw422016.N().S(`    }
     w.resourceEntity = w.CreateEntity()
 
-    
+
 
 
     return w

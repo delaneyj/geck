@@ -53,14 +53,14 @@ func (w *World) CreateEntities(count int, opts ...EntityBuilderOption) []Entity 
 	for i := range entities {
 		var entity Entity
 
-		if w.freeEntities.IsEmpty() {
+		if w.freeEntities.Len() == 0 {
 			entity = Entity(w.nextEntityID)
 			w.nextEntityID++
 		} else {
-			entity = Entity(w.freeEntities.Minimum())
-			w.freeEntities.Remove(uint32(entity))
+			entity = w.freeEntities.dense[0]
+			w.freeEntities.Remove(entity)
 		}
-		w.livingEntities.Add(uint32(entity))
+		w.livingEntities.Upsert(entity, empty{})
 		entities[i] = entity
 
 		for _, opt := range opts {
@@ -76,18 +76,38 @@ func (w *World) CreateEntity(opts ...EntityBuilderOption) Entity {
 
 func (w *World) DestroyEntities(entities ...Entity) {
 	for _, entity := range entities {
-		w.livingEntities.Remove(uint32(entity))
-		w.freeEntities.Add(uint32(entity))
+		w.livingEntities.Remove(entity)
+		w.freeEntities.Upsert(entity, empty{})
+
+		w.nameComponents.Remove(entity)
+		w.childOfComponents.Remove(entity)
+		w.isAComponents.Remove(entity)
+		w.positionComponents.Remove(entity)
+		w.velocityComponents.Remove(entity)
+		w.rotationComponents.Remove(entity)
+		w.directionComponents.Remove(entity)
+		w.eatsComponents.Remove(entity)
+		w.likesComponents.Remove(entity)
+		w.enemyTags.Remove(entity)
+		w.growsComponents.Remove(entity)
+		w.gravityComponents.Remove(entity)
+		w.spaceshipTags.Remove(entity)
+		w.spacestationTags.Remove(entity)
+		w.factionComponents.Remove(entity)
+		w.dockedToComponents.Remove(entity)
+		w.planetTags.Remove(entity)
+		w.ruledByComponents.Remove(entity)
+		w.alliedWithComponents.Remove(entity)
 	}
 }
 
 func (w *World) IsAlive(entity Entity) bool {
-	return w.livingEntities.Contains(uint32(entity))
+	return w.livingEntities.Contains(entity)
 }
 
 func (w *World) All(yield func(entity Entity) bool) {
-	for _, entity := range w.livingEntities.ToArray() {
-		if !yield(Entity(entity)) {
+	for e := range w.livingEntities.AllEntities {
+		if !yield(e) {
 			break
 		}
 	}

@@ -39,11 +39,11 @@ package `)
 //line generator/tags.qtpl:10
 	qw422016.N().S(`
 
-func (w *World) Upsert`)
+func (w *World) TagWith`)
 //line generator/tags.qtpl:12
 	qw422016.E().S(nsp)
 //line generator/tags.qtpl:12
-	qw422016.N().S(`Tag(entities ...Entity) (anyUpdated bool) {
+	qw422016.N().S(`(entities ...Entity) (anyUpdated bool) {
     for _, e := range entities {
         if _, updated := w.`)
 //line generator/tags.qtpl:14
@@ -184,7 +184,7 @@ func (w *World) ResourceHas`)
 	qw422016.N().S(`Tags.Contains(w.resourceEntity)
 }
 
-// Events 
+// Events
 `)
 //line generator/tags.qtpl:70
 	if data.ShouldGenAdded {

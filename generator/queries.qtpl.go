@@ -82,7 +82,7 @@ type `)
 //line generator/queries.qtpl:31
 			qw422016.E().S(arg.Name.Singular.Pascal)
 //line generator/queries.qtpl:31
-			qw422016.N().S(`
+			qw422016.N().S(`Component
     `)
 //line generator/queries.qtpl:32
 		}

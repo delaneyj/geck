@@ -1,6 +1,6 @@
 package ecs
 
-func (w *World) UpsertPlanetTag(entities ...Entity) (anyUpdated bool) {
+func (w *World) TagWithPlanet(entities ...Entity) (anyUpdated bool) {
 	for _, e := range entities {
 		if _, updated := w.planetTags.Upsert(e, empty{}); updated {
 			anyUpdated = true

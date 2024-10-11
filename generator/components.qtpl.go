@@ -54,7 +54,7 @@ type `)
 //line generator/components.qtpl:17
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:17
-	qw422016.N().S(` struct {
+	qw422016.N().S(`Component struct {
 `)
 //line generator/components.qtpl:18
 	for _, f := range data.Fields {
@@ -82,11 +82,11 @@ func (w *World) Set`)
 //line generator/components.qtpl:23
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:23
-	qw422016.N().S(`) (old `)
+	qw422016.N().S(`Component) (old `)
 //line generator/components.qtpl:23
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:23
-	qw422016.N().S(`, wasAdded bool) {
+	qw422016.N().S(`Component, wasAdded bool) {
     old, wasAdded = w.`)
 //line generator/components.qtpl:24
 	qw422016.E().S(ss)
@@ -158,7 +158,7 @@ func (w *World) Set`)
 //line generator/components.qtpl:47
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:47
-	qw422016.N().S(`{
+	qw422016.N().S(`Component{
 `)
 //line generator/components.qtpl:48
 	for _, f := range data.Fields {
@@ -208,7 +208,7 @@ func (w *World) `)
 //line generator/components.qtpl:61
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:61
-	qw422016.N().S(`, ok bool) {
+	qw422016.N().S(`Component, ok bool) {
     return w.`)
 //line generator/components.qtpl:62
 	qw422016.E().S(ss)
@@ -224,7 +224,7 @@ func (w *World) Mutable`)
 //line generator/components.qtpl:65
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:65
-	qw422016.N().S(`, ok bool) {
+	qw422016.N().S(`Component, ok bool) {
     return w.`)
 //line generator/components.qtpl:66
 	qw422016.E().S(ss)
@@ -240,7 +240,7 @@ func (w *World) Must`)
 //line generator/components.qtpl:69
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:69
-	qw422016.N().S(` {
+	qw422016.N().S(`Component {
     c, ok := w.`)
 //line generator/components.qtpl:70
 	qw422016.E().S(ss)
@@ -307,7 +307,7 @@ func (w *World) All`)
 //line generator/components.qtpl:94
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:94
-	qw422016.N().S(`) bool) {
+	qw422016.N().S(`Component) bool) {
     for e, c := range w.`)
 //line generator/components.qtpl:95
 	qw422016.E().S(ss)
@@ -327,7 +327,7 @@ func (w *World) AllMutable`)
 //line generator/components.qtpl:102
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:102
-	qw422016.N().S(`) bool) {
+	qw422016.N().S(`Component) bool) {
     for e, c := range w.`)
 //line generator/components.qtpl:103
 	qw422016.E().S(ss)
@@ -368,7 +368,7 @@ func With`)
 //line generator/components.qtpl:119
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:119
-	qw422016.N().S(`) EntityBuilderOption {
+	qw422016.N().S(`Component) EntityBuilderOption {
     return func(w *World, e Entity) {
         w.`)
 //line generator/components.qtpl:121
@@ -439,7 +439,7 @@ func With`)
 //line generator/components.qtpl:143
 		qw422016.E().S(nsp)
 //line generator/components.qtpl:143
-		qw422016.N().S(`
+		qw422016.N().S(`Component
 }
 func (w *World) On`)
 //line generator/components.qtpl:145
@@ -474,7 +474,7 @@ func (w *World) On`)
 //line generator/components.qtpl:156
 		qw422016.E().S(nsp)
 //line generator/components.qtpl:156
-		qw422016.N().S(`
+		qw422016.N().S(`Component
 }
 func (w *World) On`)
 //line generator/components.qtpl:158
@@ -509,7 +509,7 @@ func (w *World) On`)
 //line generator/components.qtpl:169
 		qw422016.E().S(nsp)
 //line generator/components.qtpl:169
-		qw422016.N().S(`
+		qw422016.N().S(`Component
 }
 func (w *World) On`)
 //line generator/components.qtpl:171
@@ -539,12 +539,12 @@ func (w *World) Set`)
 //line generator/components.qtpl:180
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:180
-	qw422016.N().S(`) {
-    w.`)
+	qw422016.N().S(`Component) {
+    w.Set`)
 //line generator/components.qtpl:181
-	qw422016.E().S(ss)
+	qw422016.E().S(nsp)
 //line generator/components.qtpl:181
-	qw422016.N().S(`.Upsert(w.resourceEntity, c)
+	qw422016.N().S(`(w.resourceEntity, c)
 }
 
 func (w *World) Set`)
@@ -578,7 +578,7 @@ func (w *World) Set`)
 //line generator/components.qtpl:189
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:189
-	qw422016.N().S(`{
+	qw422016.N().S(`Component{
 `)
 //line generator/components.qtpl:190
 	for _, f := range data.Fields {
@@ -607,7 +607,7 @@ func (w *World) `)
 //line generator/components.qtpl:196
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:196
-	qw422016.N().S(`,bool) {
+	qw422016.N().S(`Component,bool) {
     return w.`)
 //line generator/components.qtpl:197
 	qw422016.E().S(ss)
@@ -623,7 +623,7 @@ func (w *World) Must`)
 //line generator/components.qtpl:200
 	qw422016.E().S(nsp)
 //line generator/components.qtpl:200
-	qw422016.N().S(` {
+	qw422016.N().S(`Component {
     c, ok := w.`)
 //line generator/components.qtpl:201
 	qw422016.E().S(nsp)

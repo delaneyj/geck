@@ -1,10 +1,10 @@
 package ecs
 
-type Direction struct {
+type DirectionComponent struct {
 	Values EnumDirection
 }
 
-func (w *World) SetDirection(e Entity, c Direction) (old Direction, wasAdded bool) {
+func (w *World) SetDirection(e Entity, c DirectionComponent) (old DirectionComponent, wasAdded bool) {
 	old, wasAdded = w.directionComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -17,7 +17,7 @@ func (w *World) SetDirectionFromValues(
 	e Entity,
 	valuesArg EnumDirection,
 ) {
-	old, _ := w.SetDirection(e, Direction{
+	old, _ := w.SetDirection(e, DirectionComponent{
 		Values: valuesArg,
 	})
 
@@ -26,15 +26,15 @@ func (w *World) SetDirectionFromValues(
 
 }
 
-func (w *World) Direction(e Entity) (c Direction, ok bool) {
+func (w *World) Direction(e Entity) (c DirectionComponent, ok bool) {
 	return w.directionComponents.Data(e)
 }
 
-func (w *World) MutableDirection(e Entity) (c *Direction, ok bool) {
+func (w *World) MutableDirection(e Entity) (c *DirectionComponent, ok bool) {
 	return w.directionComponents.DataMutable(e)
 }
 
-func (w *World) MustDirection(e Entity) Direction {
+func (w *World) MustDirection(e Entity) DirectionComponent {
 	c, ok := w.directionComponents.Data(e)
 	if !ok {
 		panic("entity does not have Direction")
@@ -54,7 +54,7 @@ func (w *World) HasDirection(e Entity) bool {
 	return w.directionComponents.Contains(e)
 }
 
-func (w *World) AllDirections(yield func(e Entity, c Direction) bool) {
+func (w *World) AllDirections(yield func(e Entity, c DirectionComponent) bool) {
 	for e, c := range w.directionComponents.All {
 		if !yield(e, c) {
 			break
@@ -62,7 +62,7 @@ func (w *World) AllDirections(yield func(e Entity, c Direction) bool) {
 	}
 }
 
-func (w *World) AllMutableDirections(yield func(e Entity, c *Direction) bool) {
+func (w *World) AllMutableDirections(yield func(e Entity, c *DirectionComponent) bool) {
 	for e, c := range w.directionComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -79,7 +79,7 @@ func (w *World) AllDirectionsEntities(yield func(e Entity) bool) {
 }
 
 // DirectionBuilder
-func WithDirection(c Direction) EntityBuilderOption {
+func WithDirection(c DirectionComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.directionComponents.Upsert(e, c)
 	}
@@ -98,23 +98,23 @@ func WithDirectionFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetDirectionResource(c Direction) {
-	w.directionComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetDirectionResource(c DirectionComponent) {
+	w.SetDirection(w.resourceEntity, c)
 }
 
 func (w *World) SetDirectionResourceFromValues(
 	valuesArg EnumDirection,
 ) {
-	w.SetDirectionResource(Direction{
+	w.SetDirectionResource(DirectionComponent{
 		Values: valuesArg,
 	})
 }
 
-func (w *World) DirectionResource() (Direction, bool) {
+func (w *World) DirectionResource() (DirectionComponent, bool) {
 	return w.directionComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustDirectionResource() Direction {
+func (w *World) MustDirectionResource() DirectionComponent {
 	c, ok := w.DirectionResource()
 	if !ok {
 		panic("resource entity does not have Direction")

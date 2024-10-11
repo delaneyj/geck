@@ -1,13 +1,13 @@
 package ecs
 
-type Rotation struct {
+type RotationComponent struct {
 	X float32
 	Y float32
 	Z float32
 	W float32
 }
 
-func (w *World) SetRotation(e Entity, c Rotation) (old Rotation, wasAdded bool) {
+func (w *World) SetRotation(e Entity, c RotationComponent) (old RotationComponent, wasAdded bool) {
 	old, wasAdded = w.rotationComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -23,7 +23,7 @@ func (w *World) SetRotationFromValues(
 	zArg float32,
 	wArg float32,
 ) {
-	old, _ := w.SetRotation(e, Rotation{
+	old, _ := w.SetRotation(e, RotationComponent{
 		X: xArg,
 		Y: yArg,
 		Z: zArg,
@@ -35,15 +35,15 @@ func (w *World) SetRotationFromValues(
 
 }
 
-func (w *World) Rotation(e Entity) (c Rotation, ok bool) {
+func (w *World) Rotation(e Entity) (c RotationComponent, ok bool) {
 	return w.rotationComponents.Data(e)
 }
 
-func (w *World) MutableRotation(e Entity) (c *Rotation, ok bool) {
+func (w *World) MutableRotation(e Entity) (c *RotationComponent, ok bool) {
 	return w.rotationComponents.DataMutable(e)
 }
 
-func (w *World) MustRotation(e Entity) Rotation {
+func (w *World) MustRotation(e Entity) RotationComponent {
 	c, ok := w.rotationComponents.Data(e)
 	if !ok {
 		panic("entity does not have Rotation")
@@ -63,7 +63,7 @@ func (w *World) HasRotation(e Entity) bool {
 	return w.rotationComponents.Contains(e)
 }
 
-func (w *World) AllRotations(yield func(e Entity, c Rotation) bool) {
+func (w *World) AllRotations(yield func(e Entity, c RotationComponent) bool) {
 	for e, c := range w.rotationComponents.All {
 		if !yield(e, c) {
 			break
@@ -71,7 +71,7 @@ func (w *World) AllRotations(yield func(e Entity, c Rotation) bool) {
 	}
 }
 
-func (w *World) AllMutableRotations(yield func(e Entity, c *Rotation) bool) {
+func (w *World) AllMutableRotations(yield func(e Entity, c *RotationComponent) bool) {
 	for e, c := range w.rotationComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -88,7 +88,7 @@ func (w *World) AllRotationsEntities(yield func(e Entity) bool) {
 }
 
 // RotationBuilder
-func WithRotation(c Rotation) EntityBuilderOption {
+func WithRotation(c RotationComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.rotationComponents.Upsert(e, c)
 	}
@@ -113,8 +113,8 @@ func WithRotationFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetRotationResource(c Rotation) {
-	w.rotationComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetRotationResource(c RotationComponent) {
+	w.SetRotation(w.resourceEntity, c)
 }
 
 func (w *World) SetRotationResourceFromValues(
@@ -123,7 +123,7 @@ func (w *World) SetRotationResourceFromValues(
 	zArg float32,
 	wArg float32,
 ) {
-	w.SetRotationResource(Rotation{
+	w.SetRotationResource(RotationComponent{
 		X: xArg,
 		Y: yArg,
 		Z: zArg,
@@ -131,11 +131,11 @@ func (w *World) SetRotationResourceFromValues(
 	})
 }
 
-func (w *World) RotationResource() (Rotation, bool) {
+func (w *World) RotationResource() (RotationComponent, bool) {
 	return w.rotationComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustRotationResource() Rotation {
+func (w *World) MustRotationResource() RotationComponent {
 	c, ok := w.RotationResource()
 	if !ok {
 		panic("resource entity does not have Rotation")

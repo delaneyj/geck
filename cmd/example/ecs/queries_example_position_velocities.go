@@ -1,9 +1,9 @@
 package ecs
 
 type QueryExamplePositionVelocitiesArgs struct {
-	Velocity Velocity
+	Velocity VelocityComponent
 
-	Position *Position
+	Position *PositionComponent
 }
 
 type queryExamplePositionVelocitiesIter func(e Entity, args QueryExamplePositionVelocitiesArgs) bool

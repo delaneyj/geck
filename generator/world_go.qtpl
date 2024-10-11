@@ -13,7 +13,7 @@ type empty struct{}
 
 type World struct{
     nextEntityID uint32
-    livingEntities,freeEntities *roaring.Bitmap
+    livingEntities,freeEntities *SparseSet[empty]
     resourceEntity Entity
     systems []SystemTicker
     eventBus *mint.Emitter
@@ -28,7 +28,7 @@ type World struct{
     // Components
     {%- for _, c := range data.Components -%}
     {%- if !c.IsTag -%}
-    {%s c.Name.Singular.Camel %}Components *SparseSet[{%s c.Name.Singular.Pascal %}]
+    {%s c.Name.Singular.Camel %}Components *SparseSet[{%s c.Name.Singular.Pascal %}Component]
     {%- endif -%}
     {%- endfor -%}
 }
@@ -36,8 +36,8 @@ type World struct{
 func NewWorld() *World{
     w := &World{
         nextEntityID: 0,
-        livingEntities: roaring.New(),
-        freeEntities: roaring.New(),
+        livingEntities: NewSparseSet[empty](),
+        freeEntities: NewSparseSet[empty](),
         eventBus: &mint.Emitter{},
 
         // Initialize tags
@@ -51,13 +51,13 @@ func NewWorld() *World{
         // Initialize components
         {%- for _, c := range data.Components -%}
             {%- if !c.IsTag -%}
-                {%s c.Name.Singular.Camel %}Components: NewSparseSet[{%s c.Name.Singular.Pascal %}](),
+                {%s c.Name.Singular.Camel %}Components: NewSparseSet[{%s c.Name.Singular.Pascal %}Component](),
             {%- endif -%}
         {%- endfor -%}
     }
     w.resourceEntity = w.CreateEntity()
 
-    
+
 
 
     return w

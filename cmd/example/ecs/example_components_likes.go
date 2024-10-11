@@ -1,10 +1,10 @@
 package ecs
 
-type Likes struct {
+type LikesComponent struct {
 	Entity []Entity
 }
 
-func (w *World) SetLikes(e Entity, c Likes) (old Likes, wasAdded bool) {
+func (w *World) SetLikes(e Entity, c LikesComponent) (old LikesComponent, wasAdded bool) {
 	old, wasAdded = w.likesComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -17,7 +17,7 @@ func (w *World) SetLikesFromValues(
 	e Entity,
 	entityArg []Entity,
 ) {
-	old, _ := w.SetLikes(e, Likes{
+	old, _ := w.SetLikes(e, LikesComponent{
 		Entity: entityArg,
 	})
 
@@ -26,15 +26,15 @@ func (w *World) SetLikesFromValues(
 
 }
 
-func (w *World) Likes(e Entity) (c Likes, ok bool) {
+func (w *World) Likes(e Entity) (c LikesComponent, ok bool) {
 	return w.likesComponents.Data(e)
 }
 
-func (w *World) MutableLikes(e Entity) (c *Likes, ok bool) {
+func (w *World) MutableLikes(e Entity) (c *LikesComponent, ok bool) {
 	return w.likesComponents.DataMutable(e)
 }
 
-func (w *World) MustLikes(e Entity) Likes {
+func (w *World) MustLikes(e Entity) LikesComponent {
 	c, ok := w.likesComponents.Data(e)
 	if !ok {
 		panic("entity does not have Likes")
@@ -54,7 +54,7 @@ func (w *World) HasLikes(e Entity) bool {
 	return w.likesComponents.Contains(e)
 }
 
-func (w *World) AllLikes(yield func(e Entity, c Likes) bool) {
+func (w *World) AllLikes(yield func(e Entity, c LikesComponent) bool) {
 	for e, c := range w.likesComponents.All {
 		if !yield(e, c) {
 			break
@@ -62,7 +62,7 @@ func (w *World) AllLikes(yield func(e Entity, c Likes) bool) {
 	}
 }
 
-func (w *World) AllMutableLikes(yield func(e Entity, c *Likes) bool) {
+func (w *World) AllMutableLikes(yield func(e Entity, c *LikesComponent) bool) {
 	for e, c := range w.likesComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -79,7 +79,7 @@ func (w *World) AllLikesEntities(yield func(e Entity) bool) {
 }
 
 // LikesBuilder
-func WithLikes(c Likes) EntityBuilderOption {
+func WithLikes(c LikesComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.likesComponents.Upsert(e, c)
 	}
@@ -98,23 +98,23 @@ func WithLikesFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetLikesResource(c Likes) {
-	w.likesComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetLikesResource(c LikesComponent) {
+	w.SetLikes(w.resourceEntity, c)
 }
 
 func (w *World) SetLikesResourceFromValues(
 	entityArg []Entity,
 ) {
-	w.SetLikesResource(Likes{
+	w.SetLikesResource(LikesComponent{
 		Entity: entityArg,
 	})
 }
 
-func (w *World) LikesResource() (Likes, bool) {
+func (w *World) LikesResource() (LikesComponent, bool) {
 	return w.likesComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustLikesResource() Likes {
+func (w *World) MustLikesResource() LikesComponent {
 	c, ok := w.LikesResource()
 	if !ok {
 		panic("resource entity does not have Likes")

@@ -1,12 +1,12 @@
 package ecs
 
-type Velocity struct {
+type VelocityComponent struct {
 	X float32
 	Y float32
 	Z float32
 }
 
-func (w *World) SetVelocity(e Entity, c Velocity) (old Velocity, wasAdded bool) {
+func (w *World) SetVelocity(e Entity, c VelocityComponent) (old VelocityComponent, wasAdded bool) {
 	old, wasAdded = w.velocityComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -21,7 +21,7 @@ func (w *World) SetVelocityFromValues(
 	yArg float32,
 	zArg float32,
 ) {
-	old, _ := w.SetVelocity(e, Velocity{
+	old, _ := w.SetVelocity(e, VelocityComponent{
 		X: xArg,
 		Y: yArg,
 		Z: zArg,
@@ -32,15 +32,15 @@ func (w *World) SetVelocityFromValues(
 
 }
 
-func (w *World) Velocity(e Entity) (c Velocity, ok bool) {
+func (w *World) Velocity(e Entity) (c VelocityComponent, ok bool) {
 	return w.velocityComponents.Data(e)
 }
 
-func (w *World) MutableVelocity(e Entity) (c *Velocity, ok bool) {
+func (w *World) MutableVelocity(e Entity) (c *VelocityComponent, ok bool) {
 	return w.velocityComponents.DataMutable(e)
 }
 
-func (w *World) MustVelocity(e Entity) Velocity {
+func (w *World) MustVelocity(e Entity) VelocityComponent {
 	c, ok := w.velocityComponents.Data(e)
 	if !ok {
 		panic("entity does not have Velocity")
@@ -60,7 +60,7 @@ func (w *World) HasVelocity(e Entity) bool {
 	return w.velocityComponents.Contains(e)
 }
 
-func (w *World) AllVelocities(yield func(e Entity, c Velocity) bool) {
+func (w *World) AllVelocities(yield func(e Entity, c VelocityComponent) bool) {
 	for e, c := range w.velocityComponents.All {
 		if !yield(e, c) {
 			break
@@ -68,7 +68,7 @@ func (w *World) AllVelocities(yield func(e Entity, c Velocity) bool) {
 	}
 }
 
-func (w *World) AllMutableVelocities(yield func(e Entity, c *Velocity) bool) {
+func (w *World) AllMutableVelocities(yield func(e Entity, c *VelocityComponent) bool) {
 	for e, c := range w.velocityComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -85,7 +85,7 @@ func (w *World) AllVelocitiesEntities(yield func(e Entity) bool) {
 }
 
 // VelocityBuilder
-func WithVelocity(c Velocity) EntityBuilderOption {
+func WithVelocity(c VelocityComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.velocityComponents.Upsert(e, c)
 	}
@@ -108,8 +108,8 @@ func WithVelocityFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetVelocityResource(c Velocity) {
-	w.velocityComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetVelocityResource(c VelocityComponent) {
+	w.SetVelocity(w.resourceEntity, c)
 }
 
 func (w *World) SetVelocityResourceFromValues(
@@ -117,18 +117,18 @@ func (w *World) SetVelocityResourceFromValues(
 	yArg float32,
 	zArg float32,
 ) {
-	w.SetVelocityResource(Velocity{
+	w.SetVelocityResource(VelocityComponent{
 		X: xArg,
 		Y: yArg,
 		Z: zArg,
 	})
 }
 
-func (w *World) VelocityResource() (Velocity, bool) {
+func (w *World) VelocityResource() (VelocityComponent, bool) {
 	return w.velocityComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustVelocityResource() Velocity {
+func (w *World) MustVelocityResource() VelocityComponent {
 	c, ok := w.VelocityResource()
 	if !ok {
 		panic("resource entity does not have Velocity")

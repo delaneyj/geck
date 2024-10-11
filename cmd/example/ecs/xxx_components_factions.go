@@ -1,10 +1,10 @@
 package ecs
 
-type Faction struct {
+type FactionComponent struct {
 	Entity Entity
 }
 
-func (w *World) SetFaction(e Entity, c Faction) (old Faction, wasAdded bool) {
+func (w *World) SetFaction(e Entity, c FactionComponent) (old FactionComponent, wasAdded bool) {
 	old, wasAdded = w.factionComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -17,7 +17,7 @@ func (w *World) SetFactionFromValues(
 	e Entity,
 	entityArg Entity,
 ) {
-	old, _ := w.SetFaction(e, Faction{
+	old, _ := w.SetFaction(e, FactionComponent{
 		Entity: entityArg,
 	})
 
@@ -26,15 +26,15 @@ func (w *World) SetFactionFromValues(
 
 }
 
-func (w *World) Faction(e Entity) (c Faction, ok bool) {
+func (w *World) Faction(e Entity) (c FactionComponent, ok bool) {
 	return w.factionComponents.Data(e)
 }
 
-func (w *World) MutableFaction(e Entity) (c *Faction, ok bool) {
+func (w *World) MutableFaction(e Entity) (c *FactionComponent, ok bool) {
 	return w.factionComponents.DataMutable(e)
 }
 
-func (w *World) MustFaction(e Entity) Faction {
+func (w *World) MustFaction(e Entity) FactionComponent {
 	c, ok := w.factionComponents.Data(e)
 	if !ok {
 		panic("entity does not have Faction")
@@ -54,7 +54,7 @@ func (w *World) HasFaction(e Entity) bool {
 	return w.factionComponents.Contains(e)
 }
 
-func (w *World) AllFactions(yield func(e Entity, c Faction) bool) {
+func (w *World) AllFactions(yield func(e Entity, c FactionComponent) bool) {
 	for e, c := range w.factionComponents.All {
 		if !yield(e, c) {
 			break
@@ -62,7 +62,7 @@ func (w *World) AllFactions(yield func(e Entity, c Faction) bool) {
 	}
 }
 
-func (w *World) AllMutableFactions(yield func(e Entity, c *Faction) bool) {
+func (w *World) AllMutableFactions(yield func(e Entity, c *FactionComponent) bool) {
 	for e, c := range w.factionComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -79,7 +79,7 @@ func (w *World) AllFactionsEntities(yield func(e Entity) bool) {
 }
 
 // FactionBuilder
-func WithFaction(c Faction) EntityBuilderOption {
+func WithFaction(c FactionComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.factionComponents.Upsert(e, c)
 	}
@@ -98,23 +98,23 @@ func WithFactionFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetFactionResource(c Faction) {
-	w.factionComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetFactionResource(c FactionComponent) {
+	w.SetFaction(w.resourceEntity, c)
 }
 
 func (w *World) SetFactionResourceFromValues(
 	entityArg Entity,
 ) {
-	w.SetFactionResource(Faction{
+	w.SetFactionResource(FactionComponent{
 		Entity: entityArg,
 	})
 }
 
-func (w *World) FactionResource() (Faction, bool) {
+func (w *World) FactionResource() (FactionComponent, bool) {
 	return w.factionComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustFactionResource() Faction {
+func (w *World) MustFactionResource() FactionComponent {
 	c, ok := w.FactionResource()
 	if !ok {
 		panic("resource entity does not have Faction")

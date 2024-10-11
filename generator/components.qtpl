@@ -14,13 +14,13 @@ nsc := data.Name.Singular.Camel
 ss := nsc + "Components"
 -%}
 
-type {%s nsp %} struct {
+type {%s nsp %}Component struct {
     {%- for _, f := range data.Fields -%}
     {%s f.Name.Singular.Pascal %} {%s f.Type.Singular.Original %}
     {%- endfor -%}
 }
 
-func (w *World) Set{%s nsp %}(e Entity, c {%s nsp %}) (old {%s nsp %}, wasAdded bool) {
+func (w *World) Set{%s nsp %}(e Entity, c {%s nsp %}Component) (old {%s nsp %}Component, wasAdded bool) {
     old, wasAdded = w.{%s ss %}.Upsert(e, c);
 
     // depending on the generation flags, these might be unused
@@ -44,7 +44,7 @@ func (w *World) Set{%s nsp %}FromValues(
     {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
     {%- endfor -%}
 ) {
-    old, _ := w.Set{%s nsp %}(e, {%s nsp %}{
+    old, _ := w.Set{%s nsp %}(e, {%s nsp %}Component{
         {%- for _, f := range data.Fields -%}
         {%s f.Name.Singular.Pascal %}: {%s f.Name.Singular.Camel %}Arg,
         {%- endfor -%}
@@ -58,15 +58,15 @@ func (w *World) Set{%s nsp %}FromValues(
     {%- endif -%}
 }
 
-func (w *World) {%s nsp %}(e Entity) (c {%s nsp %}, ok bool) {
+func (w *World) {%s nsp %}(e Entity) (c {%s nsp %}Component, ok bool) {
     return w.{%s ss %}.Data(e)
 }
 
-func (w *World) Mutable{%s nsp %}(e Entity) (c *{%s nsp %}, ok bool) {
+func (w *World) Mutable{%s nsp %}(e Entity) (c *{%s nsp %}Component, ok bool) {
     return w.{%s ss %}.DataMutable(e)
 }
 
-func (w *World) Must{%s nsp %}(e Entity) {%s nsp %} {
+func (w *World) Must{%s nsp %}(e Entity) {%s nsp %}Component {
     c, ok := w.{%s ss %}.Data(e)
     if !ok {
         panic("entity does not have {%s nsp %}")
@@ -91,7 +91,7 @@ func (w *World) Has{%s nsp %}(e Entity) bool {
     return w.{%s ss %}.Contains(e)
 }
 
-func (w *World) All{%s npp %}(yield func(e Entity, c {%s nsp %}) bool) {
+func (w *World) All{%s npp %}(yield func(e Entity, c {%s nsp %}Component) bool) {
     for e, c := range w.{%s ss %}.All {
         if !yield(e, c) {
             break
@@ -99,7 +99,7 @@ func (w *World) All{%s npp %}(yield func(e Entity, c {%s nsp %}) bool) {
     }
 }
 
-func (w *World) AllMutable{%s npp %}(yield func(e Entity, c *{%s nsp %}) bool) {
+func (w *World) AllMutable{%s npp %}(yield func(e Entity, c *{%s nsp %}Component) bool) {
     for e, c := range w.{%s ss %}.AllMutable {
         if !yield(e, c) {
             break
@@ -116,7 +116,7 @@ func (w *World) All{%s npp %}Entities(yield func(e Entity) bool) {
 }
 
 // {%s nsp %}Builder
-func With{%s nsp %}(c {%s nsp %}) EntityBuilderOption {
+func With{%s nsp %}(c {%s nsp %}Component) EntityBuilderOption {
     return func(w *World, e Entity) {
         w.{%s ss %}.Upsert(e, c)
     }
@@ -140,7 +140,7 @@ func With{%s nsp %}FromValues(
 {%- if data.ShouldGenAdded -%}
 type {%s nsp %}AddedEvent struct {
     Entity Entity
-    Component {%s nsp %}
+    Component {%s nsp %}Component
 }
 func (w *World) On{%s nsp %}Added(fn func(evt {%s nsp %}AddedEvent)) UnsubscribeFunc {
     unsub := mint.On(w.eventBus, fn)
@@ -153,7 +153,7 @@ func (w *World) On{%s nsp %}Added(fn func(evt {%s nsp %}AddedEvent)) Unsubscribe
 {%- if data.ShouldGenRemoved -%}
 type {%s nsp %}RemovedEvent struct {
     Entity Entity
-    Component {%s nsp %}
+    Component {%s nsp %}Component
 }
 func (w *World) On{%s nsp %}Removed(fn func(evt {%s nsp %}RemovedEvent)) UnsubscribeFunc {
     unsub := mint.On(w.eventBus, fn)
@@ -166,7 +166,7 @@ func (w *World) On{%s nsp %}Removed(fn func(evt {%s nsp %}RemovedEvent)) Unsubsc
 {%- if data.ShouldGenChanged -%}
 type {%s nsp %}ChangedEvent struct {
     Entity Entity
-    Old, New {%s nsp %}
+    Old, New {%s nsp %}Component
 }
 func (w *World) On{%s nsp %}Changed(fn func(evt {%s nsp %}ChangedEvent)) UnsubscribeFunc {
 	unsub := mint.On(w.eventBus, fn)
@@ -177,8 +177,8 @@ func (w *World) On{%s nsp %}Changed(fn func(evt {%s nsp %}ChangedEvent)) Unsubsc
 {%- endif -%}
 
 // Resource methods
-func (w *World) Set{%s nsp %}Resource(c {%s nsp %}) {
-    w.{%s ss %}.Upsert(w.resourceEntity, c)
+func (w *World) Set{%s nsp %}Resource(c {%s nsp %}Component) {
+    w.Set{%s nsp %}(w.resourceEntity, c)
 }
 
 func (w *World) Set{%s nsp %}ResourceFromValues(
@@ -186,18 +186,18 @@ func (w *World) Set{%s nsp %}ResourceFromValues(
     {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
     {%- endfor -%}
 ) {
-   w.Set{%s nsp %}Resource({%s nsp %}{
+   w.Set{%s nsp %}Resource({%s nsp %}Component{
         {%- for _, f := range data.Fields -%}
         {%s f.Name.Singular.Pascal %}: {%s f.Name.Singular.Camel %}Arg,
         {%- endfor -%}
     })
 }
 
-func (w *World) {%s nsp %}Resource() ({%s nsp %},bool) {
+func (w *World) {%s nsp %}Resource() ({%s nsp %}Component,bool) {
     return w.{%s ss %}.Data(w.resourceEntity)
 }
 
-func (w *World) Must{%s nsp %}Resource() {%s nsp %} {
+func (w *World) Must{%s nsp %}Resource() {%s nsp %}Component {
     c, ok := w.{%s nsp %}Resource()
     if !ok {
         panic("resource entity does not have {%s nsp %}")

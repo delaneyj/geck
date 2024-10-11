@@ -9,7 +9,7 @@ nsc := data.Name.Singular.Camel
 ss := nsc + "Tags"
 %}
 
-func (w *World) Upsert{%s nsp %}Tag(entities ...Entity) (anyUpdated bool) {
+func (w *World) TagWith{%s nsp %}(entities ...Entity) (anyUpdated bool) {
     for _, e := range entities {
         if _, updated := w.{%s ss %}.Upsert(e, empty{}); updated{
             anyUpdated = true
@@ -66,7 +66,7 @@ func (w *World) ResourceHas{%s nsp %}Tag() bool {
     return w.{%s nsc %}Tags.Contains(w.resourceEntity)
 }
 
-// Events 
+// Events
 {%- if data.ShouldGenAdded -%}
 type {%s nsp %}AddedEvent struct {
     Entities []Entity

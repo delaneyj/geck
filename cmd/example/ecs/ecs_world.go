@@ -3,7 +3,6 @@ package ecs
 import (
 	"fmt"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/btvoidx/mint"
 )
 
@@ -11,7 +10,7 @@ type empty struct{}
 
 type World struct {
 	nextEntityID                 uint32
-	livingEntities, freeEntities *roaring.Bitmap
+	livingEntities, freeEntities *SparseSet[empty]
 	resourceEntity               Entity
 	systems                      []SystemTicker
 	eventBus                     *mint.Emitter
@@ -23,28 +22,28 @@ type World struct {
 	planetTags       *SparseSet[empty]
 
 	// Components
-	nameComponents       *SparseSet[Name]
-	childOfComponents    *SparseSet[ChildOf]
-	isAComponents        *SparseSet[IsA]
-	positionComponents   *SparseSet[Position]
-	velocityComponents   *SparseSet[Velocity]
-	rotationComponents   *SparseSet[Rotation]
-	directionComponents  *SparseSet[Direction]
-	eatsComponents       *SparseSet[Eats]
-	likesComponents      *SparseSet[Likes]
-	growsComponents      *SparseSet[Grows]
-	gravityComponents    *SparseSet[Gravity]
-	factionComponents    *SparseSet[Faction]
-	dockedToComponents   *SparseSet[DockedTo]
-	ruledByComponents    *SparseSet[RuledBy]
-	alliedWithComponents *SparseSet[AlliedWith]
+	nameComponents       *SparseSet[NameComponent]
+	childOfComponents    *SparseSet[ChildOfComponent]
+	isAComponents        *SparseSet[IsAComponent]
+	positionComponents   *SparseSet[PositionComponent]
+	velocityComponents   *SparseSet[VelocityComponent]
+	rotationComponents   *SparseSet[RotationComponent]
+	directionComponents  *SparseSet[DirectionComponent]
+	eatsComponents       *SparseSet[EatsComponent]
+	likesComponents      *SparseSet[LikesComponent]
+	growsComponents      *SparseSet[GrowsComponent]
+	gravityComponents    *SparseSet[GravityComponent]
+	factionComponents    *SparseSet[FactionComponent]
+	dockedToComponents   *SparseSet[DockedToComponent]
+	ruledByComponents    *SparseSet[RuledByComponent]
+	alliedWithComponents *SparseSet[AlliedWithComponent]
 }
 
 func NewWorld() *World {
 	w := &World{
 		nextEntityID:   0,
-		livingEntities: roaring.New(),
-		freeEntities:   roaring.New(),
+		livingEntities: NewSparseSet[empty](),
+		freeEntities:   NewSparseSet[empty](),
 		eventBus:       &mint.Emitter{},
 
 		// Initialize tags
@@ -54,21 +53,21 @@ func NewWorld() *World {
 		planetTags:       NewSparseSet[empty](),
 
 		// Initialize components
-		nameComponents:       NewSparseSet[Name](),
-		childOfComponents:    NewSparseSet[ChildOf](),
-		isAComponents:        NewSparseSet[IsA](),
-		positionComponents:   NewSparseSet[Position](),
-		velocityComponents:   NewSparseSet[Velocity](),
-		rotationComponents:   NewSparseSet[Rotation](),
-		directionComponents:  NewSparseSet[Direction](),
-		eatsComponents:       NewSparseSet[Eats](),
-		likesComponents:      NewSparseSet[Likes](),
-		growsComponents:      NewSparseSet[Grows](),
-		gravityComponents:    NewSparseSet[Gravity](),
-		factionComponents:    NewSparseSet[Faction](),
-		dockedToComponents:   NewSparseSet[DockedTo](),
-		ruledByComponents:    NewSparseSet[RuledBy](),
-		alliedWithComponents: NewSparseSet[AlliedWith](),
+		nameComponents:       NewSparseSet[NameComponent](),
+		childOfComponents:    NewSparseSet[ChildOfComponent](),
+		isAComponents:        NewSparseSet[IsAComponent](),
+		positionComponents:   NewSparseSet[PositionComponent](),
+		velocityComponents:   NewSparseSet[VelocityComponent](),
+		rotationComponents:   NewSparseSet[RotationComponent](),
+		directionComponents:  NewSparseSet[DirectionComponent](),
+		eatsComponents:       NewSparseSet[EatsComponent](),
+		likesComponents:      NewSparseSet[LikesComponent](),
+		growsComponents:      NewSparseSet[GrowsComponent](),
+		gravityComponents:    NewSparseSet[GravityComponent](),
+		factionComponents:    NewSparseSet[FactionComponent](),
+		dockedToComponents:   NewSparseSet[DockedToComponent](),
+		ruledByComponents:    NewSparseSet[RuledByComponent](),
+		alliedWithComponents: NewSparseSet[AlliedWithComponent](),
 	}
 	w.resourceEntity = w.CreateEntity()
 

@@ -1,11 +1,11 @@
 package ecs
 
-type Eats struct {
+type EatsComponent struct {
 	Entities []Entity
 	Amounts  []uint8
 }
 
-func (w *World) SetEats(e Entity, c Eats) (old Eats, wasAdded bool) {
+func (w *World) SetEats(e Entity, c EatsComponent) (old EatsComponent, wasAdded bool) {
 	old, wasAdded = w.eatsComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
@@ -19,7 +19,7 @@ func (w *World) SetEatsFromValues(
 	entitiesArg []Entity,
 	amountsArg []uint8,
 ) {
-	old, _ := w.SetEats(e, Eats{
+	old, _ := w.SetEats(e, EatsComponent{
 		Entities: entitiesArg,
 		Amounts:  amountsArg,
 	})
@@ -29,15 +29,15 @@ func (w *World) SetEatsFromValues(
 
 }
 
-func (w *World) Eats(e Entity) (c Eats, ok bool) {
+func (w *World) Eats(e Entity) (c EatsComponent, ok bool) {
 	return w.eatsComponents.Data(e)
 }
 
-func (w *World) MutableEats(e Entity) (c *Eats, ok bool) {
+func (w *World) MutableEats(e Entity) (c *EatsComponent, ok bool) {
 	return w.eatsComponents.DataMutable(e)
 }
 
-func (w *World) MustEats(e Entity) Eats {
+func (w *World) MustEats(e Entity) EatsComponent {
 	c, ok := w.eatsComponents.Data(e)
 	if !ok {
 		panic("entity does not have Eats")
@@ -57,7 +57,7 @@ func (w *World) HasEats(e Entity) bool {
 	return w.eatsComponents.Contains(e)
 }
 
-func (w *World) AllEats(yield func(e Entity, c Eats) bool) {
+func (w *World) AllEats(yield func(e Entity, c EatsComponent) bool) {
 	for e, c := range w.eatsComponents.All {
 		if !yield(e, c) {
 			break
@@ -65,7 +65,7 @@ func (w *World) AllEats(yield func(e Entity, c Eats) bool) {
 	}
 }
 
-func (w *World) AllMutableEats(yield func(e Entity, c *Eats) bool) {
+func (w *World) AllMutableEats(yield func(e Entity, c *EatsComponent) bool) {
 	for e, c := range w.eatsComponents.AllMutable {
 		if !yield(e, c) {
 			break
@@ -82,7 +82,7 @@ func (w *World) AllEatsEntities(yield func(e Entity) bool) {
 }
 
 // EatsBuilder
-func WithEats(c Eats) EntityBuilderOption {
+func WithEats(c EatsComponent) EntityBuilderOption {
 	return func(w *World, e Entity) {
 		w.eatsComponents.Upsert(e, c)
 	}
@@ -103,25 +103,25 @@ func WithEatsFromValues(
 // Events
 
 // Resource methods
-func (w *World) SetEatsResource(c Eats) {
-	w.eatsComponents.Upsert(w.resourceEntity, c)
+func (w *World) SetEatsResource(c EatsComponent) {
+	w.SetEats(w.resourceEntity, c)
 }
 
 func (w *World) SetEatsResourceFromValues(
 	entitiesArg []Entity,
 	amountsArg []uint8,
 ) {
-	w.SetEatsResource(Eats{
+	w.SetEatsResource(EatsComponent{
 		Entities: entitiesArg,
 		Amounts:  amountsArg,
 	})
 }
 
-func (w *World) EatsResource() (Eats, bool) {
+func (w *World) EatsResource() (EatsComponent, bool) {
 	return w.eatsComponents.Data(w.resourceEntity)
 }
 
-func (w *World) MustEatsResource() Eats {
+func (w *World) MustEatsResource() EatsComponent {
 	c, ok := w.EatsResource()
 	if !ok {
 		panic("resource entity does not have Eats")
