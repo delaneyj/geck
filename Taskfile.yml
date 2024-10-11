@@ -2,14 +2,15 @@
 
 version: "3"
 
+interval: 100ms
+
 vars:
-  VERSION: 0.2.1
+  VERSION: 0.3.0
 
 tasks:
   tools:
     cmds:
-      - go install github.com/bufbuild/buf/cmd/buf@latest
-      - go install github.com/google/pprof@latest
+      - go install  github.com/valyala/quicktemplate/qtc@latest
   pb:
     dir: pb
     sources:
@@ -22,6 +23,12 @@ tasks:
       - buf dep update
       - rm -rf gen
       - buf generate
+
+  qtc:
+    sources:
+      - "**/*.qtpl"
+    cmds:
+      - qtc
 
   libpub:
     dir: ./library
@@ -38,11 +45,20 @@ tasks:
       - go run main.go
       - go tool pprof -http=localhost:5432 cpu.prof
 
+  test:
+    dir: ./cmd/geckgen
+    method: none
+    sources:
+      - "../../generator/**/*.go"
+      - "geckgen.json"
+    deps:
+      - qtc
+    cmds:
+      - go run main.go
+
   install:
     dir: ./cmd/geckgen
-    sources:
-      - "**/*.go"
-      - "**/*.gtpl"
-
+    deps:
+      - test
     cmds:
       - go install

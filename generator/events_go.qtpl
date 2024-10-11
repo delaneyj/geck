@@ -1,4 +1,7 @@
-package ecs
+package generator
+
+{% func eventsTemplate(data *ecsTmplData) %}
+package {%s data.PackageName %}
 
 import "github.com/btvoidx/mint"
 
@@ -23,5 +26,7 @@ func (w *World) OnEntitiesDestroyed(fn func(EntitiesDestroyedEvent)) Unsubscribe
 }
 
 func fireEvent[T any](w *World, event T) {
-	mint.Emit(w.eventBus, event)
+	mint.Emit(w.eventBus,event)
 }
+
+{% endfunc %}

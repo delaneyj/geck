@@ -20,9 +20,9 @@
                     "additionalProperties": false,
                     "type": "array"
                 },
-                "componentSets": {
+                "queries": {
                     "items": {
-                        "$ref": "#/definitions/geck.v1.ComponentSetDefinition"
+                        "$ref": "#/definitions/geck.v1.QueryDefinition"
                     },
                     "additionalProperties": false,
                     "type": "array"
@@ -93,40 +93,6 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Component Definition"
-        },
-        "geck.v1.ComponentSetDefinition": {
-            "properties": {
-                "owned": {
-                    "items": {
-                        "$ref": "#/definitions/geck.v1.ComponentSetDefinition.Component"
-                    },
-                    "additionalProperties": false,
-                    "type": "array"
-                },
-                "borrowed": {
-                    "items": {
-                        "$ref": "#/definitions/geck.v1.ComponentSetDefinition.Component"
-                    },
-                    "additionalProperties": false,
-                    "type": "array"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Component Set Definition"
-        },
-        "geck.v1.ComponentSetDefinition.Component": {
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "isWriteable": {
-                    "type": "boolean"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Component"
         },
         "geck.v1.Enum": {
             "properties": {
@@ -302,6 +268,39 @@
                 }
             ],
             "title": "Field Definition"
+        },
+        "geck.v1.QueryDefinition": {
+            "properties": {
+                "alias": {
+                    "type": "string"
+                },
+                "entries": {
+                    "items": {
+                        "$ref": "#/definitions/geck.v1.QueryDefinition.ComponentOrTag"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Query Definition"
+        },
+        "geck.v1.QueryDefinition.ComponentOrTag": {
+            "properties": {
+                "bundleName": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "isMutable": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Component Or Tag"
         }
     }
 }

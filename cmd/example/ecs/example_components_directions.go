@@ -1,216 +1,127 @@
 package ecs
 
-import (
-	ecspb "github.com/delaneyj/geck/cmd/example/ecs/pb/gen/ecs/v1"
-)
-
-type Direction EnumDirection
-
-func DirectionFromEnumDirection(c EnumDirection) Direction {
-	return Direction(c)
+type DirectionComponent struct {
+	Values EnumDirection
 }
 
-func (c Direction) ToEnumDirection() EnumDirection {
-	return EnumDirection(c)
+func (w *World) SetDirection(e Entity, c DirectionComponent) (old DirectionComponent, wasAdded bool) {
+	old, wasAdded = w.directionComponents.Upsert(e, c)
+
+	// depending on the generation flags, these might be unused
+	_, _ = old, wasAdded
+
+	return old, wasAdded
 }
 
-func (w *World) ResetDirection() EnumDirection {
-	return EnumDirection(0)
+func (w *World) SetDirectionFromValues(
+	e Entity,
+	valuesArg EnumDirection,
+) {
+	old, _ := w.SetDirection(e, DirectionComponent{
+		Values: valuesArg,
+	})
+
+	// depending on the generation flags, these might be unused
+	_ = old
+
 }
 
-//#region Events
-//#endregion
-
-func (e Entity) HasDirection() bool {
-	return e.w.directionsStore.Has(e)
+func (w *World) Direction(e Entity) (c DirectionComponent, ok bool) {
+	return w.directionComponents.Data(e)
 }
 
-func (e Entity) ReadDirection() (Direction, bool) {
-	return e.w.directionsStore.Read(e)
+func (w *World) MutableDirection(e Entity) (c *DirectionComponent, ok bool) {
+	return w.directionComponents.DataMutable(e)
 }
 
-func (e Entity) MustReadDirection() Direction {
-	c, ok := e.w.directionsStore.Read(e)
+func (w *World) MustDirection(e Entity) DirectionComponent {
+	c, ok := w.directionComponents.Data(e)
 	if !ok {
-		panic("Direction not found")
+		panic("entity does not have Direction")
 	}
 	return c
 }
 
-func (e Entity) RemoveDirection() Entity {
-	e.w.directionsStore.Remove(e)
+func (w *World) RemoveDirection(e Entity) {
+	wasRemoved := w.directionComponents.Remove(e)
 
-	e.w.patch.DirectionComponents[e.val] = nil
-	return e
+	// depending on the generation flags, these might be unused
+	_ = wasRemoved
+
 }
 
-func (e Entity) WritableDirection() (c *Direction, done func()) {
-	var ok bool
-	c, ok = e.w.directionsStore.Writeable(e)
+func (w *World) HasDirection(e Entity) bool {
+	return w.directionComponents.Contains(e)
+}
+
+func (w *World) AllDirections(yield func(e Entity, c DirectionComponent) bool) {
+	for e, c := range w.directionComponents.All {
+		if !yield(e, c) {
+			break
+		}
+	}
+}
+
+func (w *World) AllMutableDirections(yield func(e Entity, c *DirectionComponent) bool) {
+	for e, c := range w.directionComponents.AllMutable {
+		if !yield(e, c) {
+			break
+		}
+	}
+}
+
+func (w *World) AllDirectionsEntities(yield func(e Entity) bool) {
+	for e := range w.directionComponents.AllEntities {
+		if !yield(e) {
+			break
+		}
+	}
+}
+
+// DirectionBuilder
+func WithDirection(c DirectionComponent) EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.directionComponents.Upsert(e, c)
+	}
+}
+
+func WithDirectionFromValues(
+	valuesArg EnumDirection,
+) EntityBuilderOption {
+	return func(w *World, e Entity) {
+		w.SetDirectionFromValues(e,
+			valuesArg,
+		)
+	}
+}
+
+// Events
+
+// Resource methods
+func (w *World) SetDirectionResource(c DirectionComponent) {
+	w.SetDirection(w.resourceEntity, c)
+}
+
+func (w *World) SetDirectionResourceFromValues(
+	valuesArg EnumDirection,
+) {
+	w.SetDirectionResource(DirectionComponent{
+		Values: valuesArg,
+	})
+}
+
+func (w *World) DirectionResource() (DirectionComponent, bool) {
+	return w.directionComponents.Data(w.resourceEntity)
+}
+
+func (w *World) MustDirectionResource() DirectionComponent {
+	c, ok := w.DirectionResource()
 	if !ok {
-		return nil, nil
+		panic("resource entity does not have Direction")
 	}
-	return c, func() {
-		e.w.patch.DirectionComponents[e.val] = c.ToPB()
-	}
+	return c
 }
 
-func (e Entity) SetDirection(other Direction) Entity {
-	e.w.directionsStore.Set(other, e)
-
-	e.w.patch.DirectionComponents[e.val] = Direction(other).ToPB()
-	return e
-}
-
-func (w *World) SetDirections(c Direction, entities ...Entity) {
-	if len(entities) == 0 {
-		panic("no entities provided, are you sure you didn't mean to call SetDirectionResource?")
-	}
-	w.directionsStore.Set(c, entities...)
-	w.patch.DirectionComponents[w.resourceEntity.val] = c.ToPB()
-}
-
-func (w *World) RemoveDirections(entities ...Entity) {
-	w.directionsStore.Remove(entities...)
-	for _, entity := range entities {
-		w.patch.DirectionComponents[entity.val] = nil
-	}
-}
-
-//#region Resources
-
-// HasDirectionResource checks if the world has a Direction}}
-func (w *World) HasDirectionResource() bool {
-	return w.resourceEntity.HasDirection()
-}
-
-// DirectionResource Retrieve the  resource from the world
-func (w *World) DirectionResource() (Direction, bool) {
-	return w.resourceEntity.ReadDirection()
-}
-
-// SetDirectionResource set the resource in the world
-func (w *World) SetDirectionResource(c Direction) Entity {
-	w.resourceEntity.SetDirection(c)
-	return w.resourceEntity
-}
-
-// RemoveDirectionResource removes the resource from the world
-func (w *World) RemoveDirectionResource() Entity {
-	w.resourceEntity.RemoveDirection()
-
-	return w.resourceEntity
-}
-
-// WriteableDirectionResource returns a writable reference to the resource
-func (w *World) WriteableDirectionResource() (c *Direction, done func()) {
-	return w.resourceEntity.WritableDirection()
-}
-
-//#endregion
-
-//#region Iterators
-
-type DirectionReadIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Direction]
-}
-
-func (iter *DirectionReadIterator) HasNext() bool {
-	return iter.currIdx < iter.store.Len()
-}
-
-func (iter *DirectionReadIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx++
-	return e
-}
-
-func (iter *DirectionReadIterator) NextDirection() (Entity, Direction) {
-	e := iter.store.dense[iter.currIdx]
-	c := iter.store.components[iter.currIdx]
-	iter.currIdx++
-	return e, c
-}
-
-func (iter *DirectionReadIterator) Reset() {
-	iter.currIdx = 0
-}
-
-func (w *World) DirectionReadIter() *DirectionReadIterator {
-	iter := &DirectionReadIterator{
-		w:     w,
-		store: w.directionsStore,
-	}
-	iter.Reset()
-	return iter
-}
-
-type DirectionWriteIterator struct {
-	w       *World
-	currIdx int
-	store   *SparseSet[Direction]
-}
-
-func (iter *DirectionWriteIterator) HasNext() bool {
-	return iter.currIdx >= 0
-}
-
-func (iter *DirectionWriteIterator) NextEntity() Entity {
-	e := iter.store.dense[iter.currIdx]
-	iter.currIdx--
-
-	return e
-}
-
-func (iter *DirectionWriteIterator) NextDirection() (Entity, *Direction, func()) {
-	e := iter.store.dense[iter.currIdx]
-	c := &iter.store.components[iter.currIdx]
-	iter.currIdx--
-	done := func() {
-		iter.w.patch.DirectionComponents[e.val] = c.ToPB()
-	}
-
-	return e, c, done
-}
-
-func (iter *DirectionWriteIterator) Reset() {
-	iter.currIdx = iter.store.Len() - 1
-}
-
-func (w *World) DirectionWriteIter() *DirectionWriteIterator {
-	iter := &DirectionWriteIterator{
-		w:     w,
-		store: w.directionsStore,
-	}
-	iter.Reset()
-	return iter
-}
-
-//#endregion
-
-func (w *World) DirectionEntities() []Entity {
-	return w.directionsStore.entities()
-}
-
-func (w *World) SetDirectionSortFn(lessThan func(a, b Entity) bool) {
-	w.directionsStore.LessThan = lessThan
-}
-
-func (w *World) SortDirections() {
-	w.directionsStore.Sort()
-}
-
-func (w *World) ApplyDirectionPatch(e Entity, patch *ecspb.DirectionComponent) Entity {
-	c := Direction(patch.Values)
-	e.w.directionsStore.Set(c, e)
-	return e
-}
-
-func (c Direction) ToPB() *ecspb.DirectionComponent {
-	pb := &ecspb.DirectionComponent{
-		Values: ecspb.DirectionEnum(c.ToEnumDirection()),
-	}
-	return pb
+func (w *World) RemoveDirectionResource() {
+	w.directionComponents.Remove(w.resourceEntity)
 }

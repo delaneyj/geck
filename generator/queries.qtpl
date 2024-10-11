@@ -1,0 +1,94 @@
+package generator
+
+
+{% func queryTemplate(data *queryTmplData) %}
+package {%s data.PackageName %}
+
+import "sort"
+
+{% code
+argsName := "Query" + data.Name.Plural.Pascal + "Args"
+iterName := "query" + data.Name.Plural.Pascal + "Iter"
+first := data.Entries[0]
+rest := data.Entries[1:]
+firstIterName := "All"
+if first.IsMutable {
+    firstIterName += "Mutable"
+}
+firstIterName += first.Name.Plural.Pascal
+
+firstSparseSetName := first.Name.Singular.Camel
+if first.ComponentOrTag.IsTag {
+    firstSparseSetName += "Tags"
+} else {
+    firstSparseSetName += "Components"
+}
+
+ %}
+type {%s argsName %} struct {
+    {% for _, arg := range data.Entries -%}
+    {% if !arg.ComponentOrTag.IsTag %}
+    {%s arg.Name.Singular.Pascal %} {%if arg.IsMutable %}*{% endif %}{%s arg.Name.Singular.Pascal %}Component
+    {% endif %}
+    {% endfor %}
+}
+
+type {%s iterName %}  func(e Entity, args {%s argsName %}) bool
+
+
+func(w *World) Query{%s data.Name.Singular.Pascal %}(yield {%s iterName %}) {
+    args := {%s argsName %}{}
+
+    {% if len(rest) > 0 %}
+    var ok bool
+    {% endif %}
+
+    for e, first := range w.{%s firstIterName %} {
+        args.{%s first.Name.Singular.Pascal %} = first
+        ok  = true
+
+        {%- for _, e := range rest -%}
+            {%if e.ComponentOrTag.IsTag %}
+            if !w.Has{%s e.Name.Singular.Pascal %}Tag(e) {
+                continue
+            }
+            {%else%}
+                {% if e.IsMutable %}
+            args.{%s e.Name.Singular.Pascal %}, ok = w.Mutable{%s e.Name.Singular.Pascal %}(e)
+                {% else %}
+            args.{%s e.Name.Singular.Pascal %}, ok = w.{%s e.Name.Singular.Pascal %}(e)
+                {% endif %}
+            {%endif%}
+            if !ok {
+                continue
+            }
+        {%- endfor -%}
+
+
+        if !yield(e, args) {
+            break
+        }
+    }
+}
+
+func(w *World) Query{%s data.Name.Singular.Pascal %}Entities(yield func(e Entity) bool) {
+    for e := range w.{%s firstIterName %}Entities {
+        {%- for _, e := range rest -%}
+            {%- if e.ComponentOrTag.IsTag -%}
+            if !w.Has{%s e.Name.Singular.Pascal %}Tag(e) {
+                continue
+            }
+            {%- else -%}
+            if !w.Has{%s e.Name.Singular.Pascal %}(e) {
+                continue
+            }
+            {%- endif -%}
+        {%- endfor -%}
+
+        if !yield(e) {
+            break
+        }
+    }
+}
+
+{% endfunc %}
