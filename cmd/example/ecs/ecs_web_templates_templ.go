@@ -14,7 +14,7 @@ import (
 	templruntime "github.com/a-h/templ/runtime"
 )
 
-func SparseSetView[T any](ss *SparseSet[T]) templ.Component {
+func Page() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -39,61 +39,282 @@ func SparseSetView[T any](ss *SparseSet[T]) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-
-		var zero T
-		name := reflect.TypeOf(zero).Name()
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div>Hello ")
+		templ_7745c5c3_Err = templ_7745c5c3_Var1.Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(name)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 20, Col: 21}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" SparseSet View</div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if ss == nil || ss.Len() == 0 {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div>Empty SparseSet</div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex flex-wrap\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			for _, idx := range ss.sparse {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"border p-4\"><div class=\"text-lg font-bold\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var3 string
-				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(idx))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 27, Col: 64}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</body></html>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func AllSparseSetsView() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var3 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"text-2xl font-bold\">Sparse Sets</div><div class=\"flex gap-4 flex-wrap\"><div class=\"card bg-base-200\"><div class=\"card-body\"><div class=\"card-title\">Tags</div><div class=\"flex flex-col\"><a href=\"/sparsesets/enemy\" class=\"link link-primary\">Enemy</a> <a href=\"/sparsesets/spaceship\" class=\"link link-primary\">Spaceship</a> <a href=\"/sparsesets/spacestation\" class=\"link link-primary\">Spacestation</a> <a href=\"/sparsesets/planet\" class=\"link link-primary\">Planet</a></div></div></div><div class=\"card bg-base-200\"><div class=\"card-body\"><div class=\"card-title\">Components</div><div class=\"flex flex-col\"><a href=\"/sparsesets/names\" class=\"link link-primary\">Names</a> <a href=\"/sparsesets/positions\" class=\"link link-primary\">Positions</a> <a href=\"/sparsesets/velocities\" class=\"link link-primary\">Velocities</a> <a href=\"/sparsesets/rotations\" class=\"link link-primary\">Rotations</a> <a href=\"/sparsesets/directions\" class=\"link link-primary\">Directions</a> <a href=\"/sparsesets/gravities\" class=\"link link-primary\">Gravities</a> <a href=\"/sparsesets/factions\" class=\"link link-primary\">Factions</a> <a href=\"/sparsesets/docked_tos\" class=\"link link-primary\">DockedTos</a> <a href=\"/sparsesets/ruled_bys\" class=\"link link-primary\">RuledBys</a></div></div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return templ_7745c5c3_Err
+		})
+		templ_7745c5c3_Err = Page().Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func SparseSetView[T any](ss *SparseSet[T]) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var4 == nil {
+			templ_7745c5c3_Var4 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var5 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+
+			var zero T
+			name := reflect.TypeOf(zero).Name()
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a href=\"/sparsesets\" class=\"link link-primary\">Sparse Sets</a> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if ss == nil || ss.Len() == 0 {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var6 string
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 194, Col: 23}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" SparseSet is empty</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"overflow-x-auto\"><table class=\"table table-compact table-zebra\"><caption>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 198, Col: 35}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" SparseSet View</caption> <thead><tr><th>#</th><th>Dense Index</th><th>Entity Idx/Gen</th><th>Data</th></tr></thead> <tbody>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				for i, idx := range ss.sparse {
+
+					hasDense := i < len(ss.dense)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr class=\"hover font-mono\"><td id=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var8 string
+					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("sparse%d", i))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 213, Col: 66}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var9 string
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(i))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 213, Col: 83}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td><td><a href=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var10 templ.SafeURL = templ.SafeURL(fmt.Sprintf("#sparse%d", idx))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var10)))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"link link-primary\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var11 string
+					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(idx))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 219, Col: 61}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></td>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					if hasDense {
+
+						d := ss.dense[i]
+						di, dg := d.Index(), d.Generation()
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<td><a href=\"")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						var templ_7745c5c3_Var12 templ.SafeURL = templ.SafeURL(fmt.Sprintf("#sparse%d", idx))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var12)))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"link link-primary\">")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						var templ_7745c5c3_Var13 string
+						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", di, dg))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 229, Col: 74}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></td><td>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+
+						elem := reflect.ValueOf(&ss.data[i]).Elem()
+						fields := elem.Type().NumField()
+						for j := 0; j < fields; j++ {
+
+							key := fmt.Sprint(elem.Type().Field(j).Name)
+							value := fmt.Sprint(elem.Field(j))
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var14 string
+							templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(key)
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 243, Col: 53}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("➡️<span class=\"font-bold\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var15 string
+							templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `ecs_web_templates.templ`, Line: 243, Col: 92}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span></div>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tr>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tbody></table></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			return templ_7745c5c3_Err
+		})
+		templ_7745c5c3_Err = Page().Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

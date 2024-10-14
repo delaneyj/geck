@@ -544,23 +544,6 @@ func generateComponent(component *componentTmplData) error {
 	return nil
 }
 
-func generateRelationship(relationship *componentTmplData) error {
-	fp := filepath.Join(
-		relationship.Folder,
-		fmt.Sprintf(
-			"relationships_%s.go",
-			relationship.Name.Plural.Snake,
-		),
-	)
-
-	contents := relationshipTemplate(relationship)
-	if err := os.WriteFile(fp, []byte(contents), 0644); err != nil {
-		return fmt.Errorf("failed to write to file: %w", err)
-	}
-
-	return nil
-}
-
 func generateQueries(query *queryTmplData) error {
 	fp := filepath.Join(
 		query.Folder,
@@ -595,24 +578,12 @@ var builtinBundle = &geckpb.BundleDefinition{
 		{
 			Name:             "ChildOf",
 			ShouldNotInflect: true,
-			Fields: []*geckpb.FieldDefinition{
-				{
-					Name:        "Parent",
-					Description: "The parent entity",
-					ResetValue:  &geckpb.FieldDefinition_Entity{},
-				},
-			},
+			IsRelationship:   true,
 		},
 		{
 			Name:             "IsA",
 			ShouldNotInflect: true,
-			Fields: []*geckpb.FieldDefinition{
-				{
-					Name:        "Prototype",
-					Description: "The prototype entity",
-					ResetValue:  &geckpb.FieldDefinition_Entity{},
-				},
-			},
+			IsRelationship:   true,
 		},
 	},
 }

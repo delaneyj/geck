@@ -17,8 +17,11 @@ pairName := data.Name.Singular.Pascal + "RelationshipPair"
 -%}
 
 type {%s pairName %} struct {
-    Source Entity
-    Target Entity
+    From Entity
+    To Entity
+    {%- for _, f := range data.Fields -%}
+    {%s f.Name.Singular.Pascal %} {%s f.Type.Singular.Original %}
+    {%- endfor -%}
 }
 
 type {%s nsp %}Relationship struct {
@@ -28,9 +31,9 @@ type {%s nsp %}Relationship struct {
 func New{%s nsp %}Relationship() *{%s nsp %}Relationship {
     return &{%s nsp %}Relationship{
         btree: btree.NewBTreeG[{%s pairName %}](func(a, b {%s pairName %}) bool {
-            ati, bti := a.Target.Index(), b.Target.Index()
+            ati, bti := a.To.Index(), b.To.Index()
             if ati == bti {
-                return a.Source.Index() < b.Source.Index()
+                return a.From.Index() < b.From.Index()
             }
             return ati < bti
         }),
@@ -41,76 +44,78 @@ func (r *{%s nsp %}Relationship) Clear() {
     r.btree.Clear()
 }
 
-func(w *World) Link{%s nsp %}(target Entity, sources ... Entity) {
-    for _, source := range sources {
-        pair := {%s pairName %}{
-            Target: target,
-            Source: source,
-        }
-
-        w.{%s nsc %}Relationships.btree.Set(pair)
-    }
-}
-
-func(w *World) Unlink{%s nsp %}(target Entity, sources ... Entity) {
-    for _, source := range sources {
-        pair := {%s pairName %}{
-            Target: target,
-            Source: source,
-        }
-
-        w.{%s nsc %}Relationships.btree.Delete(pair)
-    }
-}
-
-func (w *World) {%s nsp %}IsLinked(source, target Entity) bool {
+func(w *World) Link{%s nsp %}(
+    to, from Entity,
+    {%- for _, f := range data.Fields -%}
+    {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
+    {%- endfor -%}
+) {
     pair := {%s pairName %}{
-        Source: source,
-        Target: target,
+        From: from,
+        To: to,
+        {%- for _, f := range data.Fields -%}
+        {%s f.Name.Singular.Pascal %}: {%s f.Name.Singular.Camel %}Arg,
+        {%- endfor -%}
+    }
+
+    w.{%s nsc %}Relationships.btree.Set(pair)
+}
+
+func(w *World) Unlink{%s nsp %}(from, to Entity) {
+    pair := {%s pairName %}{
+        From: from,
+        To: to,
+    }
+    w.{%s nsc %}Relationships.btree.Delete(pair)
+}
+
+func (w *World) {%s nsp %}IsLinked(from, to Entity) bool {
+    pair := {%s pairName %}{
+        From: from,
+        To: to,
     }
 
     _, ok := w.{%s nsc %}Relationships.btree.Get(pair)
     return ok
 }
 
-func (w *World) {%s nsp %}Sources(target Entity) func(yield func(source Entity) bool) {
-    return func(yield func(source Entity) bool) {
+func (w *World) {%s nsp %}(to Entity) func(yield func(from Entity) bool) {
+    return func(yield func(from Entity) bool) {
         iter := w.{%s nsc %}Relationships.btree.Iter()
-        iter.Seek({%s pairName %}{ Target: target })
-        end := {%s pairName %}{ Target: target + 1 }
+        iter.Seek({%s pairName %}{ To: to })
+        end := {%s pairName %}{ To: to + 1 }
 
         for iter.Next() {
             item := iter.Item()
-            if item.Target >= end.Target {
+            if item.To >= end.To {
                 break
             }
 
-            if !yield(item.Source) {
+            if !yield(item.From) {
                 break
             }
         }
     }
 }
 
-func (w *World) Remove{%s nsp %}Relationships(target Entity, sources ... Entity) {
-    for _, source := range sources {
+func (w *World) Remove{%s nsp %}Relationships(to Entity, froms ... Entity) {
+    for _, from := range froms {
         pair := {%s pairName %}{
-            Target: target,
-            Source: source,
+            To: to,
+            From: from,
         }
 
         w.{%s nsc %}Relationships.btree.Delete(pair)
     }
 }
 
-func (w *World) RemoveAll{%s nsp %}Relationships(target Entity) {
+func (w *World) RemoveAll{%s nsp %}Relationships(to Entity) {
     iter := w.{%s nsc %}Relationships.btree.Iter()
-    iter.Seek({%s pairName %}{ Target: target })
-    end := {%s pairName %}{ Target: target + 1 }
+    end := {%s pairName %}{ To: to + 1 }
 
     for iter.Next() {
         item := iter.Item()
-        if item.Target >= end.Target {
+        if item.To >= end.To {
             break
         }
 

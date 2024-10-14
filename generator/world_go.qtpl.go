@@ -39,7 +39,7 @@ import (
 type empty struct{}
 
 type World struct{
-    nextEntityID uint32
+    nextEntityID int
     livingEntities,freeEntities *SparseSet[empty]
     resourceEntity Entity
     systems []SystemTicker

@@ -35,58 +35,201 @@ import(
     "reflect"
 )
 
-templ SparseSetView[T any](ss *SparseSet[T]) {
-<html>
-<head>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.13/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="p-4">
-    {{
-        var zero T
-        name := reflect.TypeOf(zero).Name()
-    }}
-    <div>Hello { name } SparseSet View</div>
-    if ss == nil || ss.Len() == 0 {
-        <div>Empty SparseSet</div>
-    } else {
-        <div class="flex flex-wrap">
-        for _, idx := range ss.sparse {
-            <div class="border p-4">
-                <div class="text-lg font-bold">{ fmt.Sprint(idx) }</div>
+templ Page(){
+    <html>
+        <head>
+            <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.13/dist/full.min.css" rel="stylesheet" type="text/css" />
+            <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="p-4">
+            { children...}
+        </body>
+    </html>
+}
+
+templ AllSparseSetsView() {
+    @Page(){
+        <div class="text-2xl font-bold">Sparse Sets</div>
+        <div class="flex gap-4 flex-wrap">
+            <div class="card bg-base-200">
+                <div class="card-body">
+                    <div class="card-title">Tags</div>
+                    <div class="flex flex-col">
+                    `)
+//line generator/templ_templates.qtpl:32
+	for _, c := range data.Components {
+//line generator/templ_templates.qtpl:32
+		qw422016.N().S(`
+`)
+//line generator/templ_templates.qtpl:33
+		if c.IsTag {
+//line generator/templ_templates.qtpl:33
+			qw422016.N().S(`                            <a
+                                href="/sparsesets/`)
+//line generator/templ_templates.qtpl:35
+			qw422016.E().S(c.Name.Plural.Snake)
+//line generator/templ_templates.qtpl:35
+			qw422016.N().S(`"
+                                class="link link-primary">
+                                `)
+//line generator/templ_templates.qtpl:37
+			qw422016.E().S(c.Name.Plural.Pascal)
+//line generator/templ_templates.qtpl:37
+			qw422016.N().S(`
+                            </a>
+                        `)
+//line generator/templ_templates.qtpl:39
+		}
+//line generator/templ_templates.qtpl:39
+		qw422016.N().S(`
+                    `)
+//line generator/templ_templates.qtpl:40
+	}
+//line generator/templ_templates.qtpl:40
+	qw422016.N().S(`
+                    </div>
+                </div>
             </div>
-        }
+            <div class="card bg-base-200">
+                <div class="card-body">
+                    <div class="card-title">Components</div>
+                    <div class="flex flex-col">
+                    `)
+//line generator/templ_templates.qtpl:48
+	for _, c := range data.Components {
+//line generator/templ_templates.qtpl:48
+		qw422016.N().S(`
+`)
+//line generator/templ_templates.qtpl:49
+		if !c.IsTag && !c.IsRelationship {
+//line generator/templ_templates.qtpl:49
+			qw422016.N().S(`                            <a
+                                href="/sparsesets/`)
+//line generator/templ_templates.qtpl:51
+			qw422016.E().S(c.Name.Plural.Snake)
+//line generator/templ_templates.qtpl:51
+			qw422016.N().S(`"
+                                class="link link-primary">
+                                `)
+//line generator/templ_templates.qtpl:53
+			qw422016.E().S(c.Name.Plural.Pascal)
+//line generator/templ_templates.qtpl:53
+			qw422016.N().S(`
+                            </a>
+                        `)
+//line generator/templ_templates.qtpl:55
+		}
+//line generator/templ_templates.qtpl:55
+		qw422016.N().S(`
+                    `)
+//line generator/templ_templates.qtpl:56
+	}
+//line generator/templ_templates.qtpl:56
+	qw422016.N().S(`
+                    </div>
+                </div>
+            </div>
         </div>
     }
-</body>
-</html>
 }
+
+templ SparseSetView[T any](ss *SparseSet[T]) {
+    @Page(){
+        {{
+            var zero T
+            name := reflect.TypeOf(zero).Name()
+        }}
+        <a href="/sparsesets" class="link link-primary">Sparse Sets</a>
+        if ss == nil || ss.Len() == 0 {
+            <div>{ name } SparseSet is empty</div>
+        } else {
+            <div class="overflow-x-auto">
+                <table class="table table-compact table-zebra">
+                    <caption>{ name } SparseSet View</caption>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Dense Index</th>
+                            <th>Entity Idx/Gen</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        for i, idx := range ss.sparse {
+                            {{
+                                hasDense := i < len(ss.dense)
+                            }}
+                            <tr class="hover font-mono">
+                                <td id={fmt.Sprintf("sparse%d", i)}>{ fmt.Sprint(i) }</td>
+                                <td>
+                                    <a
+                                        href={templ.SafeURL(fmt.Sprintf("#sparse%d", idx))}
+                                        class="link link-primary"
+                                    >
+                                            { fmt.Sprint(idx) }
+                                    </a>
+                                </td>
+                                if hasDense {
+                                    {{
+                                        d := ss.dense[i]
+                                        di, dg := d.Index(), d.Generation()
+                                    }}
+                                    <td>
+                                        <a href={templ.SafeURL(fmt.Sprintf("#sparse%d", idx))} class="link link-primary">
+                                            { fmt.Sprintf("%d/%d", di, dg) }
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {{
+                                            elem := reflect.ValueOf(&ss.data[i]).Elem()
+                                            fields := elem.Type().NumField()
+                                        }}
+                                        for j := 0; j < fields; j++ {
+                                            {{
+                                                key := fmt.Sprint(elem.Type().Field(j).Name)
+                                                value := fmt.Sprint(elem.Field(j))
+                                            }}
+                                            <div>
+                                                { key }➡️<span class="font-bold">{ value }</span>
+                                            </div>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+}
+
 `)
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 }
 
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 func writetemplTemplate(qq422016 qtio422016.Writer, data *ecsTmplData) {
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 	streamtemplTemplate(qw422016, data)
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 	qt422016.ReleaseWriter(qw422016)
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 }
 
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 func templTemplate(data *ecsTmplData) string {
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 	writetemplTemplate(qb422016, data)
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 	qs422016 := string(qb422016.B)
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 	return qs422016
-//line generator/templ_templates.qtpl:38
+//line generator/templ_templates.qtpl:135
 }

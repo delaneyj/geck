@@ -10,24 +10,29 @@ import (
 
 func SetupRoutes(setupCtx context.Context, world *World, baseRouter chi.Router) error {
     baseRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
-        w.Write([]byte("Hello, Geck!"))
+        w.Write([]byte("Hello, World!"))
     })
 
     baseRouter.Route("/sparsesets", func(sparseSetsRouter chi.Router) {
         sparseSetsRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
-            w.Write([]byte("Hello, SparseSets!"))
+            AllSparseSetsView().Render(r.Context(),w)
         })
 
-        {% for _, c := range data.Components[0:1] %}
-        {% if !c.IsTag && !c.IsRelationship %}
-        sparseSetsRouter.Route("/{%s c.Name.Singular.Camel %}", func(ssRouter chi.Router) {
-            ssRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
-                ss := world.{%s c.Name.Singular.Camel %}Components
-                SparseSetView(ss).Render(r.Context(),w)
+        {%- for _, c := range data.Components -%}
+            {%if !c.IsRelationship %}
+            sparseSetsRouter.Route("/{%s c.Name.Plural.Snake %}", func(ssRouter chi.Router) {
+                ssRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
+                    {%- if c.IsTag && !c.IsRelationship -%}
+                        ss := world.{%s c.Name.Singular.Camel %}Tags
+                    {%- else -%}
+                        ss := world.{%s c.Name.Singular.Camel %}Components
+                    {%- endif -%}
+                        SparseSetView(ss).Render(r.Context(),w)
+                    })
+
             })
-        })
-        {% endif %}
-        {% endfor %}
+            {%- endif -%}
+        {%- endfor -%}
     })
 
     return nil

@@ -36,79 +36,92 @@ import (
 
 func SetupRoutes(setupCtx context.Context, world *World, baseRouter chi.Router) error {
     baseRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
-        w.Write([]byte("Hello, Geck!"))
+        w.Write([]byte("Hello, World!"))
     })
 
     baseRouter.Route("/sparsesets", func(sparseSetsRouter chi.Router) {
         sparseSetsRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
-            w.Write([]byte("Hello, SparseSets!"))
+            AllSparseSetsView().Render(r.Context(),w)
         })
 
-        `)
+`)
 //line generator/web_go.qtpl:21
-	for _, c := range data.Components[0:1] {
+	for _, c := range data.Components {
 //line generator/web_go.qtpl:21
-		qw422016.N().S(`
-        `)
+		qw422016.N().S(`            `)
 //line generator/web_go.qtpl:22
-		if !c.IsTag && !c.IsRelationship {
+		if !c.IsRelationship {
 //line generator/web_go.qtpl:22
 			qw422016.N().S(`
-        sparseSetsRouter.Route("/`)
+            sparseSetsRouter.Route("/`)
 //line generator/web_go.qtpl:23
-			qw422016.E().S(c.Name.Singular.Camel)
+			qw422016.E().S(c.Name.Plural.Snake)
 //line generator/web_go.qtpl:23
 			qw422016.N().S(`", func(ssRouter chi.Router) {
-            ssRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
-                ss := world.`)
+                ssRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
+`)
 //line generator/web_go.qtpl:25
-			qw422016.E().S(c.Name.Singular.Camel)
+			if c.IsTag && !c.IsRelationship {
 //line generator/web_go.qtpl:25
-			qw422016.N().S(`Components
-                SparseSetView(ss).Render(r.Context(),w)
+				qw422016.N().S(`                        ss := world.`)
+//line generator/web_go.qtpl:26
+				qw422016.E().S(c.Name.Singular.Camel)
+//line generator/web_go.qtpl:26
+				qw422016.N().S(`Tags
+`)
+//line generator/web_go.qtpl:27
+			} else {
+//line generator/web_go.qtpl:27
+				qw422016.N().S(`                        ss := world.`)
+//line generator/web_go.qtpl:28
+				qw422016.E().S(c.Name.Singular.Camel)
+//line generator/web_go.qtpl:28
+				qw422016.N().S(`Components
+`)
+//line generator/web_go.qtpl:29
+			}
+//line generator/web_go.qtpl:29
+			qw422016.N().S(`                        SparseSetView(ss).Render(r.Context(),w)
+                    })
+
             })
-        })
-        `)
-//line generator/web_go.qtpl:29
+`)
+//line generator/web_go.qtpl:34
 		}
-//line generator/web_go.qtpl:29
-		qw422016.N().S(`
-        `)
-//line generator/web_go.qtpl:30
+//line generator/web_go.qtpl:35
 	}
-//line generator/web_go.qtpl:30
-	qw422016.N().S(`
-    })
+//line generator/web_go.qtpl:35
+	qw422016.N().S(`    })
 
     return nil
 }
 
 `)
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 }
 
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 func writewebTemplate(qq422016 qtio422016.Writer, data *ecsTmplData) {
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 	streamwebTemplate(qw422016, data)
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 	qt422016.ReleaseWriter(qw422016)
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 }
 
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 func webTemplate(data *ecsTmplData) string {
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 	writewebTemplate(qb422016, data)
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 	qs422016 := string(qb422016.B)
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 	return qs422016
-//line generator/web_go.qtpl:36
+//line generator/web_go.qtpl:41
 }

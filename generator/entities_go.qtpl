@@ -70,7 +70,7 @@ func(w *World) NextEntities(count int, opts ...EntityBuilderOption) []Entity{
         var entity Entity
 
         if w.freeEntities.Len() == 0 {
-            entity = Entity(w.nextEntityID)
+            entity = NewEntity(w.nextEntityID,0)
             w.nextEntityID++
         } else {
             entity = w.freeEntities.dense[0]

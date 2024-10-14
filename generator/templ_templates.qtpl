@@ -9,30 +9,127 @@ import(
     "reflect"
 )
 
-templ SparseSetView[T any](ss *SparseSet[T]) {
-<html>
-<head>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.13/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="p-4">
-    {{
-        var zero T
-        name := reflect.TypeOf(zero).Name()
-    }}
-    <div>Hello { name } SparseSet View</div>
-    if ss == nil || ss.Len() == 0 {
-        <div>Empty SparseSet</div>
-    } else {
-        <div class="flex flex-wrap">
-        for _, idx := range ss.sparse {
-            <div class="border p-4">
-                <div class="text-lg font-bold">{ fmt.Sprint(idx) }</div>
+templ Page(){
+    <html>
+        <head>
+            <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.13/dist/full.min.css" rel="stylesheet" type="text/css" />
+            <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="p-4">
+            { children...}
+        </body>
+    </html>
+}
+
+templ AllSparseSetsView() {
+    @Page(){
+        <div class="text-2xl font-bold">Sparse Sets</div>
+        <div class="flex gap-4 flex-wrap">
+            <div class="card bg-base-200">
+                <div class="card-body">
+                    <div class="card-title">Tags</div>
+                    <div class="flex flex-col">
+                    {% for _, c := range data.Components %}
+                        {%- if c.IsTag -%}
+                            <a
+                                href="/sparsesets/{%s c.Name.Plural.Snake %}"
+                                class="link link-primary">
+                                {%s c.Name.Plural.Pascal %}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                </div>
             </div>
-        }
+            <div class="card bg-base-200">
+                <div class="card-body">
+                    <div class="card-title">Components</div>
+                    <div class="flex flex-col">
+                    {% for _, c := range data.Components %}
+                        {%- if !c.IsTag && !c.IsRelationship -%}
+                            <a
+                                href="/sparsesets/{%s c.Name.Plural.Snake %}"
+                                class="link link-primary">
+                                {%s c.Name.Plural.Pascal %}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
     }
-</body>
-</html>
 }
+
+templ SparseSetView[T any](ss *SparseSet[T]) {
+    @Page(){
+        {{
+            var zero T
+            name := reflect.TypeOf(zero).Name()
+        }}
+        <a href="/sparsesets" class="link link-primary">Sparse Sets</a>
+        if ss == nil || ss.Len() == 0 {
+            <div>{ name } SparseSet is empty</div>
+        } else {
+            <div class="overflow-x-auto">
+                <table class="table table-compact table-zebra">
+                    <caption>{ name } SparseSet View</caption>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Dense Index</th>
+                            <th>Entity Idx/Gen</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        for i, idx := range ss.sparse {
+                            {{
+                                hasDense := i < len(ss.dense)
+                            }}
+                            <tr class="hover font-mono">
+                                <td id={fmt.Sprintf("sparse%d", i)}>{ fmt.Sprint(i) }</td>
+                                <td>
+                                    <a
+                                        href={templ.SafeURL(fmt.Sprintf("#sparse%d", idx))}
+                                        class="link link-primary"
+                                    >
+                                            { fmt.Sprint(idx) }
+                                    </a>
+                                </td>
+                                if hasDense {
+                                    {{
+                                        d := ss.dense[i]
+                                        di, dg := d.Index(), d.Generation()
+                                    }}
+                                    <td>
+                                        <a href={templ.SafeURL(fmt.Sprintf("#sparse%d", idx))} class="link link-primary">
+                                            { fmt.Sprintf("%d/%d", di, dg) }
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {{
+                                            elem := reflect.ValueOf(&ss.data[i]).Elem()
+                                            fields := elem.Type().NumField()
+                                        }}
+                                        for j := 0; j < fields; j++ {
+                                            {{
+                                                key := fmt.Sprint(elem.Type().Field(j).Name)
+                                                value := fmt.Sprint(elem.Field(j))
+                                            }}
+                                            <div>
+                                                { key }➡️<span class="font-bold">{ value }</span>
+                                            </div>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+}
+
 {% endfunc %}

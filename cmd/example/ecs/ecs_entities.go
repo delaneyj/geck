@@ -69,7 +69,7 @@ func (w *World) NextEntities(count int, opts ...EntityBuilderOption) []Entity {
 		var entity Entity
 
 		if w.freeEntities.Len() == 0 {
-			entity = Entity(w.nextEntityID)
+			entity = NewEntity(w.nextEntityID, 0)
 			w.nextEntityID++
 		} else {
 			entity = w.freeEntities.dense[0]
@@ -95,13 +95,13 @@ func (w *World) DestroyEntities(entities ...Entity) {
 		w.freeEntities.Upsert(entity, empty{})
 
 		w.nameComponents.Remove(entity)
-		w.childOfComponents.Remove(entity)
-		w.isAComponents.Remove(entity)
+		w.childOfRelationships.Clear()
+		w.isARelationships.Clear()
 		w.positionComponents.Remove(entity)
 		w.velocityComponents.Remove(entity)
 		w.rotationComponents.Remove(entity)
 		w.directionComponents.Remove(entity)
-		w.eatsComponents.Remove(entity)
+		w.eatsRelationships.Clear()
 		w.likesRelationships.Clear()
 		w.enemyTags.Remove(entity)
 		w.growsRelationships.Clear()

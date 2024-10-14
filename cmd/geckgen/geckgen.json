@@ -86,15 +86,10 @@
         {
           "name": "Eats",
           "shouldNotInflect": true,
+          "isRelationship": true,
           "fields": [
             {
-              "name": "Entities",
-              "hasMultiple": true,
-              "entity": 0
-            },
-            {
-              "name": "Amounts",
-              "hasMultiple": true,
+              "name": "Amount",
               "u8": 5
             }
           ]

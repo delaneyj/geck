@@ -10,7 +10,7 @@ import (
 type empty struct{}
 
 type World struct {
-	nextEntityID                 uint32
+	nextEntityID                 int
 	livingEntities, freeEntities *SparseSet[empty]
 	resourceEntity               Entity
 	systems                      []SystemTicker
@@ -24,19 +24,19 @@ type World struct {
 
 	// Components
 	nameComponents      *SparseSet[NameComponent]
-	childOfComponents   *SparseSet[ChildOfComponent]
-	isAComponents       *SparseSet[IsAComponent]
 	positionComponents  *SparseSet[PositionComponent]
 	velocityComponents  *SparseSet[VelocityComponent]
 	rotationComponents  *SparseSet[RotationComponent]
 	directionComponents *SparseSet[DirectionComponent]
-	eatsComponents      *SparseSet[EatsComponent]
 	gravityComponents   *SparseSet[GravityComponent]
 	factionComponents   *SparseSet[FactionComponent]
 	dockedToComponents  *SparseSet[DockedToComponent]
 	ruledByComponents   *SparseSet[RuledByComponent]
 
 	// Relationships
+	childOfRelationships    *ChildOfRelationship
+	isARelationships        *IsARelationship
+	eatsRelationships       *EatsRelationship
 	likesRelationships      *LikesRelationship
 	growsRelationships      *GrowsRelationship
 	alliedWithRelationships *AlliedWithRelationship
@@ -57,19 +57,19 @@ func NewWorld() *World {
 
 		// Initialize components
 		nameComponents:      NewSparseSet[NameComponent](),
-		childOfComponents:   NewSparseSet[ChildOfComponent](),
-		isAComponents:       NewSparseSet[IsAComponent](),
 		positionComponents:  NewSparseSet[PositionComponent](),
 		velocityComponents:  NewSparseSet[VelocityComponent](),
 		rotationComponents:  NewSparseSet[RotationComponent](),
 		directionComponents: NewSparseSet[DirectionComponent](),
-		eatsComponents:      NewSparseSet[EatsComponent](),
 		gravityComponents:   NewSparseSet[GravityComponent](),
 		factionComponents:   NewSparseSet[FactionComponent](),
 		dockedToComponents:  NewSparseSet[DockedToComponent](),
 		ruledByComponents:   NewSparseSet[RuledByComponent](),
 
 		// Initialize relationships
+		childOfRelationships:    NewChildOfRelationship(),
+		isARelationships:        NewIsARelationship(),
+		eatsRelationships:       NewEatsRelationship(),
 		likesRelationships:      NewLikesRelationship(),
 		growsRelationships:      NewGrowsRelationship(),
 		alliedWithRelationships: NewAlliedWithRelationship(),
@@ -94,19 +94,19 @@ func (w *World) Reset() {
 
 	// Reset components
 	w.nameComponents.Clear()
-	w.childOfComponents.Clear()
-	w.isAComponents.Clear()
 	w.positionComponents.Clear()
 	w.velocityComponents.Clear()
 	w.rotationComponents.Clear()
 	w.directionComponents.Clear()
-	w.eatsComponents.Clear()
 	w.gravityComponents.Clear()
 	w.factionComponents.Clear()
 	w.dockedToComponents.Clear()
 	w.ruledByComponents.Clear()
 
 	// Reset relationships
+	w.childOfRelationships.Clear()
+	w.isARelationships.Clear()
+	w.eatsRelationships.Clear()
 	w.likesRelationships.Clear()
 	w.growsRelationships.Clear()
 	w.alliedWithRelationships.Clear()

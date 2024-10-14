@@ -57,48 +57,65 @@ type `)
 	qw422016.E().S(pairName)
 //line generator/relationships.qtpl:19
 	qw422016.N().S(` struct {
-    Source Entity
-    Target Entity
-}
+    From Entity
+    To Entity
+`)
+//line generator/relationships.qtpl:22
+	for _, f := range data.Fields {
+//line generator/relationships.qtpl:22
+		qw422016.N().S(`    `)
+//line generator/relationships.qtpl:23
+		qw422016.E().S(f.Name.Singular.Pascal)
+//line generator/relationships.qtpl:23
+		qw422016.N().S(` `)
+//line generator/relationships.qtpl:23
+		qw422016.E().S(f.Type.Singular.Original)
+//line generator/relationships.qtpl:23
+		qw422016.N().S(`
+`)
+//line generator/relationships.qtpl:24
+	}
+//line generator/relationships.qtpl:24
+	qw422016.N().S(`}
 
 type `)
-//line generator/relationships.qtpl:24
+//line generator/relationships.qtpl:27
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:24
+//line generator/relationships.qtpl:27
 	qw422016.N().S(`Relationship struct {
     btree *btree.BTreeG[`)
-//line generator/relationships.qtpl:25
+//line generator/relationships.qtpl:28
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:25
+//line generator/relationships.qtpl:28
 	qw422016.N().S(`]
 }
 
 func New`)
-//line generator/relationships.qtpl:28
+//line generator/relationships.qtpl:31
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:28
+//line generator/relationships.qtpl:31
 	qw422016.N().S(`Relationship() *`)
-//line generator/relationships.qtpl:28
+//line generator/relationships.qtpl:31
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:28
+//line generator/relationships.qtpl:31
 	qw422016.N().S(`Relationship {
     return &`)
-//line generator/relationships.qtpl:29
+//line generator/relationships.qtpl:32
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:29
+//line generator/relationships.qtpl:32
 	qw422016.N().S(`Relationship{
         btree: btree.NewBTreeG[`)
-//line generator/relationships.qtpl:30
+//line generator/relationships.qtpl:33
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:30
+//line generator/relationships.qtpl:33
 	qw422016.N().S(`](func(a, b `)
-//line generator/relationships.qtpl:30
+//line generator/relationships.qtpl:33
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:30
+//line generator/relationships.qtpl:33
 	qw422016.N().S(`) bool {
-            ati, bti := a.Target.Index(), b.Target.Index()
+            ati, bti := a.To.Index(), b.To.Index()
             if ati == bti {
-                return a.Source.Index() < b.Source.Index()
+                return a.From.Index() < b.From.Index()
             }
             return ati < bti
         }),
@@ -106,110 +123,141 @@ func New`)
 }
 
 func (r *`)
-//line generator/relationships.qtpl:40
+//line generator/relationships.qtpl:43
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:40
+//line generator/relationships.qtpl:43
 	qw422016.N().S(`Relationship) Clear() {
     r.btree.Clear()
 }
 
 func(w *World) Link`)
-//line generator/relationships.qtpl:44
+//line generator/relationships.qtpl:47
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:44
-	qw422016.N().S(`(target Entity, sources ... Entity) {
-    for _, source := range sources {
-        pair := `)
-//line generator/relationships.qtpl:46
+//line generator/relationships.qtpl:47
+	qw422016.N().S(`(
+    to, from Entity,
+`)
+//line generator/relationships.qtpl:49
+	for _, f := range data.Fields {
+//line generator/relationships.qtpl:49
+		qw422016.N().S(`    `)
+//line generator/relationships.qtpl:50
+		qw422016.E().S(f.Name.Singular.Camel)
+//line generator/relationships.qtpl:50
+		qw422016.N().S(`Arg `)
+//line generator/relationships.qtpl:50
+		qw422016.E().S(f.Type.Singular.Original)
+//line generator/relationships.qtpl:50
+		qw422016.N().S(`,
+`)
+//line generator/relationships.qtpl:51
+	}
+//line generator/relationships.qtpl:51
+	qw422016.N().S(`) {
+    pair := `)
+//line generator/relationships.qtpl:53
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:46
+//line generator/relationships.qtpl:53
 	qw422016.N().S(`{
-            Target: target,
-            Source: source,
-        }
+        From: from,
+        To: to,
+`)
+//line generator/relationships.qtpl:56
+	for _, f := range data.Fields {
+//line generator/relationships.qtpl:56
+		qw422016.N().S(`        `)
+//line generator/relationships.qtpl:57
+		qw422016.E().S(f.Name.Singular.Pascal)
+//line generator/relationships.qtpl:57
+		qw422016.N().S(`: `)
+//line generator/relationships.qtpl:57
+		qw422016.E().S(f.Name.Singular.Camel)
+//line generator/relationships.qtpl:57
+		qw422016.N().S(`Arg,
+`)
+//line generator/relationships.qtpl:58
+	}
+//line generator/relationships.qtpl:58
+	qw422016.N().S(`    }
 
-        w.`)
-//line generator/relationships.qtpl:51
+    w.`)
+//line generator/relationships.qtpl:61
 	qw422016.E().S(nsc)
-//line generator/relationships.qtpl:51
+//line generator/relationships.qtpl:61
 	qw422016.N().S(`Relationships.btree.Set(pair)
-    }
 }
 
 func(w *World) Unlink`)
-//line generator/relationships.qtpl:55
+//line generator/relationships.qtpl:64
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:55
-	qw422016.N().S(`(target Entity, sources ... Entity) {
-    for _, source := range sources {
-        pair := `)
-//line generator/relationships.qtpl:57
+//line generator/relationships.qtpl:64
+	qw422016.N().S(`(from, to Entity) {
+    pair := `)
+//line generator/relationships.qtpl:65
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:57
+//line generator/relationships.qtpl:65
 	qw422016.N().S(`{
-            Target: target,
-            Source: source,
-        }
-
-        w.`)
-//line generator/relationships.qtpl:62
-	qw422016.E().S(nsc)
-//line generator/relationships.qtpl:62
-	qw422016.N().S(`Relationships.btree.Delete(pair)
+        From: from,
+        To: to,
     }
+    w.`)
+//line generator/relationships.qtpl:69
+	qw422016.E().S(nsc)
+//line generator/relationships.qtpl:69
+	qw422016.N().S(`Relationships.btree.Delete(pair)
 }
 
 func (w *World) `)
-//line generator/relationships.qtpl:66
+//line generator/relationships.qtpl:72
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:66
-	qw422016.N().S(`IsLinked(source, target Entity) bool {
+//line generator/relationships.qtpl:72
+	qw422016.N().S(`IsLinked(from, to Entity) bool {
     pair := `)
-//line generator/relationships.qtpl:67
+//line generator/relationships.qtpl:73
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:67
+//line generator/relationships.qtpl:73
 	qw422016.N().S(`{
-        Source: source,
-        Target: target,
+        From: from,
+        To: to,
     }
 
     _, ok := w.`)
-//line generator/relationships.qtpl:72
+//line generator/relationships.qtpl:78
 	qw422016.E().S(nsc)
-//line generator/relationships.qtpl:72
+//line generator/relationships.qtpl:78
 	qw422016.N().S(`Relationships.btree.Get(pair)
     return ok
 }
 
 func (w *World) `)
-//line generator/relationships.qtpl:76
+//line generator/relationships.qtpl:82
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:76
-	qw422016.N().S(`Sources(target Entity) func(yield func(source Entity) bool) {
-    return func(yield func(source Entity) bool) {
+//line generator/relationships.qtpl:82
+	qw422016.N().S(`(to Entity) func(yield func(from Entity) bool) {
+    return func(yield func(from Entity) bool) {
         iter := w.`)
-//line generator/relationships.qtpl:78
+//line generator/relationships.qtpl:84
 	qw422016.E().S(nsc)
-//line generator/relationships.qtpl:78
+//line generator/relationships.qtpl:84
 	qw422016.N().S(`Relationships.btree.Iter()
         iter.Seek(`)
-//line generator/relationships.qtpl:79
+//line generator/relationships.qtpl:85
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:79
-	qw422016.N().S(`{ Target: target })
+//line generator/relationships.qtpl:85
+	qw422016.N().S(`{ To: to })
         end := `)
-//line generator/relationships.qtpl:80
+//line generator/relationships.qtpl:86
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:80
-	qw422016.N().S(`{ Target: target + 1 }
+//line generator/relationships.qtpl:86
+	qw422016.N().S(`{ To: to + 1 }
 
         for iter.Next() {
             item := iter.Item()
-            if item.Target >= end.Target {
+            if item.To >= end.To {
                 break
             }
 
-            if !yield(item.Source) {
+            if !yield(item.From) {
                 break
             }
         }
@@ -217,90 +265,85 @@ func (w *World) `)
 }
 
 func (w *World) Remove`)
-//line generator/relationships.qtpl:95
+//line generator/relationships.qtpl:101
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:95
-	qw422016.N().S(`Relationships(target Entity, sources ... Entity) {
-    for _, source := range sources {
+//line generator/relationships.qtpl:101
+	qw422016.N().S(`Relationships(to Entity, froms ... Entity) {
+    for _, from := range froms {
         pair := `)
-//line generator/relationships.qtpl:97
+//line generator/relationships.qtpl:103
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:97
+//line generator/relationships.qtpl:103
 	qw422016.N().S(`{
-            Target: target,
-            Source: source,
+            To: to,
+            From: from,
         }
 
         w.`)
-//line generator/relationships.qtpl:102
+//line generator/relationships.qtpl:108
 	qw422016.E().S(nsc)
-//line generator/relationships.qtpl:102
+//line generator/relationships.qtpl:108
 	qw422016.N().S(`Relationships.btree.Delete(pair)
     }
 }
 
 func (w *World) RemoveAll`)
-//line generator/relationships.qtpl:106
+//line generator/relationships.qtpl:112
 	qw422016.E().S(nsp)
-//line generator/relationships.qtpl:106
-	qw422016.N().S(`Relationships(target Entity) {
+//line generator/relationships.qtpl:112
+	qw422016.N().S(`Relationships(to Entity) {
     iter := w.`)
-//line generator/relationships.qtpl:107
+//line generator/relationships.qtpl:113
 	qw422016.E().S(nsc)
-//line generator/relationships.qtpl:107
+//line generator/relationships.qtpl:113
 	qw422016.N().S(`Relationships.btree.Iter()
-    iter.Seek(`)
-//line generator/relationships.qtpl:108
-	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:108
-	qw422016.N().S(`{ Target: target })
     end := `)
-//line generator/relationships.qtpl:109
+//line generator/relationships.qtpl:114
 	qw422016.E().S(pairName)
-//line generator/relationships.qtpl:109
-	qw422016.N().S(`{ Target: target + 1 }
+//line generator/relationships.qtpl:114
+	qw422016.N().S(`{ To: to + 1 }
 
     for iter.Next() {
         item := iter.Item()
-        if item.Target >= end.Target {
+        if item.To >= end.To {
             break
         }
 
         w.`)
-//line generator/relationships.qtpl:117
+//line generator/relationships.qtpl:122
 	qw422016.E().S(nsc)
-//line generator/relationships.qtpl:117
+//line generator/relationships.qtpl:122
 	qw422016.N().S(`Relationships.btree.Delete(item)
     }
 }
 
 
 `)
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 }
 
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 func writerelationshipTemplate(qq422016 qtio422016.Writer, data *componentTmplData) {
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 	streamrelationshipTemplate(qw422016, data)
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 	qt422016.ReleaseWriter(qw422016)
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 }
 
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 func relationshipTemplate(data *componentTmplData) string {
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 	writerelationshipTemplate(qb422016, data)
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 	qs422016 := string(qb422016.B)
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 	return qs422016
-//line generator/relationships.qtpl:122
+//line generator/relationships.qtpl:127
 }

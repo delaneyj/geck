@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/delaneyj/geck/cmd/example/ecs"
@@ -51,7 +52,7 @@ func (sys *RelationshipSystem) Tick(ctx context.Context, w *ecs.World) error {
 		}
 
 		hasAllies := false
-		for ally := range w.AlliedWithSources(spacesphipFaction.Entity) {
+		for ally := range w.AlliedWith(spacesphipFaction.Entity) {
 			if ally == planetFaction.Entity {
 				sys.foundCount++
 				hasAllies = true
@@ -211,12 +212,13 @@ func TestECS(t *testing.T) {
 	apples := w.NextEntity()
 	pears := w.NextEntity()
 
-	w.SetEatsFromValues(bob, []ecs.Entity{apples, pears}, []uint8{3, 2})
+	w.LinkEats(bob, apples, 3)
+	w.LinkEats(bob, pears, 2)
 	w.LinkGrows(bob, pears)
 
-	bobEats, _ := w.Eats(bob)
-	assert.True(t, apples.InSlice(bobEats.Entities...))
-	assert.True(t, pears.InSlice(bobEats.Entities...))
+	bobEats := slices.Collect(w.Eats(bob))
+	assert.True(t, apples.InSlice(bobEats...))
+	assert.True(t, pears.InSlice(bobEats...))
 
 	w.SetGravityResource(-9.8)
 	assert.True(t, w.HasGravityResource())
