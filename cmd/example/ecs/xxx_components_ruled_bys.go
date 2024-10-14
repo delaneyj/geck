@@ -4,26 +4,36 @@ type RuledByComponent struct {
 	Entity Entity
 }
 
-func (w *World) SetRuledBy(e Entity, c RuledByComponent) (old RuledByComponent, wasAdded bool) {
+func RuledByComponentFromValues(
+	entityArg Entity,
+) RuledByComponent {
+	return RuledByComponent{
+		Entity: entityArg,
+	}
+}
+
+func DefaultRuledByComponent() RuledByComponent {
+	return RuledByComponent{
+		Entity: EntityFromU32(0),
+	}
+}
+
+func (c RuledByComponent) Clone() RuledByComponent {
+	return RuledByComponent{
+		Entity: c.Entity,
+	}
+}
+
+func (w *World) SetRuledBy(e Entity, arg Entity) (old RuledByComponent, wasAdded bool) {
+	c := RuledByComponent{
+		Entity: arg,
+	}
 	old, wasAdded = w.ruledByComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
 	_, _ = old, wasAdded
 
 	return old, wasAdded
-}
-
-func (w *World) SetRuledByFromValues(
-	e Entity,
-	entityArg Entity,
-) {
-	old, _ := w.SetRuledBy(e, RuledByComponent{
-		Entity: entityArg,
-	})
-
-	// depending on the generation flags, these might be unused
-	_ = old
-
 }
 
 func (w *World) RuledBy(e Entity) (c RuledByComponent, ok bool) {
@@ -79,35 +89,23 @@ func (w *World) AllRuledBysEntities(yield func(e Entity) bool) {
 }
 
 // RuledByBuilder
-func WithRuledBy(c RuledByComponent) EntityBuilderOption {
+
+func WithRuledBy(arg Entity) EntityBuilderOption {
+	c := RuledByComponent{
+		Entity: arg,
+	}
+
 	return func(w *World, e Entity) {
 		w.ruledByComponents.Upsert(e, c)
-	}
-}
-
-func WithRuledByFromValues(
-	entityArg Entity,
-) EntityBuilderOption {
-	return func(w *World, e Entity) {
-		w.SetRuledByFromValues(e,
-			entityArg,
-		)
 	}
 }
 
 // Events
 
 // Resource methods
-func (w *World) SetRuledByResource(c RuledByComponent) {
-	w.SetRuledBy(w.resourceEntity, c)
-}
 
-func (w *World) SetRuledByResourceFromValues(
-	entityArg Entity,
-) {
-	w.SetRuledByResource(RuledByComponent{
-		Entity: entityArg,
-	})
+func (w *World) SetRuledByResource(arg Entity) {
+	w.SetRuledBy(w.resourceEntity, arg)
 }
 
 func (w *World) RuledByResource() (RuledByComponent, bool) {
@@ -124,4 +122,8 @@ func (w *World) MustRuledByResource() RuledByComponent {
 
 func (w *World) RemoveRuledByResource() {
 	w.ruledByComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasRuledByResource() bool {
+	return w.ruledByComponents.Contains(w.resourceEntity)
 }

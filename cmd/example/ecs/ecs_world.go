@@ -1,6 +1,7 @@
 package ecs
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/btvoidx/mint"
@@ -22,21 +23,23 @@ type World struct {
 	planetTags       *SparseSet[empty]
 
 	// Components
-	nameComponents       *SparseSet[NameComponent]
-	childOfComponents    *SparseSet[ChildOfComponent]
-	isAComponents        *SparseSet[IsAComponent]
-	positionComponents   *SparseSet[PositionComponent]
-	velocityComponents   *SparseSet[VelocityComponent]
-	rotationComponents   *SparseSet[RotationComponent]
-	directionComponents  *SparseSet[DirectionComponent]
-	eatsComponents       *SparseSet[EatsComponent]
-	likesComponents      *SparseSet[LikesComponent]
-	growsComponents      *SparseSet[GrowsComponent]
-	gravityComponents    *SparseSet[GravityComponent]
-	factionComponents    *SparseSet[FactionComponent]
-	dockedToComponents   *SparseSet[DockedToComponent]
-	ruledByComponents    *SparseSet[RuledByComponent]
-	alliedWithComponents *SparseSet[AlliedWithComponent]
+	nameComponents      *SparseSet[NameComponent]
+	childOfComponents   *SparseSet[ChildOfComponent]
+	isAComponents       *SparseSet[IsAComponent]
+	positionComponents  *SparseSet[PositionComponent]
+	velocityComponents  *SparseSet[VelocityComponent]
+	rotationComponents  *SparseSet[RotationComponent]
+	directionComponents *SparseSet[DirectionComponent]
+	eatsComponents      *SparseSet[EatsComponent]
+	gravityComponents   *SparseSet[GravityComponent]
+	factionComponents   *SparseSet[FactionComponent]
+	dockedToComponents  *SparseSet[DockedToComponent]
+	ruledByComponents   *SparseSet[RuledByComponent]
+
+	// Relationships
+	likesRelationships      *LikesRelationship
+	growsRelationships      *GrowsRelationship
+	alliedWithRelationships *AlliedWithRelationship
 }
 
 func NewWorld() *World {
@@ -53,25 +56,60 @@ func NewWorld() *World {
 		planetTags:       NewSparseSet[empty](),
 
 		// Initialize components
-		nameComponents:       NewSparseSet[NameComponent](),
-		childOfComponents:    NewSparseSet[ChildOfComponent](),
-		isAComponents:        NewSparseSet[IsAComponent](),
-		positionComponents:   NewSparseSet[PositionComponent](),
-		velocityComponents:   NewSparseSet[VelocityComponent](),
-		rotationComponents:   NewSparseSet[RotationComponent](),
-		directionComponents:  NewSparseSet[DirectionComponent](),
-		eatsComponents:       NewSparseSet[EatsComponent](),
-		likesComponents:      NewSparseSet[LikesComponent](),
-		growsComponents:      NewSparseSet[GrowsComponent](),
-		gravityComponents:    NewSparseSet[GravityComponent](),
-		factionComponents:    NewSparseSet[FactionComponent](),
-		dockedToComponents:   NewSparseSet[DockedToComponent](),
-		ruledByComponents:    NewSparseSet[RuledByComponent](),
-		alliedWithComponents: NewSparseSet[AlliedWithComponent](),
+		nameComponents:      NewSparseSet[NameComponent](),
+		childOfComponents:   NewSparseSet[ChildOfComponent](),
+		isAComponents:       NewSparseSet[IsAComponent](),
+		positionComponents:  NewSparseSet[PositionComponent](),
+		velocityComponents:  NewSparseSet[VelocityComponent](),
+		rotationComponents:  NewSparseSet[RotationComponent](),
+		directionComponents: NewSparseSet[DirectionComponent](),
+		eatsComponents:      NewSparseSet[EatsComponent](),
+		gravityComponents:   NewSparseSet[GravityComponent](),
+		factionComponents:   NewSparseSet[FactionComponent](),
+		dockedToComponents:  NewSparseSet[DockedToComponent](),
+		ruledByComponents:   NewSparseSet[RuledByComponent](),
+
+		// Initialize relationships
+		likesRelationships:      NewLikesRelationship(),
+		growsRelationships:      NewGrowsRelationship(),
+		alliedWithRelationships: NewAlliedWithRelationship(),
 	}
-	w.resourceEntity = w.CreateEntity()
+
+	w.Reset()
 
 	return w
+}
+
+func (w *World) Reset() {
+	w.nextEntityID = 0
+	w.livingEntities.Clear()
+	w.freeEntities.Clear()
+	w.resourceEntity = w.NextEntity()
+
+	// Reset tags
+	w.enemyTags.Clear()
+	w.spaceshipTags.Clear()
+	w.spacestationTags.Clear()
+	w.planetTags.Clear()
+
+	// Reset components
+	w.nameComponents.Clear()
+	w.childOfComponents.Clear()
+	w.isAComponents.Clear()
+	w.positionComponents.Clear()
+	w.velocityComponents.Clear()
+	w.rotationComponents.Clear()
+	w.directionComponents.Clear()
+	w.eatsComponents.Clear()
+	w.gravityComponents.Clear()
+	w.factionComponents.Clear()
+	w.dockedToComponents.Clear()
+	w.ruledByComponents.Clear()
+
+	// Reset relationships
+	w.likesRelationships.Clear()
+	w.growsRelationships.Clear()
+	w.alliedWithRelationships.Clear()
 }
 
 func (w *World) AddSystems(systems ...System) error {
@@ -91,21 +129,23 @@ func (w *World) AddSystems(systems ...System) error {
 	return nil
 }
 
-func (w *World) Tick() error {
+func (w *World) Tick(ctx context.Context) error {
 	for _, s := range w.systems {
-		if err := s.Tick(w); err != nil {
+		if err := s.Tick(ctx, w); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+type ReliedOnIter func(reliedOn System) bool
+
 type System interface {
 	Initialize(w *World) error
-	ReliesOn(func(reliedOn System) bool)
+	ReliesOn() ReliedOnIter
 }
 
 type SystemTicker interface {
 	System
-	Tick(w *World) error
+	Tick(ctx context.Context, w *World) error
 }

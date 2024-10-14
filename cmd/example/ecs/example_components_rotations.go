@@ -7,6 +7,38 @@ type RotationComponent struct {
 	W float32
 }
 
+func RotationComponentFromValues(
+	xArg float32,
+	yArg float32,
+	zArg float32,
+	wArg float32,
+) RotationComponent {
+	return RotationComponent{
+		X: xArg,
+		Y: yArg,
+		Z: zArg,
+		W: wArg,
+	}
+}
+
+func DefaultRotationComponent() RotationComponent {
+	return RotationComponent{
+		X: 0.000000,
+		Y: 0.000000,
+		Z: 0.000000,
+		W: 1.000000,
+	}
+}
+
+func (c RotationComponent) Clone() RotationComponent {
+	return RotationComponent{
+		X: c.X,
+		Y: c.Y,
+		Z: c.Z,
+		W: c.W,
+	}
+}
+
 func (w *World) SetRotation(e Entity, c RotationComponent) (old RotationComponent, wasAdded bool) {
 	old, wasAdded = w.rotationComponents.Upsert(e, c)
 
@@ -88,7 +120,9 @@ func (w *World) AllRotationsEntities(yield func(e Entity) bool) {
 }
 
 // RotationBuilder
+
 func WithRotation(c RotationComponent) EntityBuilderOption {
+
 	return func(w *World, e Entity) {
 		w.rotationComponents.Upsert(e, c)
 	}
@@ -113,6 +147,7 @@ func WithRotationFromValues(
 // Events
 
 // Resource methods
+
 func (w *World) SetRotationResource(c RotationComponent) {
 	w.SetRotation(w.resourceEntity, c)
 }
@@ -145,4 +180,8 @@ func (w *World) MustRotationResource() RotationComponent {
 
 func (w *World) RemoveRotationResource() {
 	w.rotationComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasRotationResource() bool {
+	return w.rotationComponents.Contains(w.resourceEntity)
 }

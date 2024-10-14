@@ -1,0 +1,122 @@
+package generator
+
+{% func relationshipTemplate(data *componentTmplData) %}
+package {%s data.PackageName -%}
+
+import (
+    "github.com/tidwall/btree"
+{% if data.HasAnyEvents %}
+    import "github.com/btvoidx/mint"
+{% endif %}
+)
+
+{%- code
+nsp := data.Name.Singular.Pascal
+nsc := data.Name.Singular.Camel
+pairName := data.Name.Singular.Pascal + "RelationshipPair"
+-%}
+
+type {%s pairName %} struct {
+    Source Entity
+    Target Entity
+}
+
+type {%s nsp %}Relationship struct {
+    btree *btree.BTreeG[{%s pairName %}]
+}
+
+func New{%s nsp %}Relationship() *{%s nsp %}Relationship {
+    return &{%s nsp %}Relationship{
+        btree: btree.NewBTreeG[{%s pairName %}](func(a, b {%s pairName %}) bool {
+            ati, bti := a.Target.Index(), b.Target.Index()
+            if ati == bti {
+                return a.Source.Index() < b.Source.Index()
+            }
+            return ati < bti
+        }),
+    }
+}
+
+func (r *{%s nsp %}Relationship) Clear() {
+    r.btree.Clear()
+}
+
+func(w *World) Link{%s nsp %}(target Entity, sources ... Entity) {
+    for _, source := range sources {
+        pair := {%s pairName %}{
+            Target: target,
+            Source: source,
+        }
+
+        w.{%s nsc %}Relationships.btree.Set(pair)
+    }
+}
+
+func(w *World) Unlink{%s nsp %}(target Entity, sources ... Entity) {
+    for _, source := range sources {
+        pair := {%s pairName %}{
+            Target: target,
+            Source: source,
+        }
+
+        w.{%s nsc %}Relationships.btree.Delete(pair)
+    }
+}
+
+func (w *World) {%s nsp %}IsLinked(source, target Entity) bool {
+    pair := {%s pairName %}{
+        Source: source,
+        Target: target,
+    }
+
+    _, ok := w.{%s nsc %}Relationships.btree.Get(pair)
+    return ok
+}
+
+func (w *World) {%s nsp %}Sources(target Entity) func(yield func(source Entity) bool) {
+    return func(yield func(source Entity) bool) {
+        iter := w.{%s nsc %}Relationships.btree.Iter()
+        iter.Seek({%s pairName %}{ Target: target })
+        end := {%s pairName %}{ Target: target + 1 }
+
+        for iter.Next() {
+            item := iter.Item()
+            if item.Target >= end.Target {
+                break
+            }
+
+            if !yield(item.Source) {
+                break
+            }
+        }
+    }
+}
+
+func (w *World) Remove{%s nsp %}Relationships(target Entity, sources ... Entity) {
+    for _, source := range sources {
+        pair := {%s pairName %}{
+            Target: target,
+            Source: source,
+        }
+
+        w.{%s nsc %}Relationships.btree.Delete(pair)
+    }
+}
+
+func (w *World) RemoveAll{%s nsp %}Relationships(target Entity) {
+    iter := w.{%s nsc %}Relationships.btree.Iter()
+    iter.Seek({%s pairName %}{ Target: target })
+    end := {%s pairName %}{ Target: target + 1 }
+
+    for iter.Next() {
+        item := iter.Item()
+        if item.Target >= end.Target {
+            break
+        }
+
+        w.{%s nsc %}Relationships.btree.Delete(item)
+    }
+}
+
+
+{%- endfunc -%}

@@ -5,6 +5,30 @@ type EatsComponent struct {
 	Amounts  []uint8
 }
 
+func EatsComponentFromValues(
+	entitiesArg []Entity,
+	amountsArg []uint8,
+) EatsComponent {
+	return EatsComponent{
+		Entities: entitiesArg,
+		Amounts:  amountsArg,
+	}
+}
+
+func DefaultEatsComponent() EatsComponent {
+	return EatsComponent{
+		Entities: nil,
+		Amounts:  nil,
+	}
+}
+
+func (c EatsComponent) Clone() EatsComponent {
+	return EatsComponent{
+		Entities: c.Entities,
+		Amounts:  c.Amounts,
+	}
+}
+
 func (w *World) SetEats(e Entity, c EatsComponent) (old EatsComponent, wasAdded bool) {
 	old, wasAdded = w.eatsComponents.Upsert(e, c)
 
@@ -82,7 +106,9 @@ func (w *World) AllEatsEntities(yield func(e Entity) bool) {
 }
 
 // EatsBuilder
+
 func WithEats(c EatsComponent) EntityBuilderOption {
+
 	return func(w *World, e Entity) {
 		w.eatsComponents.Upsert(e, c)
 	}
@@ -103,6 +129,7 @@ func WithEatsFromValues(
 // Events
 
 // Resource methods
+
 func (w *World) SetEatsResource(c EatsComponent) {
 	w.SetEats(w.resourceEntity, c)
 }
@@ -131,4 +158,8 @@ func (w *World) MustEatsResource() EatsComponent {
 
 func (w *World) RemoveEatsResource() {
 	w.eatsComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasEatsResource() bool {
+	return w.eatsComponents.Contains(w.resourceEntity)
 }

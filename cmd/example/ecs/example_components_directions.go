@@ -4,26 +4,36 @@ type DirectionComponent struct {
 	Values EnumDirection
 }
 
-func (w *World) SetDirection(e Entity, c DirectionComponent) (old DirectionComponent, wasAdded bool) {
+func DirectionComponentFromValues(
+	valuesArg EnumDirection,
+) DirectionComponent {
+	return DirectionComponent{
+		Values: valuesArg,
+	}
+}
+
+func DefaultDirectionComponent() DirectionComponent {
+	return DirectionComponent{
+		Values: EnumDirection(0),
+	}
+}
+
+func (c DirectionComponent) Clone() DirectionComponent {
+	return DirectionComponent{
+		Values: c.Values,
+	}
+}
+
+func (w *World) SetDirection(e Entity, arg EnumDirection) (old DirectionComponent, wasAdded bool) {
+	c := DirectionComponent{
+		Values: arg,
+	}
 	old, wasAdded = w.directionComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
 	_, _ = old, wasAdded
 
 	return old, wasAdded
-}
-
-func (w *World) SetDirectionFromValues(
-	e Entity,
-	valuesArg EnumDirection,
-) {
-	old, _ := w.SetDirection(e, DirectionComponent{
-		Values: valuesArg,
-	})
-
-	// depending on the generation flags, these might be unused
-	_ = old
-
 }
 
 func (w *World) Direction(e Entity) (c DirectionComponent, ok bool) {
@@ -79,35 +89,23 @@ func (w *World) AllDirectionsEntities(yield func(e Entity) bool) {
 }
 
 // DirectionBuilder
-func WithDirection(c DirectionComponent) EntityBuilderOption {
+
+func WithDirection(arg EnumDirection) EntityBuilderOption {
+	c := DirectionComponent{
+		Values: arg,
+	}
+
 	return func(w *World, e Entity) {
 		w.directionComponents.Upsert(e, c)
-	}
-}
-
-func WithDirectionFromValues(
-	valuesArg EnumDirection,
-) EntityBuilderOption {
-	return func(w *World, e Entity) {
-		w.SetDirectionFromValues(e,
-			valuesArg,
-		)
 	}
 }
 
 // Events
 
 // Resource methods
-func (w *World) SetDirectionResource(c DirectionComponent) {
-	w.SetDirection(w.resourceEntity, c)
-}
 
-func (w *World) SetDirectionResourceFromValues(
-	valuesArg EnumDirection,
-) {
-	w.SetDirectionResource(DirectionComponent{
-		Values: valuesArg,
-	})
+func (w *World) SetDirectionResource(arg EnumDirection) {
+	w.SetDirection(w.resourceEntity, arg)
 }
 
 func (w *World) DirectionResource() (DirectionComponent, bool) {
@@ -124,4 +122,8 @@ func (w *World) MustDirectionResource() DirectionComponent {
 
 func (w *World) RemoveDirectionResource() {
 	w.directionComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasDirectionResource() bool {
+	return w.directionComponents.Contains(w.resourceEntity)
 }

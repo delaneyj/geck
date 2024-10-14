@@ -44,11 +44,12 @@ type ecsTmplData struct {
 	Queries     []*queryTmplData
 }
 type fieldTemplateData struct {
-	Name              InflectionString
-	Type              InflectionString
-	Description       string
-	ResetValue        string
-	IsSlice, IsEntity bool
+	Name                 InflectionString
+	Type                 InflectionString
+	Description          string
+	ResetValue           string
+	IsSlice, IsEntity    bool
+	IsEntityRelationship bool
 }
 
 type componentTmplData struct {
@@ -59,7 +60,7 @@ type componentTmplData struct {
 	Name                                               InflectionString
 	Description                                        string
 	Fields                                             []fieldTemplateData
-	IsTag                                              bool
+	IsTag, IsRelationship                              bool
 	IsOnlyOneField, IsFirstFieldEntity, IsFirstSlice   bool
 	ShouldGenAdded, ShouldGenRemoved, ShouldGenChanged bool
 	HasAnyEvents                                       bool
@@ -112,6 +113,8 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 		generateFile("sparse_set.go", data, sparseSetTemplate),
 		generateFile("entities.go", data, entitiesTemplate),
 		generateFile("events.go", data, eventsTemplate),
+		generateFile("web.go", data, webTemplate),
+		generateFile("web_templates.templ", data, templTemplate),
 	); err != nil {
 
 		return fmt.Errorf("failed to generate top level files: %w", err)
@@ -147,6 +150,8 @@ func BuildECS(ctx context.Context, opts *geckpb.GeneratorOptions) error {
 		{
 			subdir: "",
 			cmds: []string{
+				"go install github.com/valyala/quicktemplate/qtc@latest",
+				"templ generate",
 				"go install golang.org/x/tools/cmd/goimports@latest",
 				"goimports -w .",
 				"go mod tidy",
@@ -204,7 +209,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 
 		for _, ed := range bundleDef.Enums {
 			if len(ed.Values) == 0 {
-				return nil, fmt.Errorf("enum must have at least one value")
+				return nil, fmt.Errorf("enum '%s' must have at least one value", ed.Name)
 			}
 
 			enum := &enumTmplData{
@@ -244,7 +249,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 
 		bundleComponentNames := map[string]*componentTmplData{}
 		for _, cd := range bundleDef.Components {
-			isTag := len(cd.Fields) == 0
+			isTag := len(cd.Fields) == 0 && !cd.IsRelationship
 
 			component := &componentTmplData{
 				PackageName:      data.PackageName,
@@ -253,6 +258,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 				Name:             inflectionStrings(cd.Name, !isTag && !cd.ShouldNotInflect),
 				Description:      cd.Description,
 				IsTag:            isTag,
+				IsRelationship:   cd.IsRelationship,
 				ShouldGenAdded:   cd.ShouldGenerateAddedEvent,
 				ShouldGenRemoved: cd.ShouldGenerateRemovedEvent,
 				ShouldGenChanged: cd.ShouldGenerateChangedEvent,
@@ -322,7 +328,7 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 					ftd.ResetValue = fmt.Sprintf("[]byte(%v)", f.GetBin())
 				case *geckpb.FieldDefinition_Entity:
 					typ = "Entity"
-					ftd.ResetValue = "w.EntityFromU32(0)"
+					ftd.ResetValue = "EntityFromU32(0)"
 					ftd.IsEntity = true
 				case *geckpb.FieldDefinition_Enum:
 					e := f.GetEnum()
@@ -340,9 +346,8 @@ func optsToData(opts *geckpb.GeneratorOptions) (data *ecsTmplData, err error) {
 					}
 					typ = "Enum" + typ
 					ftd.ResetValue = fmt.Sprintf("%s(%d)", typ, e.Value)
-
 				default:
-					return nil, fmt.Errorf("unknown field type: %T", f.ResetValue)
+					return nil, fmt.Errorf("unknown field type: %s %T", f.Name, f.ResetValue)
 				}
 
 				if f.HasMultiple {
@@ -510,10 +515,14 @@ func generateEnum(enum *enumTmplData) error {
 func generateComponent(component *componentTmplData) error {
 
 	var prefix, contents string
-	if component.IsTag {
+	switch {
+	case component.IsRelationship:
+		prefix = "relationships"
+		contents = relationshipTemplate(component)
+	case component.IsTag:
 		prefix = "tags"
 		contents = tagTemplate(component)
-	} else {
+	default:
 		prefix = "components"
 		contents = componentTemplate(component)
 	}
@@ -528,6 +537,23 @@ func generateComponent(component *componentTmplData) error {
 		),
 	)
 
+	if err := os.WriteFile(fp, []byte(contents), 0644); err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
+	}
+
+	return nil
+}
+
+func generateRelationship(relationship *componentTmplData) error {
+	fp := filepath.Join(
+		relationship.Folder,
+		fmt.Sprintf(
+			"relationships_%s.go",
+			relationship.Name.Plural.Snake,
+		),
+	)
+
+	contents := relationshipTemplate(relationship)
 	if err := os.WriteFile(fp, []byte(contents), 0644); err != nil {
 		return fmt.Errorf("failed to write to file: %w", err)
 	}

@@ -11,6 +11,7 @@ tasks:
   tools:
     cmds:
       - go install  github.com/valyala/quicktemplate/qtc@latest
+      - go install github.com/go-task/task/v3/cmd/task@latest
   pb:
     dir: pb
     sources:
@@ -56,9 +57,32 @@ tasks:
     cmds:
       - go run main.go
 
+  templ:
+    env:
+      TEMPL_EXPERIMENT: rawgo
+    generates:
+      - "**/*_templ.go"
+    sources:
+      - "**/*.templ"
+    cmds:
+      - templ generate .
+
+
   install:
     dir: ./cmd/geckgen
     deps:
       - test
     cmds:
       - go install
+
+  example:
+    dir: ./cmd/example
+    method: none
+    deps:
+      - qtc
+      - templ
+    sources:
+      - "../../**/*.go"
+    cmds:
+      - npx kill-port 8080
+      - go run main.go

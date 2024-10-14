@@ -1,5 +1,7 @@
 package ecs
 
+const ssTombstoneIndex = -1
+
 type SparseSet[T any] struct {
 	sparse []int
 	dense  []Entity
@@ -24,7 +26,12 @@ func (s *SparseSet[T]) search(idx int) int {
 
 func (s *SparseSet[T]) grow(idx int) {
 	if idx >= len(s.sparse) {
-		s.sparse = append(s.sparse, make([]int, idx-len(s.sparse)+1)...)
+		toGrow := idx - len(s.sparse) + 1
+		arr := make([]int, toGrow)
+		for i := range arr {
+			arr[i] = ssTombstoneIndex
+		}
+		s.sparse = append(s.sparse, arr...)
 	}
 }
 

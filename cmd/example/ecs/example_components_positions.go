@@ -6,6 +6,34 @@ type PositionComponent struct {
 	Z float32
 }
 
+func PositionComponentFromValues(
+	xArg float32,
+	yArg float32,
+	zArg float32,
+) PositionComponent {
+	return PositionComponent{
+		X: xArg,
+		Y: yArg,
+		Z: zArg,
+	}
+}
+
+func DefaultPositionComponent() PositionComponent {
+	return PositionComponent{
+		X: 0.000000,
+		Y: 0.000000,
+		Z: 0.000000,
+	}
+}
+
+func (c PositionComponent) Clone() PositionComponent {
+	return PositionComponent{
+		X: c.X,
+		Y: c.Y,
+		Z: c.Z,
+	}
+}
+
 func (w *World) SetPosition(e Entity, c PositionComponent) (old PositionComponent, wasAdded bool) {
 	old, wasAdded = w.positionComponents.Upsert(e, c)
 
@@ -85,7 +113,9 @@ func (w *World) AllPositionsEntities(yield func(e Entity) bool) {
 }
 
 // PositionBuilder
+
 func WithPosition(c PositionComponent) EntityBuilderOption {
+
 	return func(w *World, e Entity) {
 		w.positionComponents.Upsert(e, c)
 	}
@@ -108,6 +138,7 @@ func WithPositionFromValues(
 // Events
 
 // Resource methods
+
 func (w *World) SetPositionResource(c PositionComponent) {
 	w.SetPosition(w.resourceEntity, c)
 }
@@ -138,4 +169,8 @@ func (w *World) MustPositionResource() PositionComponent {
 
 func (w *World) RemovePositionResource() {
 	w.positionComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasPositionResource() bool {
+	return w.positionComponents.Contains(w.resourceEntity)
 }

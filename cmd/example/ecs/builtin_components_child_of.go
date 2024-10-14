@@ -4,26 +4,36 @@ type ChildOfComponent struct {
 	Parent Entity
 }
 
-func (w *World) SetChildOf(e Entity, c ChildOfComponent) (old ChildOfComponent, wasAdded bool) {
+func ChildOfComponentFromValues(
+	parentArg Entity,
+) ChildOfComponent {
+	return ChildOfComponent{
+		Parent: parentArg,
+	}
+}
+
+func DefaultChildOfComponent() ChildOfComponent {
+	return ChildOfComponent{
+		Parent: EntityFromU32(0),
+	}
+}
+
+func (c ChildOfComponent) Clone() ChildOfComponent {
+	return ChildOfComponent{
+		Parent: c.Parent,
+	}
+}
+
+func (w *World) SetChildOf(e Entity, arg Entity) (old ChildOfComponent, wasAdded bool) {
+	c := ChildOfComponent{
+		Parent: arg,
+	}
 	old, wasAdded = w.childOfComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
 	_, _ = old, wasAdded
 
 	return old, wasAdded
-}
-
-func (w *World) SetChildOfFromValues(
-	e Entity,
-	parentArg Entity,
-) {
-	old, _ := w.SetChildOf(e, ChildOfComponent{
-		Parent: parentArg,
-	})
-
-	// depending on the generation flags, these might be unused
-	_ = old
-
 }
 
 func (w *World) ChildOf(e Entity) (c ChildOfComponent, ok bool) {
@@ -79,35 +89,23 @@ func (w *World) AllChildOfEntities(yield func(e Entity) bool) {
 }
 
 // ChildOfBuilder
-func WithChildOf(c ChildOfComponent) EntityBuilderOption {
+
+func WithChildOf(arg Entity) EntityBuilderOption {
+	c := ChildOfComponent{
+		Parent: arg,
+	}
+
 	return func(w *World, e Entity) {
 		w.childOfComponents.Upsert(e, c)
-	}
-}
-
-func WithChildOfFromValues(
-	parentArg Entity,
-) EntityBuilderOption {
-	return func(w *World, e Entity) {
-		w.SetChildOfFromValues(e,
-			parentArg,
-		)
 	}
 }
 
 // Events
 
 // Resource methods
-func (w *World) SetChildOfResource(c ChildOfComponent) {
-	w.SetChildOf(w.resourceEntity, c)
-}
 
-func (w *World) SetChildOfResourceFromValues(
-	parentArg Entity,
-) {
-	w.SetChildOfResource(ChildOfComponent{
-		Parent: parentArg,
-	})
+func (w *World) SetChildOfResource(arg Entity) {
+	w.SetChildOf(w.resourceEntity, arg)
 }
 
 func (w *World) ChildOfResource() (ChildOfComponent, bool) {
@@ -124,4 +122,8 @@ func (w *World) MustChildOfResource() ChildOfComponent {
 
 func (w *World) RemoveChildOfResource() {
 	w.childOfComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasChildOfResource() bool {
+	return w.childOfComponents.Contains(w.resourceEntity)
 }

@@ -50,6 +50,7 @@ message ComponentDefinition {
   bool should_generate_removed_event = 6;
   bool should_generate_changed_event = 7;
   repeated FieldDefinition fields = 8;
+  bool is_relationship = 9;
 }
 
 message BundleDefinition {

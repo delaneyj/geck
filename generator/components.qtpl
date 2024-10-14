@@ -20,7 +20,43 @@ type {%s nsp %}Component struct {
     {%- endfor -%}
 }
 
-func (w *World) Set{%s nsp %}(e Entity, c {%s nsp %}Component) (old {%s nsp %}Component, wasAdded bool) {
+func {%s nsp %}ComponentFromValues(
+    {%- for _, f := range data.Fields -%}
+    {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
+    {%- endfor -%}
+) {%s nsp %}Component {
+    return {%s nsp %}Component{
+        {%- for _, f := range data.Fields -%}
+        {%s f.Name.Singular.Pascal %}: {%s f.Name.Singular.Camel %}Arg,
+        {%- endfor -%}
+    }
+}
+
+func Default{%s nsp %}Component() {%s nsp %}Component {
+    return {%s nsp %}Component{
+        {%- for _, f := range data.Fields -%}
+        {%s f.Name.Singular.Pascal %}: {%s= f.ResetValue -%},
+        {%- endfor -%}
+    }
+}
+
+func (c {%s nsp %}Component) Clone() {%s nsp %}Component {
+    return {%s nsp %}Component{
+        {%- for _, f := range data.Fields -%}
+        {%s f.Name.Singular.Pascal %}: c.{%s f.Name.Singular.Pascal %},
+        {%- endfor -%}
+    }
+}
+
+
+{%- if data.IsOnlyOneField -%}
+    func (w *World) Set{%s nsp %}(e Entity, arg {%s data.Fields[0].Type.Singular.Original %}) (old {%s nsp %}Component, wasAdded bool){
+        c := {%s nsp %}Component{
+            {%s data.Fields[0].Name.Singular.Pascal %}: arg,
+        }
+{%- else -%}
+    func (w *World) Set{%s nsp %}(e Entity, c {%s nsp %}Component) (old {%s nsp %}Component, wasAdded bool) {
+{%- endif -%}
     old, wasAdded = w.{%s ss %}.Upsert(e, c);
 
     // depending on the generation flags, these might be unused
@@ -38,6 +74,7 @@ func (w *World) Set{%s nsp %}(e Entity, c {%s nsp %}Component) (old {%s nsp %}Co
     return old, wasAdded
 }
 
+{%- if !data.IsOnlyOneField %}
 func (w *World) Set{%s nsp %}FromValues(
     e Entity,
     {%- for _, f := range data.Fields -%}
@@ -57,6 +94,7 @@ func (w *World) Set{%s nsp %}FromValues(
     fireEvent(w, {%s nsp %}ChangedEvent{Entity: e, Old: old, New: w.Must{%s nsp %}(e)})
     {%- endif -%}
 }
+{% endif %}
 
 func (w *World) {%s nsp %}(e Entity) (c {%s nsp %}Component, ok bool) {
     return w.{%s ss %}.Data(e)
@@ -116,12 +154,20 @@ func (w *World) All{%s npp %}Entities(yield func(e Entity) bool) {
 }
 
 // {%s nsp %}Builder
+{% if data.IsOnlyOneField %}
+func With{%s nsp %}(arg {%s data.Fields[0].Type.Singular.Original %}) EntityBuilderOption {
+    c := {%s nsp %}Component{
+        {%s data.Fields[0].Name.Singular.Pascal %}: arg,
+    }
+{% else %}
 func With{%s nsp %}(c {%s nsp %}Component) EntityBuilderOption {
+{% endif %}
     return func(w *World, e Entity) {
         w.{%s ss %}.Upsert(e, c)
     }
 }
 
+{% if !data.IsOnlyOneField %}
 func With{%s nsp %}FromValues(
     {%- for _, f := range data.Fields -%}
     {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
@@ -135,6 +181,8 @@ func With{%s nsp %}FromValues(
         )
     }
 }
+{% endif %}
+
 
 // Events
 {%- if data.ShouldGenAdded -%}
@@ -177,10 +225,17 @@ func (w *World) On{%s nsp %}Changed(fn func(evt {%s nsp %}ChangedEvent)) Unsubsc
 {%- endif -%}
 
 // Resource methods
+{% if data.IsOnlyOneField %}
+func (w *World) Set{%s nsp %}Resource(arg {%s data.Fields[0].Type.Singular.Original %}) {
+    w.Set{%s nsp %}(w.resourceEntity, arg)
+}
+{% else %}
 func (w *World) Set{%s nsp %}Resource(c {%s nsp %}Component) {
     w.Set{%s nsp %}(w.resourceEntity, c)
 }
+{% endif %}
 
+{% if !data.IsOnlyOneField %}
 func (w *World) Set{%s nsp %}ResourceFromValues(
     {%- for _, f := range data.Fields -%}
     {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
@@ -192,6 +247,7 @@ func (w *World) Set{%s nsp %}ResourceFromValues(
         {%- endfor -%}
     })
 }
+{% endif %}
 
 func (w *World) {%s nsp %}Resource() ({%s nsp %}Component,bool) {
     return w.{%s ss %}.Data(w.resourceEntity)
@@ -208,5 +264,10 @@ func (w *World) Must{%s nsp %}Resource() {%s nsp %}Component {
 func (w *World) Remove{%s nsp %}Resource() {
     w.{%s ss %}.Remove(w.resourceEntity)
 }
+
+func (w *World) Has{%s nsp %}Resource() bool {
+    return w.{%s ss %}.Contains(w.resourceEntity)
+}
+
 
 {%- endfunc -%}

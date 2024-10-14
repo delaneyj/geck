@@ -33,6 +33,7 @@ func streamworldTemplate(qw422016 *qt422016.Writer, data *ecsTmplData) {
 import (
     "github.com/RoaringBitmap/roaring"
     "github.com/btvoidx/mint"
+    "context"
 )
 
 type empty struct{}
@@ -46,45 +47,68 @@ type World struct{
 
     // Tags
 `)
-//line generator/world_go.qtpl:22
+//line generator/world_go.qtpl:23
 	for _, c := range data.Components {
-//line generator/world_go.qtpl:23
+//line generator/world_go.qtpl:24
 		if c.IsTag {
-//line generator/world_go.qtpl:23
+//line generator/world_go.qtpl:24
 			qw422016.N().S(`    `)
-//line generator/world_go.qtpl:24
+//line generator/world_go.qtpl:25
 			qw422016.E().S(c.Name.Singular.Camel)
-//line generator/world_go.qtpl:24
+//line generator/world_go.qtpl:25
 			qw422016.N().S(`Tags *SparseSet[empty]
 `)
-//line generator/world_go.qtpl:25
+//line generator/world_go.qtpl:26
 		}
-//line generator/world_go.qtpl:26
+//line generator/world_go.qtpl:27
 	}
-//line generator/world_go.qtpl:26
+//line generator/world_go.qtpl:27
 	qw422016.N().S(`
     // Components
 `)
-//line generator/world_go.qtpl:29
+//line generator/world_go.qtpl:30
 	for _, c := range data.Components {
-//line generator/world_go.qtpl:30
-		if !c.IsTag {
-//line generator/world_go.qtpl:30
+//line generator/world_go.qtpl:31
+		if !c.IsTag && !c.IsRelationship {
+//line generator/world_go.qtpl:31
 			qw422016.N().S(`    `)
-//line generator/world_go.qtpl:31
+//line generator/world_go.qtpl:32
 			qw422016.E().S(c.Name.Singular.Camel)
-//line generator/world_go.qtpl:31
+//line generator/world_go.qtpl:32
 			qw422016.N().S(`Components *SparseSet[`)
-//line generator/world_go.qtpl:31
+//line generator/world_go.qtpl:32
 			qw422016.E().S(c.Name.Singular.Pascal)
-//line generator/world_go.qtpl:31
+//line generator/world_go.qtpl:32
 			qw422016.N().S(`Component]
 `)
-//line generator/world_go.qtpl:32
+//line generator/world_go.qtpl:33
 		}
-//line generator/world_go.qtpl:33
+//line generator/world_go.qtpl:34
 	}
-//line generator/world_go.qtpl:33
+//line generator/world_go.qtpl:34
+	qw422016.N().S(`
+    // Relationships
+`)
+//line generator/world_go.qtpl:37
+	for _, c := range data.Components {
+//line generator/world_go.qtpl:38
+		if c.IsRelationship {
+//line generator/world_go.qtpl:38
+			qw422016.N().S(`    `)
+//line generator/world_go.qtpl:39
+			qw422016.E().S(c.Name.Singular.Camel)
+//line generator/world_go.qtpl:39
+			qw422016.N().S(`Relationships *`)
+//line generator/world_go.qtpl:39
+			qw422016.E().S(c.Name.Singular.Pascal)
+//line generator/world_go.qtpl:39
+			qw422016.N().S(`Relationship
+`)
+//line generator/world_go.qtpl:40
+		}
+//line generator/world_go.qtpl:41
+	}
+//line generator/world_go.qtpl:41
 	qw422016.N().S(`}
 
 func NewWorld() *World{
@@ -96,54 +120,139 @@ func NewWorld() *World{
 
         // Initialize tags
 `)
-//line generator/world_go.qtpl:44
-	for _, c := range data.Components {
-//line generator/world_go.qtpl:45
-		if c.IsTag {
-//line generator/world_go.qtpl:45
-			qw422016.N().S(`                `)
-//line generator/world_go.qtpl:46
-			qw422016.E().S(c.Name.Singular.Camel)
-//line generator/world_go.qtpl:46
-			qw422016.N().S(`Tags : NewSparseSet[empty](),
-`)
-//line generator/world_go.qtpl:47
-		}
-//line generator/world_go.qtpl:48
-	}
-//line generator/world_go.qtpl:48
-	qw422016.N().S(`
-
-        // Initialize components
-`)
 //line generator/world_go.qtpl:52
 	for _, c := range data.Components {
 //line generator/world_go.qtpl:53
-		if !c.IsTag {
+		if c.IsTag {
 //line generator/world_go.qtpl:53
 			qw422016.N().S(`                `)
 //line generator/world_go.qtpl:54
 			qw422016.E().S(c.Name.Singular.Camel)
 //line generator/world_go.qtpl:54
-			qw422016.N().S(`Components: NewSparseSet[`)
-//line generator/world_go.qtpl:54
-			qw422016.E().S(c.Name.Singular.Pascal)
-//line generator/world_go.qtpl:54
-			qw422016.N().S(`Component](),
+			qw422016.N().S(`Tags : NewSparseSet[empty](),
 `)
 //line generator/world_go.qtpl:55
 		}
 //line generator/world_go.qtpl:56
 	}
 //line generator/world_go.qtpl:56
+	qw422016.N().S(`
+
+        // Initialize components
+`)
+//line generator/world_go.qtpl:60
+	for _, c := range data.Components {
+//line generator/world_go.qtpl:61
+		if !c.IsTag && !c.IsRelationship {
+//line generator/world_go.qtpl:61
+			qw422016.N().S(`                `)
+//line generator/world_go.qtpl:62
+			qw422016.E().S(c.Name.Singular.Camel)
+//line generator/world_go.qtpl:62
+			qw422016.N().S(`Components: NewSparseSet[`)
+//line generator/world_go.qtpl:62
+			qw422016.E().S(c.Name.Singular.Pascal)
+//line generator/world_go.qtpl:62
+			qw422016.N().S(`Component](),
+`)
+//line generator/world_go.qtpl:63
+		}
+//line generator/world_go.qtpl:64
+	}
+//line generator/world_go.qtpl:64
+	qw422016.N().S(`
+        // Initialize relationships
+`)
+//line generator/world_go.qtpl:67
+	for _, c := range data.Components {
+//line generator/world_go.qtpl:68
+		if c.IsRelationship {
+//line generator/world_go.qtpl:68
+			qw422016.N().S(`                `)
+//line generator/world_go.qtpl:69
+			qw422016.E().S(c.Name.Singular.Camel)
+//line generator/world_go.qtpl:69
+			qw422016.N().S(`Relationships: New`)
+//line generator/world_go.qtpl:69
+			qw422016.E().S(c.Name.Singular.Pascal)
+//line generator/world_go.qtpl:69
+			qw422016.N().S(`Relationship(),
+`)
+//line generator/world_go.qtpl:70
+		}
+//line generator/world_go.qtpl:71
+	}
+//line generator/world_go.qtpl:71
 	qw422016.N().S(`    }
-    w.resourceEntity = w.CreateEntity()
 
-
-
+    w.Reset()
 
     return w
 }
+
+func (w *World) Reset(){
+    w.nextEntityID = 0
+    w.livingEntities.Clear()
+    w.freeEntities.Clear()
+    w.resourceEntity = w.NextEntity()
+
+    // Reset tags
+`)
+//line generator/world_go.qtpl:86
+	for _, c := range data.Components {
+//line generator/world_go.qtpl:87
+		if c.IsTag {
+//line generator/world_go.qtpl:87
+			qw422016.N().S(`            w.`)
+//line generator/world_go.qtpl:88
+			qw422016.E().S(c.Name.Singular.Camel)
+//line generator/world_go.qtpl:88
+			qw422016.N().S(`Tags.Clear()
+`)
+//line generator/world_go.qtpl:89
+		}
+//line generator/world_go.qtpl:90
+	}
+//line generator/world_go.qtpl:90
+	qw422016.N().S(`
+    // Reset components
+`)
+//line generator/world_go.qtpl:93
+	for _, c := range data.Components {
+//line generator/world_go.qtpl:94
+		if !c.IsTag && !c.IsRelationship {
+//line generator/world_go.qtpl:94
+			qw422016.N().S(`            w.`)
+//line generator/world_go.qtpl:95
+			qw422016.E().S(c.Name.Singular.Camel)
+//line generator/world_go.qtpl:95
+			qw422016.N().S(`Components.Clear()
+`)
+//line generator/world_go.qtpl:96
+		}
+//line generator/world_go.qtpl:97
+	}
+//line generator/world_go.qtpl:97
+	qw422016.N().S(`
+    // Reset relationships
+`)
+//line generator/world_go.qtpl:100
+	for _, c := range data.Components {
+//line generator/world_go.qtpl:101
+		if c.IsRelationship {
+//line generator/world_go.qtpl:101
+			qw422016.N().S(`            w.`)
+//line generator/world_go.qtpl:102
+			qw422016.E().S(c.Name.Singular.Camel)
+//line generator/world_go.qtpl:102
+			qw422016.N().S(`Relationships.Clear()
+`)
+//line generator/world_go.qtpl:103
+		}
+//line generator/world_go.qtpl:104
+	}
+//line generator/world_go.qtpl:104
+	qw422016.N().S(`}
 
 func(w *World)  AddSystems(systems ...System) error{
     for _, s := range systems{
@@ -162,51 +271,53 @@ func(w *World)  AddSystems(systems ...System) error{
     return nil
 }
 
-func (w *World) Tick() error{
+func (w *World) Tick(ctx context.Context) error{
     for _, s := range w.systems{
-        if err := s.Tick(w); err != nil{
+        if err := s.Tick(ctx, w); err != nil{
             return err
         }
     }
     return nil
 }
 
+type ReliedOnIter func(reliedOn System) bool
+
 type System interface{
     Initialize(w *World) error
-    ReliesOn( func(reliedOn System) bool)
+    ReliesOn() ReliedOnIter
 }
 
 type SystemTicker interface{
     System
-    Tick(w *World) error
+    Tick(ctx context.Context, w *World) error
 }
 
 `)
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 }
 
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 func writeworldTemplate(qq422016 qtio422016.Writer, data *ecsTmplData) {
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 	streamworldTemplate(qw422016, data)
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 	qt422016.ReleaseWriter(qw422016)
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 }
 
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 func worldTemplate(data *ecsTmplData) string {
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 	writeworldTemplate(qb422016, data)
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 	qs422016 := string(qb422016.B)
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 	return qs422016
-//line generator/world_go.qtpl:102
+//line generator/world_go.qtpl:145
 }

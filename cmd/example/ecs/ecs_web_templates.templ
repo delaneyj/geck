@@ -1,0 +1,34 @@
+
+
+package ecs
+import(
+    "fmt"
+    "reflect"
+)
+
+templ SparseSetView[T any](ss *SparseSet[T]) {
+<html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.13/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4">
+    {{
+        var zero T
+        name := reflect.TypeOf(zero).Name()
+    }}
+    <div>Hello { name } SparseSet View</div>
+    if ss == nil || ss.Len() == 0 {
+        <div>Empty SparseSet</div>
+    } else {
+        <div class="flex flex-wrap">
+        for _, idx := range ss.sparse {
+            <div class="border p-4">
+                <div class="text-lg font-bold">{ fmt.Sprint(idx) }</div>
+            </div>
+        }
+        </div>
+    }
+</body>
+</html>
+}

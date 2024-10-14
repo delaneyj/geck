@@ -30,6 +30,8 @@ package `)
 //line generator/sparse_sets_go.qtpl:4
 	qw422016.N().S(`
 
+const ssTombstoneIndex = -1
+
 type SparseSet[T any] struct {
 	sparse []int
 	dense  []Entity
@@ -55,7 +57,12 @@ func (s *SparseSet[T]) search(idx int) int {
 
 func (s *SparseSet[T]) grow(idx int) {
 	if idx >= len(s.sparse) {
-		s.sparse = append(s.sparse, make([]int, idx-len(s.sparse)+1)...)
+		toGrow := idx - len(s.sparse) + 1
+		arr := make([]int, toGrow)
+		for i := range arr {
+			arr[i] = ssTombstoneIndex
+		}
+		s.sparse = append(s.sparse, arr...)
 	}
 }
 
@@ -153,31 +160,31 @@ func (s *SparseSet[T]) Cap() int {
 }
 
 `)
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 }
 
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 func writesparseSetTemplate(qq422016 qtio422016.Writer, data *ecsTmplData) {
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 	streamsparseSetTemplate(qw422016, data)
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 	qt422016.ReleaseWriter(qw422016)
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 }
 
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 func sparseSetTemplate(data *ecsTmplData) string {
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 	writesparseSetTemplate(qb422016, data)
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 	qs422016 := string(qb422016.B)
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 	return qs422016
-//line generator/sparse_sets_go.qtpl:128
+//line generator/sparse_sets_go.qtpl:135
 }

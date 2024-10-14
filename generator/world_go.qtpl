@@ -7,6 +7,7 @@ package {%s data.PackageName %}
 import (
     "github.com/RoaringBitmap/roaring"
     "github.com/btvoidx/mint"
+    "context"
 )
 
 type empty struct{}
@@ -27,8 +28,15 @@ type World struct{
 
     // Components
     {%- for _, c := range data.Components -%}
-    {%- if !c.IsTag -%}
+    {%- if !c.IsTag && !c.IsRelationship -%}
     {%s c.Name.Singular.Camel %}Components *SparseSet[{%s c.Name.Singular.Pascal %}Component]
+    {%- endif -%}
+    {%- endfor -%}
+
+    // Relationships
+    {%- for _, c := range data.Components -%}
+    {%- if c.IsRelationship -%}
+    {%s c.Name.Singular.Camel %}Relationships *{%s c.Name.Singular.Pascal %}Relationship
     {%- endif -%}
     {%- endfor -%}
 }
@@ -50,17 +58,50 @@ func NewWorld() *World{
 
         // Initialize components
         {%- for _, c := range data.Components -%}
-            {%- if !c.IsTag -%}
+            {%- if !c.IsTag && !c.IsRelationship -%}
                 {%s c.Name.Singular.Camel %}Components: NewSparseSet[{%s c.Name.Singular.Pascal %}Component](),
             {%- endif -%}
         {%- endfor -%}
+
+        // Initialize relationships
+        {%- for _, c := range data.Components -%}
+            {%- if c.IsRelationship -%}
+                {%s c.Name.Singular.Camel %}Relationships: New{%s c.Name.Singular.Pascal %}Relationship(),
+            {%- endif -%}
+        {%- endfor -%}
     }
-    w.resourceEntity = w.CreateEntity()
 
-
-
+    w.Reset()
 
     return w
+}
+
+func (w *World) Reset(){
+    w.nextEntityID = 0
+    w.livingEntities.Clear()
+    w.freeEntities.Clear()
+    w.resourceEntity = w.NextEntity()
+
+    // Reset tags
+    {%- for _, c := range data.Components -%}
+        {%- if c.IsTag -%}
+            w.{%s c.Name.Singular.Camel %}Tags.Clear()
+        {%- endif -%}
+    {%- endfor -%}
+
+    // Reset components
+    {%- for _, c := range data.Components -%}
+        {%- if !c.IsTag && !c.IsRelationship -%}
+            w.{%s c.Name.Singular.Camel %}Components.Clear()
+        {%- endif -%}
+    {%- endfor -%}
+
+    // Reset relationships
+    {%- for _, c := range data.Components -%}
+        {%- if c.IsRelationship -%}
+            w.{%s c.Name.Singular.Camel %}Relationships.Clear()
+        {%- endif -%}
+    {%- endfor -%}
 }
 
 func(w *World)  AddSystems(systems ...System) error{
@@ -80,23 +121,25 @@ func(w *World)  AddSystems(systems ...System) error{
     return nil
 }
 
-func (w *World) Tick() error{
+func (w *World) Tick(ctx context.Context) error{
     for _, s := range w.systems{
-        if err := s.Tick(w); err != nil{
+        if err := s.Tick(ctx, w); err != nil{
             return err
         }
     }
     return nil
 }
 
+type ReliedOnIter func(reliedOn System) bool
+
 type System interface{
     Initialize(w *World) error
-    ReliesOn( func(reliedOn System) bool)
+    ReliesOn() ReliedOnIter
 }
 
 type SystemTicker interface{
     System
-    Tick(w *World) error
+    Tick(ctx context.Context, w *World) error
 }
 
 {%- endfunc -%}

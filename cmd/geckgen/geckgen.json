@@ -102,13 +102,7 @@
         {
           "name": "Likes",
           "shouldNotInflect": true,
-          "fields": [
-            {
-              "name": "Entity",
-              "hasMultiple": true,
-              "entity": 0
-            }
-          ]
+          "isRelationship": true
         },
         {
           "name": "Enemy"
@@ -116,13 +110,7 @@
         {
           "name": "Grows",
           "shouldNotInflect": true,
-          "fields": [
-            {
-              "name": "Entity",
-              "hasMultiple": true,
-              "entity": 0
-            }
-          ]
+          "isRelationship": true
         },
         {
           "name": "Gravity",
@@ -176,13 +164,7 @@
         },
         {
           "name": "AlliedWith",
-          "fields": [
-            {
-              "name": "Entity",
-              "hasMultiple": true,
-              "entity": 0
-            }
-          ]
+          "isRelationship": true
         }
       ]
     }

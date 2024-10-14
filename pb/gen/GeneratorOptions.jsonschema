@@ -88,6 +88,9 @@
                     },
                     "additionalProperties": false,
                     "type": "array"
+                },
+                "isRelationship": {
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false,

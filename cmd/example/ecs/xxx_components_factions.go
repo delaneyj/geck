@@ -4,26 +4,36 @@ type FactionComponent struct {
 	Entity Entity
 }
 
-func (w *World) SetFaction(e Entity, c FactionComponent) (old FactionComponent, wasAdded bool) {
+func FactionComponentFromValues(
+	entityArg Entity,
+) FactionComponent {
+	return FactionComponent{
+		Entity: entityArg,
+	}
+}
+
+func DefaultFactionComponent() FactionComponent {
+	return FactionComponent{
+		Entity: EntityFromU32(0),
+	}
+}
+
+func (c FactionComponent) Clone() FactionComponent {
+	return FactionComponent{
+		Entity: c.Entity,
+	}
+}
+
+func (w *World) SetFaction(e Entity, arg Entity) (old FactionComponent, wasAdded bool) {
+	c := FactionComponent{
+		Entity: arg,
+	}
 	old, wasAdded = w.factionComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
 	_, _ = old, wasAdded
 
 	return old, wasAdded
-}
-
-func (w *World) SetFactionFromValues(
-	e Entity,
-	entityArg Entity,
-) {
-	old, _ := w.SetFaction(e, FactionComponent{
-		Entity: entityArg,
-	})
-
-	// depending on the generation flags, these might be unused
-	_ = old
-
 }
 
 func (w *World) Faction(e Entity) (c FactionComponent, ok bool) {
@@ -79,35 +89,23 @@ func (w *World) AllFactionsEntities(yield func(e Entity) bool) {
 }
 
 // FactionBuilder
-func WithFaction(c FactionComponent) EntityBuilderOption {
+
+func WithFaction(arg Entity) EntityBuilderOption {
+	c := FactionComponent{
+		Entity: arg,
+	}
+
 	return func(w *World, e Entity) {
 		w.factionComponents.Upsert(e, c)
-	}
-}
-
-func WithFactionFromValues(
-	entityArg Entity,
-) EntityBuilderOption {
-	return func(w *World, e Entity) {
-		w.SetFactionFromValues(e,
-			entityArg,
-		)
 	}
 }
 
 // Events
 
 // Resource methods
-func (w *World) SetFactionResource(c FactionComponent) {
-	w.SetFaction(w.resourceEntity, c)
-}
 
-func (w *World) SetFactionResourceFromValues(
-	entityArg Entity,
-) {
-	w.SetFactionResource(FactionComponent{
-		Entity: entityArg,
-	})
+func (w *World) SetFactionResource(arg Entity) {
+	w.SetFaction(w.resourceEntity, arg)
 }
 
 func (w *World) FactionResource() (FactionComponent, bool) {
@@ -124,4 +122,8 @@ func (w *World) MustFactionResource() FactionComponent {
 
 func (w *World) RemoveFactionResource() {
 	w.factionComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasFactionResource() bool {
+	return w.factionComponents.Contains(w.resourceEntity)
 }

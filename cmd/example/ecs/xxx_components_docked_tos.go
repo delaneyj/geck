@@ -4,26 +4,36 @@ type DockedToComponent struct {
 	Entity Entity
 }
 
-func (w *World) SetDockedTo(e Entity, c DockedToComponent) (old DockedToComponent, wasAdded bool) {
+func DockedToComponentFromValues(
+	entityArg Entity,
+) DockedToComponent {
+	return DockedToComponent{
+		Entity: entityArg,
+	}
+}
+
+func DefaultDockedToComponent() DockedToComponent {
+	return DockedToComponent{
+		Entity: EntityFromU32(0),
+	}
+}
+
+func (c DockedToComponent) Clone() DockedToComponent {
+	return DockedToComponent{
+		Entity: c.Entity,
+	}
+}
+
+func (w *World) SetDockedTo(e Entity, arg Entity) (old DockedToComponent, wasAdded bool) {
+	c := DockedToComponent{
+		Entity: arg,
+	}
 	old, wasAdded = w.dockedToComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
 	_, _ = old, wasAdded
 
 	return old, wasAdded
-}
-
-func (w *World) SetDockedToFromValues(
-	e Entity,
-	entityArg Entity,
-) {
-	old, _ := w.SetDockedTo(e, DockedToComponent{
-		Entity: entityArg,
-	})
-
-	// depending on the generation flags, these might be unused
-	_ = old
-
 }
 
 func (w *World) DockedTo(e Entity) (c DockedToComponent, ok bool) {
@@ -79,35 +89,23 @@ func (w *World) AllDockedTosEntities(yield func(e Entity) bool) {
 }
 
 // DockedToBuilder
-func WithDockedTo(c DockedToComponent) EntityBuilderOption {
+
+func WithDockedTo(arg Entity) EntityBuilderOption {
+	c := DockedToComponent{
+		Entity: arg,
+	}
+
 	return func(w *World, e Entity) {
 		w.dockedToComponents.Upsert(e, c)
-	}
-}
-
-func WithDockedToFromValues(
-	entityArg Entity,
-) EntityBuilderOption {
-	return func(w *World, e Entity) {
-		w.SetDockedToFromValues(e,
-			entityArg,
-		)
 	}
 }
 
 // Events
 
 // Resource methods
-func (w *World) SetDockedToResource(c DockedToComponent) {
-	w.SetDockedTo(w.resourceEntity, c)
-}
 
-func (w *World) SetDockedToResourceFromValues(
-	entityArg Entity,
-) {
-	w.SetDockedToResource(DockedToComponent{
-		Entity: entityArg,
-	})
+func (w *World) SetDockedToResource(arg Entity) {
+	w.SetDockedTo(w.resourceEntity, arg)
 }
 
 func (w *World) DockedToResource() (DockedToComponent, bool) {
@@ -124,4 +122,8 @@ func (w *World) MustDockedToResource() DockedToComponent {
 
 func (w *World) RemoveDockedToResource() {
 	w.dockedToComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasDockedToResource() bool {
+	return w.dockedToComponents.Contains(w.resourceEntity)
 }

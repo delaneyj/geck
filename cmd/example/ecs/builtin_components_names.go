@@ -4,26 +4,36 @@ type NameComponent struct {
 	Value string
 }
 
-func (w *World) SetName(e Entity, c NameComponent) (old NameComponent, wasAdded bool) {
+func NameComponentFromValues(
+	valueArg string,
+) NameComponent {
+	return NameComponent{
+		Value: valueArg,
+	}
+}
+
+func DefaultNameComponent() NameComponent {
+	return NameComponent{
+		Value: "",
+	}
+}
+
+func (c NameComponent) Clone() NameComponent {
+	return NameComponent{
+		Value: c.Value,
+	}
+}
+
+func (w *World) SetName(e Entity, arg string) (old NameComponent, wasAdded bool) {
+	c := NameComponent{
+		Value: arg,
+	}
 	old, wasAdded = w.nameComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
 	_, _ = old, wasAdded
 
 	return old, wasAdded
-}
-
-func (w *World) SetNameFromValues(
-	e Entity,
-	valueArg string,
-) {
-	old, _ := w.SetName(e, NameComponent{
-		Value: valueArg,
-	})
-
-	// depending on the generation flags, these might be unused
-	_ = old
-
 }
 
 func (w *World) Name(e Entity) (c NameComponent, ok bool) {
@@ -79,35 +89,23 @@ func (w *World) AllNamesEntities(yield func(e Entity) bool) {
 }
 
 // NameBuilder
-func WithName(c NameComponent) EntityBuilderOption {
+
+func WithName(arg string) EntityBuilderOption {
+	c := NameComponent{
+		Value: arg,
+	}
+
 	return func(w *World, e Entity) {
 		w.nameComponents.Upsert(e, c)
-	}
-}
-
-func WithNameFromValues(
-	valueArg string,
-) EntityBuilderOption {
-	return func(w *World, e Entity) {
-		w.SetNameFromValues(e,
-			valueArg,
-		)
 	}
 }
 
 // Events
 
 // Resource methods
-func (w *World) SetNameResource(c NameComponent) {
-	w.SetName(w.resourceEntity, c)
-}
 
-func (w *World) SetNameResourceFromValues(
-	valueArg string,
-) {
-	w.SetNameResource(NameComponent{
-		Value: valueArg,
-	})
+func (w *World) SetNameResource(arg string) {
+	w.SetName(w.resourceEntity, arg)
 }
 
 func (w *World) NameResource() (NameComponent, bool) {
@@ -124,4 +122,8 @@ func (w *World) MustNameResource() NameComponent {
 
 func (w *World) RemoveNameResource() {
 	w.nameComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasNameResource() bool {
+	return w.nameComponents.Contains(w.resourceEntity)
 }

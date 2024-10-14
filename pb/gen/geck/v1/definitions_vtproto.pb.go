@@ -249,6 +249,7 @@ func (m *ComponentDefinition) CloneVT() *ComponentDefinition {
 		ShouldGenerateAddedEvent:   m.ShouldGenerateAddedEvent,
 		ShouldGenerateRemovedEvent: m.ShouldGenerateRemovedEvent,
 		ShouldGenerateChangedEvent: m.ShouldGenerateChangedEvent,
+		IsRelationship:             m.IsRelationship,
 	}
 	if rhs := m.Fields; rhs != nil {
 		tmpContainer := make([]*FieldDefinition, len(rhs))
@@ -776,6 +777,9 @@ func (this *ComponentDefinition) EqualVT(that *ComponentDefinition) bool {
 				return false
 			}
 		}
+	}
+	if this.IsRelationship != that.IsRelationship {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1378,6 +1382,16 @@ func (m *ComponentDefinition) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.IsRelationship {
+		i--
+		if m.IsRelationship {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x48
 	}
 	if len(m.Fields) > 0 {
 		for iNdEx := len(m.Fields) - 1; iNdEx >= 0; iNdEx-- {
@@ -2230,6 +2244,16 @@ func (m *ComponentDefinition) MarshalToSizedBufferVTStrict(dAtA []byte) (int, er
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.IsRelationship {
+		i--
+		if m.IsRelationship {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x48
+	}
 	if len(m.Fields) > 0 {
 		for iNdEx := len(m.Fields) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Fields[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
@@ -2804,6 +2828,9 @@ func (m *ComponentDefinition) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
+	}
+	if m.IsRelationship {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3903,6 +3930,26 @@ func (m *ComponentDefinition) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsRelationship", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsRelationship = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

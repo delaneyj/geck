@@ -4,26 +4,36 @@ type IsAComponent struct {
 	Prototype Entity
 }
 
-func (w *World) SetIsA(e Entity, c IsAComponent) (old IsAComponent, wasAdded bool) {
+func IsAComponentFromValues(
+	prototypeArg Entity,
+) IsAComponent {
+	return IsAComponent{
+		Prototype: prototypeArg,
+	}
+}
+
+func DefaultIsAComponent() IsAComponent {
+	return IsAComponent{
+		Prototype: EntityFromU32(0),
+	}
+}
+
+func (c IsAComponent) Clone() IsAComponent {
+	return IsAComponent{
+		Prototype: c.Prototype,
+	}
+}
+
+func (w *World) SetIsA(e Entity, arg Entity) (old IsAComponent, wasAdded bool) {
+	c := IsAComponent{
+		Prototype: arg,
+	}
 	old, wasAdded = w.isAComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
 	_, _ = old, wasAdded
 
 	return old, wasAdded
-}
-
-func (w *World) SetIsAFromValues(
-	e Entity,
-	prototypeArg Entity,
-) {
-	old, _ := w.SetIsA(e, IsAComponent{
-		Prototype: prototypeArg,
-	})
-
-	// depending on the generation flags, these might be unused
-	_ = old
-
 }
 
 func (w *World) IsA(e Entity) (c IsAComponent, ok bool) {
@@ -79,35 +89,23 @@ func (w *World) AllIsAEntities(yield func(e Entity) bool) {
 }
 
 // IsABuilder
-func WithIsA(c IsAComponent) EntityBuilderOption {
+
+func WithIsA(arg Entity) EntityBuilderOption {
+	c := IsAComponent{
+		Prototype: arg,
+	}
+
 	return func(w *World, e Entity) {
 		w.isAComponents.Upsert(e, c)
-	}
-}
-
-func WithIsAFromValues(
-	prototypeArg Entity,
-) EntityBuilderOption {
-	return func(w *World, e Entity) {
-		w.SetIsAFromValues(e,
-			prototypeArg,
-		)
 	}
 }
 
 // Events
 
 // Resource methods
-func (w *World) SetIsAResource(c IsAComponent) {
-	w.SetIsA(w.resourceEntity, c)
-}
 
-func (w *World) SetIsAResourceFromValues(
-	prototypeArg Entity,
-) {
-	w.SetIsAResource(IsAComponent{
-		Prototype: prototypeArg,
-	})
+func (w *World) SetIsAResource(arg Entity) {
+	w.SetIsA(w.resourceEntity, arg)
 }
 
 func (w *World) IsAResource() (IsAComponent, bool) {
@@ -124,4 +122,8 @@ func (w *World) MustIsAResource() IsAComponent {
 
 func (w *World) RemoveIsAResource() {
 	w.isAComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasIsAResource() bool {
+	return w.isAComponents.Contains(w.resourceEntity)
 }

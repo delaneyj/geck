@@ -6,6 +6,34 @@ type VelocityComponent struct {
 	Z float32
 }
 
+func VelocityComponentFromValues(
+	xArg float32,
+	yArg float32,
+	zArg float32,
+) VelocityComponent {
+	return VelocityComponent{
+		X: xArg,
+		Y: yArg,
+		Z: zArg,
+	}
+}
+
+func DefaultVelocityComponent() VelocityComponent {
+	return VelocityComponent{
+		X: 0.000000,
+		Y: 0.000000,
+		Z: 0.000000,
+	}
+}
+
+func (c VelocityComponent) Clone() VelocityComponent {
+	return VelocityComponent{
+		X: c.X,
+		Y: c.Y,
+		Z: c.Z,
+	}
+}
+
 func (w *World) SetVelocity(e Entity, c VelocityComponent) (old VelocityComponent, wasAdded bool) {
 	old, wasAdded = w.velocityComponents.Upsert(e, c)
 
@@ -85,7 +113,9 @@ func (w *World) AllVelocitiesEntities(yield func(e Entity) bool) {
 }
 
 // VelocityBuilder
+
 func WithVelocity(c VelocityComponent) EntityBuilderOption {
+
 	return func(w *World, e Entity) {
 		w.velocityComponents.Upsert(e, c)
 	}
@@ -108,6 +138,7 @@ func WithVelocityFromValues(
 // Events
 
 // Resource methods
+
 func (w *World) SetVelocityResource(c VelocityComponent) {
 	w.SetVelocity(w.resourceEntity, c)
 }
@@ -138,4 +169,8 @@ func (w *World) MustVelocityResource() VelocityComponent {
 
 func (w *World) RemoveVelocityResource() {
 	w.velocityComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasVelocityResource() bool {
+	return w.velocityComponents.Contains(w.resourceEntity)
 }

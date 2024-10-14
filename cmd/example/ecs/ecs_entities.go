@@ -3,8 +3,8 @@ package ecs
 import "slices"
 
 const (
-	indexBits      = 12
-	generationBits = 20
+	indexBits      = 20
+	generationBits = 12
 	indexMask      = (1 << indexBits) - 1
 	generationMask = (1 << generationBits) - 1
 	maxEntities    = 1 << indexBits
@@ -15,24 +15,39 @@ var Tombstone = Entity(maxEntities)
 type Entity uint32
 
 func NewEntity(index, generation int) Entity {
-	return Entity((generation << generationBits) | index)
+	return Entity((index << generationBits) | generation)
 }
 
 func (e Entity) Index() int {
-	return int(e) & indexMask
+	return int(e) >> generationBits
 }
 
 func (e Entity) Generation() int {
-	return int(e) >> indexBits
+	return int(e) & generationMask
 }
 
-func (e Entity) In(entities ...Entity) bool {
+func EntityFromU32(u uint32) Entity {
+	return Entity(u)
+}
+
+func (e Entity) InSlice(entities ...Entity) bool {
 	for _, entity := range entities {
 		if e == entity {
 			return true
 		}
 	}
 	return false
+}
+
+func (e Entity) InIter(iter func(yield func(entity Entity) bool)) func(yield func(entity Entity) bool) {
+	return func(yield func(entity Entity) bool) {
+		iter(func(entity Entity) bool {
+			if e == entity {
+				return yield(entity)
+			}
+			return true
+		})
+	}
 }
 
 func SortEntities(fn func(yield func(entity Entity) bool)) []Entity {
@@ -48,7 +63,7 @@ func SortEntities(fn func(yield func(entity Entity) bool)) []Entity {
 
 type EntityBuilderOption func(w *World, entity Entity)
 
-func (w *World) CreateEntities(count int, opts ...EntityBuilderOption) []Entity {
+func (w *World) NextEntities(count int, opts ...EntityBuilderOption) []Entity {
 	entities := make([]Entity, count)
 	for i := range entities {
 		var entity Entity
@@ -70,8 +85,8 @@ func (w *World) CreateEntities(count int, opts ...EntityBuilderOption) []Entity 
 	return entities
 }
 
-func (w *World) CreateEntity(opts ...EntityBuilderOption) Entity {
-	return w.CreateEntities(1, opts...)[0]
+func (w *World) NextEntity(opts ...EntityBuilderOption) Entity {
+	return w.NextEntities(1, opts...)[0]
 }
 
 func (w *World) DestroyEntities(entities ...Entity) {
@@ -87,9 +102,9 @@ func (w *World) DestroyEntities(entities ...Entity) {
 		w.rotationComponents.Remove(entity)
 		w.directionComponents.Remove(entity)
 		w.eatsComponents.Remove(entity)
-		w.likesComponents.Remove(entity)
+		w.likesRelationships.Clear()
 		w.enemyTags.Remove(entity)
-		w.growsComponents.Remove(entity)
+		w.growsRelationships.Clear()
 		w.gravityComponents.Remove(entity)
 		w.spaceshipTags.Remove(entity)
 		w.spacestationTags.Remove(entity)
@@ -97,7 +112,7 @@ func (w *World) DestroyEntities(entities ...Entity) {
 		w.dockedToComponents.Remove(entity)
 		w.planetTags.Remove(entity)
 		w.ruledByComponents.Remove(entity)
-		w.alliedWithComponents.Remove(entity)
+		w.alliedWithRelationships.Clear()
 	}
 }
 

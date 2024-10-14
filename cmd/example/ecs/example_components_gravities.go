@@ -4,26 +4,36 @@ type GravityComponent struct {
 	G float32
 }
 
-func (w *World) SetGravity(e Entity, c GravityComponent) (old GravityComponent, wasAdded bool) {
+func GravityComponentFromValues(
+	gArg float32,
+) GravityComponent {
+	return GravityComponent{
+		G: gArg,
+	}
+}
+
+func DefaultGravityComponent() GravityComponent {
+	return GravityComponent{
+		G: -9.800000,
+	}
+}
+
+func (c GravityComponent) Clone() GravityComponent {
+	return GravityComponent{
+		G: c.G,
+	}
+}
+
+func (w *World) SetGravity(e Entity, arg float32) (old GravityComponent, wasAdded bool) {
+	c := GravityComponent{
+		G: arg,
+	}
 	old, wasAdded = w.gravityComponents.Upsert(e, c)
 
 	// depending on the generation flags, these might be unused
 	_, _ = old, wasAdded
 
 	return old, wasAdded
-}
-
-func (w *World) SetGravityFromValues(
-	e Entity,
-	gArg float32,
-) {
-	old, _ := w.SetGravity(e, GravityComponent{
-		G: gArg,
-	})
-
-	// depending on the generation flags, these might be unused
-	_ = old
-
 }
 
 func (w *World) Gravity(e Entity) (c GravityComponent, ok bool) {
@@ -79,35 +89,23 @@ func (w *World) AllGravitiesEntities(yield func(e Entity) bool) {
 }
 
 // GravityBuilder
-func WithGravity(c GravityComponent) EntityBuilderOption {
+
+func WithGravity(arg float32) EntityBuilderOption {
+	c := GravityComponent{
+		G: arg,
+	}
+
 	return func(w *World, e Entity) {
 		w.gravityComponents.Upsert(e, c)
-	}
-}
-
-func WithGravityFromValues(
-	gArg float32,
-) EntityBuilderOption {
-	return func(w *World, e Entity) {
-		w.SetGravityFromValues(e,
-			gArg,
-		)
 	}
 }
 
 // Events
 
 // Resource methods
-func (w *World) SetGravityResource(c GravityComponent) {
-	w.SetGravity(w.resourceEntity, c)
-}
 
-func (w *World) SetGravityResourceFromValues(
-	gArg float32,
-) {
-	w.SetGravityResource(GravityComponent{
-		G: gArg,
-	})
+func (w *World) SetGravityResource(arg float32) {
+	w.SetGravity(w.resourceEntity, arg)
 }
 
 func (w *World) GravityResource() (GravityComponent, bool) {
@@ -124,4 +122,8 @@ func (w *World) MustGravityResource() GravityComponent {
 
 func (w *World) RemoveGravityResource() {
 	w.gravityComponents.Remove(w.resourceEntity)
+}
+
+func (w *World) HasGravityResource() bool {
+	return w.gravityComponents.Contains(w.resourceEntity)
 }

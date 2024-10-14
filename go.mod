@@ -5,10 +5,14 @@ go 1.23.0
 toolchain go1.23.2
 
 require (
+	github.com/a-h/templ v0.2.778
 	github.com/btvoidx/mint v0.4.3
 	github.com/delaneyj/toolbelt v0.3.4
+	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-openapi/inflect v0.21.0
 	github.com/samber/lo v1.47.0
+	github.com/stretchr/testify v1.8.4
+	github.com/tidwall/btree v1.7.0
 	github.com/valyala/quicktemplate v1.8.0
 	google.golang.org/protobuf v1.35.1
 )
@@ -18,6 +22,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/chewxy/math32 v1.11.1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denisbrodbeck/machineid v1.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-rod/rod v0.116.2 // indirect
@@ -27,6 +32,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rzajac/clock v0.2.0 // indirect
 	github.com/rzajac/zflake v0.8.0 // indirect
@@ -41,6 +47,7 @@ require (
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.61.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
