@@ -1,42 +1,46 @@
 package mathx
 
-import "math"
+import (
+	"math"
 
-type Ray struct {
-	Origin, Dir Vector3
+	"golang.org/x/exp/constraints"
+)
+
+type Ray[T constraints.Float] struct {
+	Origin, Dir Vector3[T]
 }
 
-func NewRay(origin, dir Vector3) *Ray {
-	return &Ray{origin, dir}
+func NewRay[T constraints.Float](origin, dir Vector3[T]) *Ray[T] {
+	return &Ray[T]{origin, dir}
 }
 
-func (r *Ray) Set(origin, dir Vector3) *Ray {
+func (r *Ray[T]) Set(origin, dir Vector3[T]) *Ray[T] {
 	r.Origin = origin
 	r.Dir = dir
 	return r
 }
 
-func (r *Ray) Copy(ray *Ray) *Ray {
+func (r *Ray[T]) Copy(ray *Ray[T]) *Ray[T] {
 	r.Origin = ray.Origin
 	r.Dir = ray.Dir
 	return r
 }
 
-func (r *Ray) At(t float64) *Vector3 {
+func (r *Ray[T]) At(t T) *Vector3[T] {
 	return r.Origin.Clone().AddScaledVector(r.Dir, t)
 }
 
-func (r *Ray) LookAt(v *Vector3) *Ray {
+func (r *Ray[T]) LookAt(v *Vector3[T]) *Ray[T] {
 	r.Dir = *v.Clone().Sub(r.Origin).Normalize()
 	return r
 }
 
-func (r *Ray) Recast(t float64) *Ray {
+func (r *Ray[T]) Recast(t T) *Ray[T] {
 	r.Origin = *r.At(t)
 	return r
 }
 
-func (r *Ray) ClosestPointToPoint(point Vector3) *Vector3 {
+func (r *Ray[T]) ClosestPointToPoint(point Vector3[T]) *Vector3[T] {
 	target := SubVector3s(point, r.Origin)
 	directionDistance := target.Dot(r.Dir)
 	if directionDistance < 0 {
@@ -45,11 +49,11 @@ func (r *Ray) ClosestPointToPoint(point Vector3) *Vector3 {
 	return target.Copy(r.Origin).AddScaledVector(r.Dir, directionDistance)
 }
 
-func (r *Ray) DistanceToPoint(point Vector3) float64 {
-	return math.Sqrt(r.DistanceSqToPoint(point))
+func (r *Ray[T]) DistanceToPoint(point Vector3[T]) T {
+	return T(math.Sqrt(float64(r.DistanceSqToPoint(point))))
 }
 
-func (r *Ray) DistanceSqToPoint(point Vector3) float64 {
+func (r *Ray[T]) DistanceSqToPoint(point Vector3[T]) T {
 	directionDistance := SubVector3s(point, r.Origin).Dot(r.Dir)
 	if directionDistance < 0 {
 		return r.Origin.DistanceToSquared(point)
@@ -58,7 +62,7 @@ func (r *Ray) DistanceSqToPoint(point Vector3) float64 {
 	return _vector.DistanceToSquared(point)
 }
 
-func (r *Ray) DistanceSqToSegment(v0, v1 Vector3, optionalPointOnRay, optionalPointOnSegment *Vector3) float64 {
+func (r *Ray[T]) DistanceSqToSegment(v0, v1 Vector3[T], optionalPointOnRay, optionalPointOnSegment *Vector3[T]) T {
 	// from
 	// It returns the min distance between the ray and the segment
 	// defined by v0 and v1
@@ -68,18 +72,18 @@ func (r *Ray) DistanceSqToSegment(v0, v1 Vector3, optionalPointOnRay, optionalPo
 	_segCenter := v0.Clone().Add(v1).MultiplyScalar(0.5)
 	_segDir := v1.Clone().Sub(v0).Normalize()
 	_diff := r.Origin.Clone().Sub(*_segCenter)
-	segExtent := v0.DistanceTo(v1) * 0.5
-	a01 := -r.Dir.Dot(*_segDir)
-	b0 := _diff.Dot(r.Dir)
-	b1 := -_diff.Dot(*_segDir)
-	c := _diff.LengthSq()
-	det := math.Abs(1 - a01*a01)
+	segExtent := float64(v0.DistanceTo(v1) * 0.5)
+	a01 := float64(-r.Dir.Dot(*_segDir))
+	b0 := float64(_diff.Dot(r.Dir))
+	b1 := float64(-_diff.Dot(*_segDir))
+	c := float64(_diff.LengthSq())
+	det := math.Abs(1 - float64(a01*a01))
 	var s0, s1, sqrDist, extDet float64
 	if det > 0 {
 		// The ray and segment are not parallel.
 		s0 = a01*b1 - b0
 		s1 = a01*b0 - b1
-		extDet = segExtent * det
+		extDet = float64(segExtent) * det
 		if s0 >= 0 {
 			if s1 >= -extDet {
 				if s1 <= extDet {
@@ -142,15 +146,15 @@ func (r *Ray) DistanceSqToSegment(v0, v1 Vector3, optionalPointOnRay, optionalPo
 		sqrDist = -s0*s0 + s1*(s1+2*b1) + c
 	}
 	if optionalPointOnRay != nil {
-		optionalPointOnRay.Copy(r.Origin).AddScaledVector(r.Dir, s0)
+		optionalPointOnRay.Copy(r.Origin).AddScaledVector(r.Dir, T(s0))
 	}
 	if optionalPointOnSegment != nil {
-		optionalPointOnSegment.Copy(*_segCenter).AddScaledVector(*_segDir, s1)
+		optionalPointOnSegment.Copy(*_segCenter).AddScaledVector(*_segDir, T(s1))
 	}
-	return sqrDist
+	return T(sqrDist)
 }
 
-func (r *Ray) IntersectSphere(sphere *Sphere, target *Vector3) *Vector3 {
+func (r *Ray[T]) IntersectSphere(sphere *Sphere[T], target *Vector3[T]) *Vector3[T] {
 	_vector := SubVector3s(sphere.Center, r.Origin)
 	tca := _vector.Dot(r.Dir)
 	d2 := _vector.Dot(*_vector) - tca*tca
@@ -158,7 +162,7 @@ func (r *Ray) IntersectSphere(sphere *Sphere, target *Vector3) *Vector3 {
 	if d2 > radius2 {
 		return nil
 	}
-	thc := math.Sqrt(radius2 - d2)
+	thc := T(math.Sqrt(float64(radius2 - d2)))
 	t0 := tca - thc
 	t1 := tca + thc
 	if t1 < 0 {
@@ -170,34 +174,34 @@ func (r *Ray) IntersectSphere(sphere *Sphere, target *Vector3) *Vector3 {
 	return r.At(t0)
 }
 
-func (r *Ray) IntersectsSphere(sphere *Sphere) bool {
+func (r *Ray[T]) IntersectsSphere(sphere *Sphere[T]) bool {
 	return r.DistanceSqToPoint(sphere.Center) <= sphere.Radius*sphere.Radius
 }
 
-func (r *Ray) DistanceToPlane(plane *Plane) float64 {
+func (r *Ray[T]) DistanceToPlane(plane *Plane[T]) T {
 	denominator := plane.Normal.Dot(r.Dir)
 	if denominator == 0 {
 		if plane.DistanceToPoint(r.Origin) == 0 {
 			return 0
 		}
-		return math.NaN()
+		return T(math.NaN())
 	}
 	t := -(r.Origin.Dot(plane.Normal) + plane.Constant) / denominator
 	if t >= 0 {
 		return t
 	}
-	return math.NaN()
+	return T(math.NaN())
 }
 
-func (r *Ray) IntersectPlane(plane *Plane) *Vector3 {
+func (r *Ray[T]) IntersectPlane(plane *Plane[T]) *Vector3[T] {
 	t := r.DistanceToPlane(plane)
-	if math.IsNaN(t) {
+	if math.IsNaN(float64(t)) {
 		return nil
 	}
 	return r.At(t)
 }
 
-func (r *Ray) IntersectsPlane(plane *Plane) bool {
+func (r *Ray[T]) IntersectsPlane(plane *Plane[T]) bool {
 	distToPoint := plane.DistanceToPoint(r.Origin)
 	if distToPoint == 0 {
 		return true
@@ -206,8 +210,8 @@ func (r *Ray) IntersectsPlane(plane *Plane) bool {
 	return denominator*distToPoint < 0
 }
 
-func (r *Ray) IntersectBox(box *Box3) *Vector3 {
-	var tmin, tmax, tymin, tymax, tzmin, tzmax float64
+func (r *Ray[T]) IntersectBox(box *Box3[T]) *Vector3[T] {
+	var tmin, tmax, tymin, tymax, tzmin, tzmax T
 	invdirx := 1 / r.Dir.X
 	invdiry := 1 / r.Dir.Y
 	invdirz := 1 / r.Dir.Z
@@ -229,10 +233,10 @@ func (r *Ray) IntersectBox(box *Box3) *Vector3 {
 	if tmin > tymax || tymin > tmax {
 		return nil
 	}
-	if tymin > tmin || math.IsNaN(tmin) {
+	if tymin > tmin || math.IsNaN(float64(tmin)) {
 		tmin = tymin
 	}
-	if tymax < tmax || math.IsNaN(tmax) {
+	if tymax < tmax || math.IsNaN(float64(tmax)) {
 		tmax = tymax
 	}
 	if invdirz >= 0 {
@@ -245,10 +249,10 @@ func (r *Ray) IntersectBox(box *Box3) *Vector3 {
 	if tmin > tzmax || tzmin > tmax {
 		return nil
 	}
-	if tzmin > tmin || math.IsNaN(tmin) {
+	if tzmin > tmin || math.IsNaN(float64(tmin)) {
 		tmin = tzmin
 	}
-	if tzmax < tmax || math.IsNaN(tmax) {
+	if tzmax < tmax || math.IsNaN(float64(tmax)) {
 		tmax = tzmax
 	}
 	if tmax < 0 {
@@ -261,11 +265,11 @@ func (r *Ray) IntersectBox(box *Box3) *Vector3 {
 	return r.At(tmax)
 }
 
-func (r *Ray) IntersectsBox(box *Box3) bool {
+func (r *Ray[T]) IntersectsBox(box *Box3[T]) bool {
 	return r.IntersectBox(box) != nil
 }
 
-func (r *Ray) IntersectTriangle(a, b, c Vector3, backfaceCulling bool) *Vector3 {
+func (r *Ray[T]) IntersectTriangle(a, b, c Vector3[T], backfaceCulling bool) *Vector3[T] {
 	// Compute the offset origin, edges, and normal.
 	// from
 	// It returns the min distance between the ray and the segment
@@ -282,7 +286,7 @@ func (r *Ray) IntersectTriangle(a, b, c Vector3, backfaceCulling bool) *Vector3 
 	//   |Dot(D,N)|*b2 = sign(Dot(D,N))*Dot(D,Cross(E1,Q))
 	//   |Dot(D,N)|*t = -sign(Dot(D,N))*Dot(Q,N)
 	DdN := r.Dir.Dot(*_normal)
-	var sign float64
+	var sign T
 	if DdN > 0 {
 		if backfaceCulling {
 			return nil
@@ -316,16 +320,16 @@ func (r *Ray) IntersectTriangle(a, b, c Vector3, backfaceCulling bool) *Vector3 
 	return r.At(QdN / DdN)
 }
 
-func (r *Ray) ApplyMatrix4(matrix4 Matrix4) *Ray {
+func (r *Ray[T]) ApplyMatrix4(matrix4 Matrix4[T]) *Ray[T] {
 	r.Origin.ApplyMatrix4(matrix4)
 	r.Dir.TransformDirection(matrix4)
 	return r
 }
 
-func (r *Ray) Equals(ray Ray) bool {
+func (r *Ray[T]) Equals(ray Ray[T]) bool {
 	return ray.Origin.Equals(r.Origin) && ray.Dir.Equals(r.Dir)
 }
 
-func (r *Ray) Clone() *Ray {
+func (r *Ray[T]) Clone() *Ray[T] {
 	return NewRay(r.Origin, r.Dir)
 }

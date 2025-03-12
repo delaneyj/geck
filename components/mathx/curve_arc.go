@@ -1,12 +1,14 @@
 package mathx
 
-type ArcCurve struct {
-	EllipseCurve
+import "golang.org/x/exp/constraints"
+
+type ArcCurve[T constraints.Float] struct {
+	EllipseCurve[T]
 }
 
-func NewArcCurve(aX, aY, aRadius, aStartAngle, aEndAngle float64, aClockwise bool) *ArcCurve {
-	return &ArcCurve{
-		EllipseCurve: *NewEllipseCurve(
+func NewArcCurve[T constraints.Float](aX, aY, aRadius, aStartAngle, aEndAngle T, aClockwise bool) *ArcCurve[T] {
+	return &ArcCurve[T]{
+		EllipseCurve: *NewEllipseCurve[T](
 			aX, aY,
 			aRadius, aRadius,
 			aStartAngle, aEndAngle,

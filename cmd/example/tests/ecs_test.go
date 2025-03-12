@@ -30,7 +30,7 @@ func (sys *RelationshipSystem) Initialize(w *ecs.World) error {
 // from https://ajmmertens.medium.com/building-games-in-ecs-with-entity-relationships-657275ba2c6c
 func (sys *RelationshipSystem) Tick(ctx context.Context, w *ecs.World) error {
 	sys.foundCount = 0
-	for spaceship := range w.AllSpaceshipTags {
+	for spaceship := range w.AllSpaceshipEntities {
 
 		spacesphipFaction, ok := w.Faction(spaceship)
 		if !ok {

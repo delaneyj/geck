@@ -1,20 +1,24 @@
 package mathx
 
-import "math"
+import (
+	"math"
 
-type Quaternion struct {
-	X, Y, Z, W float64
+	"golang.org/x/exp/constraints"
+)
+
+type Quaternion[T constraints.Float] struct {
+	X, Y, Z, W T
 }
 
-func NewQuaternion(x, y, z, w float64) *Quaternion {
-	return &Quaternion{X: x, Y: y, Z: z, W: w}
+func NewQuaternion[T constraints.Float](x, y, z, w T) *Quaternion[T] {
+	return &Quaternion[T]{X: x, Y: y, Z: z, W: w}
 }
 
-func NewIdentityQuaternion() *Quaternion {
-	return &Quaternion{X: 0, Y: 0, Z: 0, W: 1}
+func NewIdentityQuaternion[T constraints.Float]() *Quaternion[T] {
+	return &Quaternion[T]{X: 0, Y: 0, Z: 0, W: 1}
 }
 
-func (q *Quaternion) SlerpFlat(dst []float64, dstOffset int, src0 []float64, srcOffset0 int, src1 []float64, srcOffset1 int, t float64) {
+func (q *Quaternion[T]) SlerpFlat(dst []T, dstOffset int, src0 []T, srcOffset0 int, src1 []T, srcOffset1 int, t T) {
 	// fuzz-free, array-based Quaternion SLERP operation
 	x0, y0, z0, w0 := src0[srcOffset0], src0[srcOffset0+1], src0[srcOffset0+2], src0[srcOffset0+3]
 	x1, y1, z1, w1 := src1[srcOffset1], src1[srcOffset1+1], src1[srcOffset1+2], src1[srcOffset1+3]
@@ -40,19 +44,19 @@ func (q *Quaternion) SlerpFlat(dst []float64, dstOffset int, src0 []float64, src
 			dir = -1
 		}
 		sqrSin := 1 - cos*cos
-		if sqrSin > EPSILON64 {
-			sin := math.Sqrt(sqrSin)
-			len := math.Atan2(sin, cos*float64(dir))
-			s = math.Sin(s*len) / sin
-			t = math.Sin(t*len) / sin
+		if sqrSin > T(EPSILON) {
+			sin := math.Sqrt(float64(sqrSin))
+			len := math.Atan2(sin, float64(cos*T(dir)))
+			s = T(math.Sin(float64(s)*len) / sin)
+			t = T(math.Sin(float64(t)*len) / sin)
 		}
-		tDir := t * float64(dir)
+		tDir := t * T(dir)
 		x0 = x0*s + x1*tDir
 		y0 = y0*s + y1*tDir
 		z0 = z0*s + z1*tDir
 		w0 = w0*s + w1*tDir
 		if s == 1-t {
-			f := 1 / math.Sqrt(x0*x0+y0*y0+z0*z0+w0*w0)
+			f := T(1 / math.Sqrt(float64(x0*x0+y0*y0+z0*z0+w0*w0)))
 			x0 *= f
 			y0 *= f
 			z0 *= f
@@ -65,7 +69,7 @@ func (q *Quaternion) SlerpFlat(dst []float64, dstOffset int, src0 []float64, src
 	dst[dstOffset+3] = w0
 }
 
-func (q *Quaternion) MultiplyQuaternionsFlat(dst []float64, dstOffset int, src0 []float64, srcOffset0 int, src1 []float64, srcOffset1 int) []float64 {
+func (q *Quaternion[T]) MultiplyQuaternionsFlat(dst []T, dstOffset int, src0 []T, srcOffset0 int, src1 []T, srcOffset1 int) []T {
 
 	x0, y0, z0, w0 := src0[srcOffset0], src0[srcOffset0+1], src0[srcOffset0+2], src0[srcOffset0+3]
 	x1, y1, z1, w1 := src1[srcOffset1], src1[srcOffset1+1], src1[srcOffset1+2], src1[srcOffset1+3]
@@ -78,7 +82,7 @@ func (q *Quaternion) MultiplyQuaternionsFlat(dst []float64, dstOffset int, src0 
 	return dst
 }
 
-func (q *Quaternion) Set(x, y, z, w float64) *Quaternion {
+func (q *Quaternion[T]) Set(x, y, z, w T) *Quaternion[T] {
 	q.X = x
 	q.Y = y
 	q.Z = z
@@ -86,11 +90,11 @@ func (q *Quaternion) Set(x, y, z, w float64) *Quaternion {
 	return q
 }
 
-func (q *Quaternion) Clone() *Quaternion {
+func (q *Quaternion[T]) Clone() *Quaternion[T] {
 	return NewQuaternion(q.X, q.Y, q.Z, q.W)
 }
 
-func (q *Quaternion) Copy(quaternion Quaternion) *Quaternion {
+func (q *Quaternion[T]) Copy(quaternion Quaternion[T]) *Quaternion[T] {
 	q.X = quaternion.X
 	q.Y = quaternion.Y
 	q.Z = quaternion.Z
@@ -98,14 +102,14 @@ func (q *Quaternion) Copy(quaternion Quaternion) *Quaternion {
 	return q
 }
 
-func (q *Quaternion) SetFromEuler(euler Euler) *Quaternion {
+func (q *Quaternion[T]) SetFromEuler(euler Euler[T]) *Quaternion[T] {
 	x, y, z, order := euler.X, euler.Y, euler.Z, euler.Order
-	c1 := math.Cos(x / 2)
-	c2 := math.Cos(y / 2)
-	c3 := math.Cos(z / 2)
-	s1 := math.Sin(x / 2)
-	s2 := math.Sin(y / 2)
-	s3 := math.Sin(z / 2)
+	c1 := T(math.Cos(float64(x / 2)))
+	c2 := T(math.Cos(float64(y / 2)))
+	c3 := T(math.Cos(float64(z / 2)))
+	s1 := T(math.Sin(float64(x / 2)))
+	s2 := T(math.Sin(float64(y / 2)))
+	s3 := T(math.Sin(float64(z / 2)))
 	switch order {
 	case EULER_ORDER_XYZ:
 		q.Set(s1*c2*c3+c1*s2*s3, c1*s2*c3-s1*c2*s3, c1*c2*s3+s1*s2*c3, c1*c2*c3-s1*s2*s3)
@@ -125,58 +129,58 @@ func (q *Quaternion) SetFromEuler(euler Euler) *Quaternion {
 	return q
 }
 
-func (q *Quaternion) SetFromAxisAngle(axis Vector3, angle float64) *Quaternion {
-	halfAngle := angle / 2
-	s := math.Sin(halfAngle)
-	q.X = axis.X * s
-	q.Y = axis.Y * s
-	q.Z = axis.Z * s
-	q.W = math.Cos(halfAngle)
+func (q *Quaternion[T]) SetFromAxisAngle(axis Vector3[T], angle T) *Quaternion[T] {
+	halfAngle := float64(angle / 2)
+	s := T(math.Sin(halfAngle))
+	q.X = T(axis.X * s)
+	q.Y = T(axis.Y * s)
+	q.Z = T(axis.Z * s)
+	q.W = T(math.Cos(halfAngle))
 	return q
 }
 
-func (q *Quaternion) SetFromRotationMatrix(m Matrix4) *Quaternion {
-	m11, m12, m13 := m[0], m[4], m[8]
-	m21, m22, m23 := m[1], m[5], m[9]
-	m31, m32, m33 := m[2], m[6], m[10]
+func (q *Quaternion[T]) SetFromRotationMatrix(m Matrix4[T]) *Quaternion[T] {
+	m11, m12, m13 := float64(m[0]), float64(m[4]), float64(m[8])
+	m21, m22, m23 := float64(m[1]), float64(m[5]), float64(m[9])
+	m31, m32, m33 := float64(m[2]), float64(m[6]), float64(m[10])
 	trace := m11 + m22 + m33
-	var s float64
+	var s T
 	if trace > 0 {
-		s = 0.5 / math.Sqrt(trace+1)
+		s = T(0.5 / math.Sqrt(trace+1))
 		q.W = 0.25 / s
-		q.X = (m32 - m23) * s
-		q.Y = (m13 - m31) * s
-		q.Z = (m21 - m12) * s
+		q.X = T((m32 - m23)) * s
+		q.Y = T((m13 - m31)) * s
+		q.Z = T((m21 - m12)) * s
 	}
 	if m11 > m22 && m11 > m33 {
-		s = 2 * math.Sqrt(1+m11-m22-m33)
-		q.W = (m32 - m23) / s
+		s = T(2 * math.Sqrt(1+m11-m22-m33))
+		q.W = T(m32-m23) / s
 		q.X = 0.25 * s
-		q.Y = (m12 + m21) / s
-		q.Z = (m13 + m31) / s
+		q.Y = T(m12+m21) / s
+		q.Z = T(m13+m31) / s
 	}
 
 	if m22 > m33 {
-		s = 2 * math.Sqrt(1+m22-m11-m33)
-		q.W = (m13 - m31) / s
-		q.X = (m12 + m21) / s
+		s = T(2 * math.Sqrt(1+m22-m11-m33))
+		q.W = T(m13-m31) / s
+		q.X = T(m12+m21) / s
 		q.Y = 0.25 * s
-		q.Z = (m23 + m32) / s
+		q.Z = T(m23+m32) / s
 	}
 
-	s = 2 * math.Sqrt(1+m33-m11-m22)
-	q.W = (m21 - m12) / s
-	q.X = (m13 + m31) / s
-	q.Y = (m23 + m32) / s
+	s = T(2 * math.Sqrt(1+m33-m11-m22))
+	q.W = T(m21-m12) / s
+	q.X = T(m13+m31) / s
+	q.Y = T(m23+m32) / s
 	q.Z = 0.25 * s
 	return q
 }
 
-func (q *Quaternion) SetFromUnitVectors(vFrom, vTo Vector3) *Quaternion {
+func (q *Quaternion[T]) SetFromUnitVectors(vFrom, vTo Vector3[T]) *Quaternion[T] {
 	r := vFrom.Dot(vTo) + 1
-	if r < EPSILON64 {
+	if r < T(EPSILON) {
 		r = 0
-		if math.Abs(vFrom.X) > math.Abs(vFrom.Z) {
+		if math.Abs(float64(vFrom.X)) > math.Abs(float64(vFrom.Z)) {
 			q.X = -vFrom.Y
 			q.Y = vFrom.X
 			q.Z = 0
@@ -197,48 +201,48 @@ func (q *Quaternion) SetFromUnitVectors(vFrom, vTo Vector3) *Quaternion {
 	return q.Normalize()
 }
 
-func (q *Quaternion) AngleTo(qb Quaternion) float64 {
-	return 2 * math.Acos(math.Abs(Clamp(q.Dot(qb), -1, 1)))
+func (q *Quaternion[T]) AngleTo(qb Quaternion[T]) T {
+	return T(2 * math.Acos(math.Abs(float64(Clamp(q.Dot(qb), -1, 1)))))
 }
 
-func (q *Quaternion) RotateTowards(qb Quaternion, step float64) *Quaternion {
+func (q *Quaternion[T]) RotateTowards(qb Quaternion[T], step T) *Quaternion[T] {
 	angle := q.AngleTo(qb)
 	if angle == 0 {
 		return q
 	}
 
-	t := math.Min(1, step/angle)
+	t := min(1, step/angle)
 	return q.Slerp(qb, t)
 }
 
-func (q *Quaternion) Identity() *Quaternion {
+func (q *Quaternion[T]) Identity() *Quaternion[T] {
 	return q.Set(0, 0, 0, 1)
 }
 
-func (q *Quaternion) Invert() *Quaternion {
+func (q *Quaternion[T]) Invert() *Quaternion[T] {
 	return q.Conjugate()
 }
 
-func (q *Quaternion) Conjugate() *Quaternion {
+func (q *Quaternion[T]) Conjugate() *Quaternion[T] {
 	q.X *= -1
 	q.Y *= -1
 	q.Z *= -1
 	return q
 }
 
-func (q *Quaternion) Dot(v Quaternion) float64 {
+func (q *Quaternion[T]) Dot(v Quaternion[T]) T {
 	return q.X*v.X + q.Y*v.Y + q.Z*v.Z + q.W*v.W
 }
 
-func (q *Quaternion) LengthSq() float64 {
+func (q *Quaternion[T]) LengthSq() T {
 	return q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W
 }
 
-func (q *Quaternion) Length() float64 {
-	return math.Sqrt(q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W)
+func (q *Quaternion[T]) Length() T {
+	return T(math.Sqrt(float64(q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W)))
 }
 
-func (q *Quaternion) Normalize() *Quaternion {
+func (q *Quaternion[T]) Normalize() *Quaternion[T] {
 	l := q.Length()
 	if l == 0 {
 		q.X = 0
@@ -255,7 +259,7 @@ func (q *Quaternion) Normalize() *Quaternion {
 	return q
 }
 
-func (q *Quaternion) Multiply(qb Quaternion) *Quaternion {
+func (q *Quaternion[T]) Multiply(qb Quaternion[T]) *Quaternion[T] {
 	qax, qay, qaz, qaw := q.X, q.Y, q.Z, q.W
 	qbx, qby, qbz, qbw := qb.X, qb.Y, qb.Z, qb.W
 	return NewQuaternion(
@@ -267,18 +271,18 @@ func (q *Quaternion) Multiply(qb Quaternion) *Quaternion {
 
 }
 
-func (q *Quaternion) Premultiply(qb Quaternion) *Quaternion {
+func (q *Quaternion[T]) Premultiply(qb Quaternion[T]) *Quaternion[T] {
 	q2 := MultiplyQuaternions(qb, *q)
 	q.Copy(*q2)
 	return q
 }
 
-func MultiplyQuaternions(a, b Quaternion) *Quaternion {
+func MultiplyQuaternions[T constraints.Float](a, b Quaternion[T]) *Quaternion[T] {
 	q := a.Clone()
 	return q.Multiply(b)
 }
 
-func (q *Quaternion) Slerp(qb Quaternion, t float64) *Quaternion {
+func (q *Quaternion[T]) Slerp(qb Quaternion[T], t T) *Quaternion[T] {
 	if t == 0 {
 		return q
 	}
@@ -286,7 +290,7 @@ func (q *Quaternion) Slerp(qb Quaternion, t float64) *Quaternion {
 		return q.Copy(qb)
 	}
 	x, y, z, w := q.X, q.Y, q.Z, q.W
-	cosHalfTheta := w*qb.W + x*qb.X + y*qb.Y + z*qb.Z
+	cosHalfTheta := float64(w*qb.W + x*qb.X + y*qb.Y + z*qb.Z)
 	if cosHalfTheta < 0 {
 		q.W = -qb.W
 		q.X = -qb.X
@@ -303,8 +307,8 @@ func (q *Quaternion) Slerp(qb Quaternion, t float64) *Quaternion {
 		q.Z = z
 		return q
 	}
-	sqrSinHalfTheta := 1.0 - cosHalfTheta*cosHalfTheta
-	if sqrSinHalfTheta <= EPSILON64 {
+	sqrSinHalfTheta := float64(1.0 - cosHalfTheta*cosHalfTheta)
+	if sqrSinHalfTheta <= EPSILON {
 		s := 1 - t
 		q.W = s*w + t*q.W
 		q.X = s*x + t*q.X
@@ -315,8 +319,8 @@ func (q *Quaternion) Slerp(qb Quaternion, t float64) *Quaternion {
 	}
 	sinHalfTheta := math.Sqrt(sqrSinHalfTheta)
 	halfTheta := math.Atan2(sinHalfTheta, cosHalfTheta)
-	ratioA := math.Sin((1-t)*halfTheta) / sinHalfTheta
-	ratioB := math.Sin(t*halfTheta) / sinHalfTheta
+	ratioA := T(math.Sin(float64(1-t)*halfTheta) / sinHalfTheta)
+	ratioB := T(math.Sin(float64(t)*halfTheta) / sinHalfTheta)
 	q.W = w*ratioA + q.W*ratioB
 	q.X = x*ratioA + q.X*ratioB
 	q.Y = y*ratioA + q.Y*ratioB
@@ -324,11 +328,11 @@ func (q *Quaternion) Slerp(qb Quaternion, t float64) *Quaternion {
 	return q.Normalize()
 }
 
-func (q *Quaternion) Equals(quaternion Quaternion) bool {
+func (q *Quaternion[T]) Equals(quaternion Quaternion[T]) bool {
 	return quaternion.X == q.X && quaternion.Y == q.Y && quaternion.Z == q.Z && quaternion.W == q.W
 }
 
-func (q *Quaternion) FromArray(array []float64, offset int) *Quaternion {
+func (q *Quaternion[T]) FromArray(array []T, offset int) *Quaternion[T] {
 	q.X = array[offset]
 	q.Y = array[offset+1]
 	q.Z = array[offset+2]
@@ -336,7 +340,7 @@ func (q *Quaternion) FromArray(array []float64, offset int) *Quaternion {
 	return q
 }
 
-func (q *Quaternion) ToArray(array []float64, offset int) []float64 {
+func (q *Quaternion[T]) ToArray(array []T, offset int) []T {
 	array[offset] = q.X
 	array[offset+1] = q.Y
 	array[offset+2] = q.Z

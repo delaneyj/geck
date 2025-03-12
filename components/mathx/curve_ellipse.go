@@ -1,15 +1,19 @@
 package mathx
 
-import "math"
+import (
+	"math"
 
-type EllipseCurve struct {
-	baseCurve
-	aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aRotation float64
+	"golang.org/x/exp/constraints"
+)
+
+type EllipseCurve[T constraints.Float] struct {
+	baseCurve[T]
+	aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aRotation T
 	aClockwise                                                  bool
 }
 
-func NewEllipseCurve(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aRotation float64, aClockwise bool) *EllipseCurve {
-	return &EllipseCurve{
+func NewEllipseCurve[T constraints.Float](aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aRotation T, aClockwise bool) *EllipseCurve[T] {
+	return &EllipseCurve[T]{
 		aX:          aX,
 		aY:          aY,
 		xRadius:     xRadius,
@@ -21,11 +25,11 @@ func NewEllipseCurve(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aRotation
 	}
 }
 
-func (c *EllipseCurve) Point(t float64) *Vector3 {
-	point := &Vector3{}
-	twoPi := 2 * math.Pi
+func (c *EllipseCurve[T]) Point(t T) *Vector3[T] {
+	point := &Vector3[T]{}
+	twoPi := T(2 * math.Pi)
 	deltaAngle := c.aEndAngle - c.aStartAngle
-	samePoints := math.Abs(deltaAngle) < EPSILON64
+	samePoints := math.Abs(float64(deltaAngle)) < EPSILON
 
 	for deltaAngle < 0 {
 		deltaAngle += twoPi
@@ -34,7 +38,7 @@ func (c *EllipseCurve) Point(t float64) *Vector3 {
 		deltaAngle -= twoPi
 	}
 
-	if deltaAngle < EPSILON64 {
+	if deltaAngle < EPSILON {
 		if samePoints {
 			deltaAngle = 0
 		} else {
@@ -51,12 +55,14 @@ func (c *EllipseCurve) Point(t float64) *Vector3 {
 	}
 
 	angle := c.aStartAngle + t*deltaAngle
-	x := c.aX + c.xRadius*math.Cos(angle)
-	y := c.aY + c.yRadius*math.Sin(angle)
+	af := float64(angle)
+	x := c.aX + c.xRadius*T(math.Cos(af))
+	y := c.aY + c.yRadius*T(math.Sin(af))
 
 	if c.aRotation != 0 {
-		cos := math.Cos(c.aRotation)
-		sin := math.Sin(c.aRotation)
+		rf := float64(c.aRotation)
+		cos := T(math.Cos(rf))
+		sin := T(math.Sin(rf))
 		tx := x - c.aX
 		ty := y - c.aY
 		x = tx*cos - ty*sin + c.aX
@@ -67,48 +73,48 @@ func (c *EllipseCurve) Point(t float64) *Vector3 {
 	return point
 }
 
-func (c *EllipseCurve) PointAt(u float64) *Vector3 {
+func (c *EllipseCurve[T]) PointAt(u T) *Vector3[T] {
 	return c.Point(u)
 }
 
-func (c *EllipseCurve) Points(divisions int) []Vector3 {
-	points := make([]Vector3, divisions)
+func (c *EllipseCurve[T]) Points(divisions int) []Vector3[T] {
+	points := make([]Vector3[T], divisions)
 	for d := 0; d <= divisions; d++ {
-		points[d] = *c.Point(float64(d) / float64(divisions))
+		points[d] = *c.Point(T(d) / T(divisions))
 	}
 	return points
 }
 
-func (c *EllipseCurve) SpacedPoints(divisions int) []Vector3 {
-	points := make([]Vector3, divisions)
+func (c *EllipseCurve[T]) SpacedPoints(divisions int) []Vector3[T] {
+	points := make([]Vector3[T], divisions)
 	for d := 0; d <= divisions; d++ {
-		points[d] = *c.PointAt(float64(d) / float64(divisions))
+		points[d] = *c.PointAt(T(d) / T(divisions))
 	}
 	return points
 }
 
-func (c *EllipseCurve) LengthsDefault() []float64 {
+func (c *EllipseCurve[T]) LengthsDefault() []T {
 	return c.Lengths(c.ArcLengthDivisions)
 }
 
-func (c *EllipseCurve) Length() float64 {
+func (c *EllipseCurve[T]) Length() T {
 	lens := c.LengthsDefault()
 	return lens[len(lens)-1]
 }
 
-func (c *EllipseCurve) Lengths(divisions int) []float64 {
+func (c *EllipseCurve[T]) Lengths(divisions int) []T {
 	if c.cacheArcLengths != nil && len(c.cacheArcLengths) == divisions {
 		return c.cacheArcLengths
 	}
 
-	lengths := make([]float64, 0)
-	sum := 0.0
-	var current, last *Vector3
+	lengths := make([]T, 0)
+	var sum T
+	var current, last *Vector3[T]
 	last = c.Point(0)
 	lengths = append(lengths, 0)
 
 	for p := 1; p <= divisions; p++ {
-		current = c.Point(float64(p) / float64(divisions))
+		current = c.Point(T(p) / T(divisions))
 		sum += current.DistanceTo(*last)
 
 		lengths = append(lengths, sum)
@@ -119,12 +125,12 @@ func (c *EllipseCurve) Lengths(divisions int) []float64 {
 	return lengths
 }
 
-func (c *EllipseCurve) UpdateArcLengths() {
+func (c *EllipseCurve[T]) UpdateArcLengths() {
 	c.cacheArcLengths = nil
 	c.Lengths(c.ArcLengthDivisions)
 }
 
-func (c *EllipseCurve) Copy(source *EllipseCurve) *EllipseCurve {
+func (c *EllipseCurve[T]) Copy(source *EllipseCurve[T]) *EllipseCurve[T] {
 	c.baseCurve.Copy(source.baseCurve)
 	c.aX = source.aX
 	c.aY = source.aY

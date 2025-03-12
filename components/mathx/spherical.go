@@ -1,6 +1,10 @@
 package mathx
 
-import "math"
+import (
+	"math"
+
+	"golang.org/x/exp/constraints"
+)
 
 /**
  * Ref: https://en.wikipedia.org/wiki/Spherical_coordinate_system
@@ -9,49 +13,49 @@ import "math"
  * The azimuthal angle (theta) is measured from the positive z-axis.
  */
 
-type Spherical struct {
-	Radius, Phi, Theta float64
+type Spherical[T constraints.Float] struct {
+	Radius, Phi, Theta T
 }
 
-func NewSpherical(radius, phi, theta float64) *Spherical {
-	return &Spherical{Radius: radius, Phi: phi, Theta: theta}
+func NewSpherical[T constraints.Float](radius, phi, theta T) *Spherical[T] {
+	return &Spherical[T]{Radius: radius, Phi: phi, Theta: theta}
 }
 
-func (s *Spherical) Set(radius, phi, theta float64) *Spherical {
+func (s *Spherical[T]) Set(radius, phi, theta T) *Spherical[T] {
 	s.Radius = radius
 	s.Phi = phi
 	s.Theta = theta
 	return s
 }
 
-func (s *Spherical) Copy(other *Spherical) *Spherical {
+func (s *Spherical[T]) Copy(other *Spherical[T]) *Spherical[T] {
 	s.Radius = other.Radius
 	s.Phi = other.Phi
 	s.Theta = other.Theta
 	return s
 }
 
-func (s *Spherical) MakeSafe() *Spherical {
-	s.Phi = math.Max(EPSILON64, math.Min(math.Pi-EPSILON64, s.Phi))
+func (s *Spherical[T]) MakeSafe() *Spherical[T] {
+	s.Phi = max(EPSILON, min(math.Pi-EPSILON, s.Phi))
 	return s
 }
 
-func (s *Spherical) SetFromVector3(v *Vector3) *Spherical {
+func (s *Spherical[T]) SetFromVector3(v *Vector3[T]) *Spherical[T] {
 	return s.SetFromCartesianCoords(v.X, v.Y, v.Z)
 }
 
-func (s *Spherical) SetFromCartesianCoords(x, y, z float64) *Spherical {
-	s.Radius = math.Sqrt(x*x + y*y + z*z)
+func (s *Spherical[T]) SetFromCartesianCoords(x, y, z T) *Spherical[T] {
+	s.Radius = T(math.Sqrt(float64(x*x + y*y + z*z)))
 	if s.Radius == 0 {
 		s.Theta = 0
 		s.Phi = 0
 	} else {
-		s.Theta = math.Atan2(x, z)
-		s.Phi = math.Acos(Clamp(y/s.Radius, -1, 1))
+		s.Theta = T(math.Atan2(float64(x), float64(z)))
+		s.Phi = T(math.Acos(float64(Clamp(y/s.Radius, -1, 1))))
 	}
 	return s
 }
 
-func (s *Spherical) Clone() *Spherical {
+func (s *Spherical[T]) Clone() *Spherical[T] {
 	return NewSpherical(s.Radius, s.Phi, s.Theta)
 }

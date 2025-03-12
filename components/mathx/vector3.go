@@ -3,44 +3,48 @@ package mathx
 import (
 	"math"
 	"math/rand"
+
+	"golang.org/x/exp/constraints"
 )
 
-type Vector3 struct {
-	X, Y, Z float64
+type Vector3[T constraints.Float] struct {
+	X, Y, Z T
 }
 
-func NewVector3(x, y, z float64) *Vector3 {
-	return &Vector3{X: x, Y: y, Z: z}
+func NewVector3[T constraints.Float](x, y, z T) *Vector3[T] {
+	return &Vector3[T]{X: x, Y: y, Z: z}
 }
 
-func NewZeroVector3() *Vector3 {
-	return NewVector3(0, 0, 0)
+func NewZeroVector3[T constraints.Float]() *Vector3[T] {
+	return NewVector3[T](0, 0, 0)
 }
 
-func NewOneVector3() *Vector3 {
-	return NewVector3(1, 1, 1)
+func NewOneVector3[T constraints.Float]() *Vector3[T] {
+	return NewVector3[T](1, 1, 1)
 }
 
 var (
-	V3Zero = *NewZeroVector3()
-	V3One  = *NewOneVector3()
+	V3Zero32 = *NewZeroVector3[float32]()
+	V3One32  = *NewOneVector3[float32]()
+	V3Zero64 = *NewZeroVector3[float64]()
+	V3One64  = *NewOneVector3[float64]()
 )
 
-func (v *Vector3) Set(x, y, z float64) *Vector3 {
+func (v *Vector3[T]) Set(x, y, z T) *Vector3[T] {
 	v.X = x
 	v.Y = y
 	v.Z = z
 	return v
 }
 
-func (v *Vector3) SetScalar(scalar float64) *Vector3 {
+func (v *Vector3[T]) SetScalar(scalar T) *Vector3[T] {
 	v.X = scalar
 	v.Y = scalar
 	v.Z = scalar
 	return v
 }
 
-func (v *Vector3) SetComponent(index int, value float64) *Vector3 {
+func (v *Vector3[T]) SetComponent(index int, value T) *Vector3[T] {
 	switch index {
 	case 0:
 		v.X = value
@@ -54,7 +58,7 @@ func (v *Vector3) SetComponent(index int, value float64) *Vector3 {
 	return v
 }
 
-func (v *Vector3) Component(index int) float64 {
+func (v *Vector3[T]) Component(index int) T {
 	switch index {
 	case 0:
 		return v.X
@@ -67,87 +71,87 @@ func (v *Vector3) Component(index int) float64 {
 	}
 }
 
-func (v *Vector3) Clone() *Vector3 {
-	return NewVector3(v.X, v.Y, v.Z)
+func (v *Vector3[T]) Clone() *Vector3[T] {
+	return NewVector3[T](v.X, v.Y, v.Z)
 }
 
-func (v *Vector3) Copy(vector Vector3) *Vector3 {
+func (v *Vector3[T]) Copy(vector Vector3[T]) *Vector3[T] {
 	v.X = vector.X
 	v.Y = vector.Y
 	v.Z = vector.Z
 	return v
 }
 
-func (v *Vector3) Add(v2 Vector3) *Vector3 {
+func (v *Vector3[T]) Add(v2 Vector3[T]) *Vector3[T] {
 	v.X += v2.X
 	v.Y += v2.Y
 	v.Z += v2.Z
 	return v
 }
 
-func (v *Vector3) AddScalar(scalar float64) *Vector3 {
+func (v *Vector3[T]) AddScalar(scalar T) *Vector3[T] {
 	v.X += scalar
 	v.Y += scalar
 	v.Z += scalar
 	return v
 }
 
-func AddVector3s(a, b Vector3) *Vector3 {
-	return NewVector3(a.X+b.X, a.Y+b.Y, a.Z+b.Z)
+func AddVector3s[T constraints.Float](a, b Vector3[T]) *Vector3[T] {
+	return NewVector3[T](a.X+b.X, a.Y+b.Y, a.Z+b.Z)
 }
 
-func (v *Vector3) AddScaledVector(vector Vector3, scalar float64) *Vector3 {
+func (v *Vector3[T]) AddScaledVector(vector Vector3[T], scalar T) *Vector3[T] {
 	v.X += vector.X * scalar
 	v.Y += vector.Y * scalar
 	v.Z += vector.Z * scalar
 	return v
 }
 
-func (v *Vector3) Sub(v2 Vector3) *Vector3 {
+func (v *Vector3[T]) Sub(v2 Vector3[T]) *Vector3[T] {
 	v.X -= v2.X
 	v.Y -= v2.Y
 	v.Z -= v2.Z
 	return v
 }
 
-func (v *Vector3) SubScalar(scalar float64) *Vector3 {
+func (v *Vector3[T]) SubScalar(scalar T) *Vector3[T] {
 	v.X -= scalar
 	v.Y -= scalar
 	v.Z -= scalar
 	return v
 }
 
-func SubVector3s(a, b Vector3) *Vector3 {
-	return NewVector3(a.X-b.X, a.Y-b.Y, a.Z-b.Z)
+func SubVector3s[T constraints.Float](a, b Vector3[T]) *Vector3[T] {
+	return NewVector3[T](a.X-b.X, a.Y-b.Y, a.Z-b.Z)
 }
 
-func (v *Vector3) Multiply(v2 Vector3) *Vector3 {
+func (v *Vector3[T]) Multiply(v2 Vector3[T]) *Vector3[T] {
 	v.X *= v2.X
 	v.Y *= v2.Y
 	v.Z *= v2.Z
 	return v
 }
 
-func (v *Vector3) MultiplyScalar(scalar float64) *Vector3 {
+func (v *Vector3[T]) MultiplyScalar(scalar T) *Vector3[T] {
 	v.X *= scalar
 	v.Y *= scalar
 	v.Z *= scalar
 	return v
 }
 
-func MultiplyVector3s(a, b Vector3) *Vector3 {
-	return NewVector3(a.X*b.X, a.Y*b.Y, a.Z*b.Z)
+func MultiplyVector3s[T constraints.Float](a, b Vector3[T]) *Vector3[T] {
+	return NewVector3[T](a.X*b.X, a.Y*b.Y, a.Z*b.Z)
 }
 
-func (v *Vector3) ApplyEuler(e Euler) *Vector3 {
-	return v.ApplyQuaternion(*NewIdentityQuaternion().SetFromEuler(e))
+func (v *Vector3[T]) ApplyEuler(e Euler[T]) *Vector3[T] {
+	return v.ApplyQuaternion(*NewIdentityQuaternion[T]().SetFromEuler(e))
 }
 
-func (v *Vector3) ApplyAxisAngle(axis Vector3, angle float64) *Vector3 {
-	return v.ApplyQuaternion(*NewIdentityQuaternion().SetFromAxisAngle(axis, angle))
+func (v *Vector3[T]) ApplyAxisAngle(axis Vector3[T], angle T) *Vector3[T] {
+	return v.ApplyQuaternion(*NewIdentityQuaternion[T]().SetFromAxisAngle(axis, angle))
 }
 
-func (v *Vector3) ApplyMatrix3(m Matrix3) *Vector3 {
+func (v *Vector3[T]) ApplyMatrix3(m Matrix3[T]) *Vector3[T] {
 	x, y, z := v.X, v.Y, v.Z
 	v.X = m[0]*x + m[3]*y + m[6]*z
 	v.Y = m[1]*x + m[4]*y + m[7]*z
@@ -155,11 +159,11 @@ func (v *Vector3) ApplyMatrix3(m Matrix3) *Vector3 {
 	return v
 }
 
-func (v *Vector3) ApplyNormalMatrix(m Matrix3) *Vector3 {
+func (v *Vector3[T]) ApplyNormalMatrix(m Matrix3[T]) *Vector3[T] {
 	return v.ApplyMatrix3(m).Normalize()
 }
 
-func (v *Vector3) ApplyMatrix4(m Matrix4) *Vector3 {
+func (v *Vector3[T]) ApplyMatrix4(m Matrix4[T]) *Vector3[T] {
 	x, y, z := v.X, v.Y, v.Z
 	w := 1 / (m[3]*x + m[7]*y + m[11]*z + m[15])
 
@@ -169,7 +173,7 @@ func (v *Vector3) ApplyMatrix4(m Matrix4) *Vector3 {
 	return v
 }
 
-func (v *Vector3) ApplyQuaternion(q Quaternion) *Vector3 {
+func (v *Vector3[T]) ApplyQuaternion(q Quaternion[T]) *Vector3[T] {
 	vx, vy, vz := v.X, v.Y, v.Z
 	qx, qy, qz, qw := q.X, q.Y, q.Z, q.W
 
@@ -183,7 +187,7 @@ func (v *Vector3) ApplyQuaternion(q Quaternion) *Vector3 {
 	return v
 }
 
-func (v *Vector3) TransformDirection(m Matrix4) *Vector3 {
+func (v *Vector3[T]) TransformDirection(m Matrix4[T]) *Vector3[T] {
 	x, y, z := v.X, v.Y, v.Z
 	v.X = m[0]*x + m[4]*y + m[8]*z
 	v.Y = m[1]*x + m[5]*y + m[9]*z
@@ -191,98 +195,98 @@ func (v *Vector3) TransformDirection(m Matrix4) *Vector3 {
 	return v.Normalize()
 }
 
-func (v *Vector3) Divide(v2 Vector3) *Vector3 {
+func (v *Vector3[T]) Divide(v2 Vector3[T]) *Vector3[T] {
 	v.X /= v2.X
 	v.Y /= v2.Y
 	v.Z /= v2.Z
 	return v
 }
 
-func (v *Vector3) DivideScalar(scalar float64) *Vector3 {
+func (v *Vector3[T]) DivideScalar(scalar T) *Vector3[T] {
 	return v.MultiplyScalar(1 / scalar)
 }
 
-func (v *Vector3) Min(v2 Vector3) *Vector3 {
+func (v *Vector3[T]) Min(v2 Vector3[T]) *Vector3[T] {
 	v.X = min(v.X, v2.X)
 	v.Y = min(v.Y, v2.Y)
 	v.Z = min(v.Z, v2.Z)
 	return v
 }
 
-func (v *Vector3) Max(v2 Vector3) *Vector3 {
+func (v *Vector3[T]) Max(v2 Vector3[T]) *Vector3[T] {
 	v.X = max(v.X, v2.X)
 	v.Y = max(v.Y, v2.Y)
 	v.Z = max(v.Z, v2.Z)
 	return v
 }
 
-func (v *Vector3) Clamp(minVal, maxVal Vector3) *Vector3 {
+func (v *Vector3[T]) Clamp(minVal, maxVal Vector3[T]) *Vector3[T] {
 	v.X = max(minVal.X, min(maxVal.X, v.X))
 	v.Y = max(minVal.Y, min(maxVal.Y, v.Y))
 	v.Z = max(minVal.Z, min(maxVal.Z, v.Z))
 	return v
 }
 
-func (v *Vector3) ClampScalar(minVal, maxVal float64) *Vector3 {
+func (v *Vector3[T]) ClampScalar(minVal, maxVal T) *Vector3[T] {
 	v.X = max(minVal, min(maxVal, v.X))
 	v.Y = max(minVal, min(maxVal, v.Y))
 	v.Z = max(minVal, min(maxVal, v.Z))
 	return v
 }
 
-func (v *Vector3) ClampLength(minVal, maxVal float64) *Vector3 {
+func (v *Vector3[T]) ClampLength(minVal, maxVal T) *Vector3[T] {
 	length := v.Length()
 	return v.DivideScalar(length).MultiplyScalar(max(minVal, min(maxVal, length)))
 }
 
-func (v *Vector3) Floor() *Vector3 {
-	v.X = math.Floor(v.X)
-	v.Y = math.Floor(v.Y)
-	v.Z = math.Floor(v.Z)
+func (v *Vector3[T]) Floor() *Vector3[T] {
+	v.X = T(math.Floor(float64(v.X)))
+	v.Y = T(math.Floor(float64(v.Y)))
+	v.Z = T(math.Floor(float64(v.Z)))
 	return v
 }
 
-func (v *Vector3) Ceil() *Vector3 {
-	v.X = math.Ceil(v.X)
-	v.Y = math.Ceil(v.Y)
-	v.Z = math.Ceil(v.Z)
+func (v *Vector3[T]) Ceil() *Vector3[T] {
+	v.X = T(math.Ceil(float64(v.X)))
+	v.Y = T(math.Ceil(float64(v.Y)))
+	v.Z = T(math.Ceil(float64(v.Z)))
 	return v
 }
 
-func (v *Vector3) Round() *Vector3 {
-	v.X = math.Round(v.X)
-	v.Y = math.Round(v.Y)
-	v.Z = math.Round(v.Z)
+func (v *Vector3[T]) Round() *Vector3[T] {
+	v.X = T(math.Round(float64(v.X)))
+	v.Y = T(math.Round(float64(v.Y)))
+	v.Z = T(math.Round(float64(v.Z)))
 	return v
 }
 
-func (v *Vector3) RoundToZero() *Vector3 {
-	v.X = math.Trunc(v.X)
-	v.Y = math.Trunc(v.Y)
-	v.Z = math.Trunc(v.Z)
+func (v *Vector3[T]) RoundToZero() *Vector3[T] {
+	v.X = T(math.Trunc(float64(v.X)))
+	v.Y = T(math.Trunc(float64(v.Y)))
+	v.Z = T(math.Trunc(float64(v.Z)))
 	return v
 }
 
-func (v *Vector3) Negate() *Vector3 {
+func (v *Vector3[T]) Negate() *Vector3[T] {
 	v.X = -v.X
 	v.Y = -v.Y
 	v.Z = -v.Z
 	return v
 }
 
-func (v *Vector3) Dot(v2 Vector3) float64 {
+func (v *Vector3[T]) Dot(v2 Vector3[T]) T {
 	return v.X*v2.X + v.Y*v2.Y + v.Z*v2.Z
 }
 
-func (v *Vector3) LengthSq() float64 {
+func (v *Vector3[T]) LengthSq() T {
 	return v.X*v.X + v.Y*v.Y + v.Z*v.Z
 }
 
-func (v *Vector3) Length() float64 {
-	return math.Sqrt(v.LengthSq())
+func (v *Vector3[T]) Length() T {
+	return T(math.Sqrt(float64(v.LengthSq())))
 }
 
-func (v *Vector3) Normalize() *Vector3 {
+func (v *Vector3[T]) Normalize() *Vector3[T] {
 	l := v.Length()
 	if l == 0 {
 		v.X = 0
@@ -297,26 +301,26 @@ func (v *Vector3) Normalize() *Vector3 {
 	return v
 }
 
-func (v *Vector3) SetLength(length float64) *Vector3 {
+func (v *Vector3[T]) SetLength(length T) *Vector3[T] {
 	return v.Normalize().MultiplyScalar(length)
 }
 
-func (v *Vector3) Lerp(v2 Vector3, alpha float64) *Vector3 {
+func (v *Vector3[T]) Lerp(v2 Vector3[T], alpha T) *Vector3[T] {
 	v.X += (v2.X - v.X) * alpha
 	v.Y += (v2.Y - v.Y) * alpha
 	v.Z += (v2.Z - v.Z) * alpha
 	return v
 }
 
-func LerpVector3s(v1, v2 Vector3, alpha float64) *Vector3 {
-	return NewVector3(
+func LerpVector3s[T constraints.Float](v1, v2 Vector3[T], alpha T) *Vector3[T] {
+	return NewVector3[T](
 		v1.X+(v2.X-v1.X)*alpha,
 		v1.Y+(v2.Y-v1.Y)*alpha,
 		v1.Z+(v2.Z-v1.Z)*alpha,
 	)
 }
 
-func (v *Vector3) Cross(v2 Vector3) *Vector3 {
+func (v *Vector3[T]) Cross(v2 Vector3[T]) *Vector3[T] {
 	ax, ay, az := v.X, v.Y, v.Z
 	bx, by, bz := v2.X, v2.Y, v2.Z
 
@@ -327,11 +331,11 @@ func (v *Vector3) Cross(v2 Vector3) *Vector3 {
 	return v
 }
 
-func CrossVector3s(a, b Vector3) *Vector3 {
+func CrossVector3s[T constraints.Float](a, b Vector3[T]) *Vector3[T] {
 	return a.Clone().Cross(b)
 }
 
-func (v *Vector3) ProjectOnVector(v2 Vector3) *Vector3 {
+func (v *Vector3[T]) ProjectOnVector(v2 Vector3[T]) *Vector3[T] {
 	denominator := v2.LengthSq()
 	if denominator == 0 {
 		return v.Set(0, 0, 0)
@@ -340,106 +344,107 @@ func (v *Vector3) ProjectOnVector(v2 Vector3) *Vector3 {
 	return v.Copy(v2).MultiplyScalar(scalar)
 }
 
-func (v *Vector3) ProjectOnPlane(planeNormal Vector3) *Vector3 {
+func (v *Vector3[T]) ProjectOnPlane(planeNormal Vector3[T]) *Vector3[T] {
 	return v.Sub(*v.Clone().ProjectOnVector(planeNormal))
 }
 
-func (v *Vector3) Reflect(normal Vector3) *Vector3 {
+func (v *Vector3[T]) Reflect(normal Vector3[T]) *Vector3[T] {
 	return v.Sub(*v.Clone().ProjectOnPlane(normal).MultiplyScalar(2))
 }
 
-func (v *Vector3) AngleTo(v2 Vector3) float64 {
-	denominator := math.Sqrt(v.LengthSq() * v2.LengthSq())
+func (v *Vector3[T]) AngleTo(v2 Vector3[T]) T {
+	denominator := math.Sqrt(float64(v.LengthSq() * v2.LengthSq()))
 	if denominator == 0 {
 		return math.Pi / 2
 	}
 
-	theta := v.Dot(v2) / denominator
-	return math.Acos(Clamp(theta, -1, 1))
+	theta := v.Dot(v2) / T(denominator)
+	return T(math.Acos(float64(Clamp(theta, -1, 1))))
 }
 
-func (v *Vector3) DistanceTo(v2 Vector3) float64 {
-	return math.Sqrt(v.DistanceToSquared(v2))
+func (v *Vector3[T]) DistanceTo(v2 Vector3[T]) T {
+	return T(math.Sqrt(float64(v.DistanceToSquared(v2))))
 }
 
-func (v *Vector3) DistanceToSquared(v2 Vector3) float64 {
+func (v *Vector3[T]) DistanceToSquared(v2 Vector3[T]) T {
 	dx := v.X - v2.X
 	dy := v.Y - v2.Y
 	dz := v.Z - v2.Z
 	return dx*dx + dy*dy + dz*dz
 }
 
-func (v *Vector3) ManhattanDistanceTo(v2 Vector3) float64 {
-	return math.Abs(v.X-v2.X) + math.Abs(v.Y-v2.Y) + math.Abs(v.Z-v2.Z)
+func (v *Vector3[T]) ManhattanDistanceTo(v2 Vector3[T]) T {
+	return T(math.Abs(float64(v.X-v2.X)) + math.Abs(float64(v.Y-v2.Y)) + math.Abs(float64(v.Z-v2.Z)))
 }
 
-func (v *Vector3) SetFromSpherical(s Spherical) *Vector3 {
+func (v *Vector3[T]) SetFromSpherical(s Spherical[T]) *Vector3[T] {
 	return v.SetFromSphericalCoords(s.Radius, s.Phi, s.Theta)
 }
 
-func (v *Vector3) SetFromSphericalCoords(radius, phi, theta float64) *Vector3 {
-	sinPhiRadius := math.Sin(phi) * radius
-	v.X = sinPhiRadius * math.Sin(theta)
-	v.Y = math.Cos(phi) * radius
-	v.Z = sinPhiRadius * math.Cos(theta)
+func (v *Vector3[T]) SetFromSphericalCoords(radius, phi, theta T) *Vector3[T] {
+	rf, pf, tf := float64(radius), float64(phi), float64(theta)
+	sinPhiRadius := math.Sin(pf) * rf
+	v.X = T(sinPhiRadius * math.Sin(tf))
+	v.Y = T(math.Cos(pf) * rf)
+	v.Z = T(sinPhiRadius * math.Cos(tf))
 	return v
 }
 
-func (v *Vector3) SetFromCylindrical(c Cylindrical) *Vector3 {
+func (v *Vector3[T]) SetFromCylindrical(c Cylindrical[T]) *Vector3[T] {
 	return v.SetFromCylindricalCoords(c.Radius, c.Theta, c.Y)
 }
 
-func (v *Vector3) SetFromCylindricalCoords(radius, theta, y float64) *Vector3 {
-	v.X = radius * math.Sin(theta)
+func (v *Vector3[T]) SetFromCylindricalCoords(radius, theta, y T) *Vector3[T] {
+	v.X = radius * T(math.Sin(float64(theta)))
 	v.Y = y
-	v.Z = radius * math.Cos(theta)
+	v.Z = radius * T(math.Cos(float64(theta)))
 	return v
 }
 
-func (v *Vector3) SetFromMatrixPosition(m Matrix4) *Vector3 {
+func (v *Vector3[T]) SetFromMatrixPosition(m Matrix4[T]) *Vector3[T] {
 	return v.Set(m[12], m[13], m[14])
 }
 
-func (v *Vector3) SetFromMatrixScale(m Matrix4) *Vector3 {
+func (v *Vector3[T]) SetFromMatrixScale(m Matrix4[T]) *Vector3[T] {
 	_, _, scale := m.Decompose()
 	return v.Copy(scale)
 }
 
-func (v *Vector3) SetFromMatrixColumn(m Matrix4, index int) *Vector3 {
+func (v *Vector3[T]) SetFromMatrixColumn(m Matrix4[T], index int) *Vector3[T] {
 	return v.FromArray(m[:], index*4)
 }
 
-func (v *Vector3) Equals(v2 Vector3) bool {
+func (v *Vector3[T]) Equals(v2 Vector3[T]) bool {
 	return v.X == v2.X && v.Y == v2.Y && v.Z == v2.Z
 }
 
-func (v *Vector3) FromArray(array []float64, offset int) *Vector3 {
+func (v *Vector3[T]) FromArray(array []T, offset int) *Vector3[T] {
 	v.X = array[offset]
 	v.Y = array[offset+1]
 	v.Z = array[offset+2]
 	return v
 }
 
-func (v *Vector3) ToArray(array []float64, offset int) []float64 {
+func (v *Vector3[T]) ToArray(array []T, offset int) []T {
 	array[offset] = v.X
 	array[offset+1] = v.Y
 	array[offset+2] = v.Z
 	return array
 }
 
-func (v *Vector3) Random() *Vector3 {
-	v.X = rand.Float64()
-	v.Y = rand.Float64()
-	v.Z = rand.Float64()
+func (v *Vector3[T]) Random() *Vector3[T] {
+	v.X = T(rand.Float64())
+	v.Y = T(rand.Float64())
+	v.Z = T(rand.Float64())
 	return v
 }
 
-func (v *Vector3) RandomDirection() *Vector3 {
+func (v *Vector3[T]) RandomDirection() *Vector3[T] {
 	u := (rand.Float64() - 0.5) * 2
 	t := rand.Float64() * math.Pi * 2
 	f := math.Sqrt(1 - u*u)
-	v.X = f * math.Cos(t)
-	v.Y = f * math.Sin(t)
-	v.Z = u
+	v.X = T(f * math.Cos(t))
+	v.Y = T(f * math.Sin(t))
+	v.Z = T(u)
 	return v
 }

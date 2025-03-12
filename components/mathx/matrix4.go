@@ -1,22 +1,26 @@
 package mathx
 
-import "math"
+import (
+	"math"
 
-type Matrix4 [16]float64
+	"golang.org/x/exp/constraints"
+)
 
-func NewMatrix4(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 float64) *Matrix4 {
-	m := &Matrix4{}
+type Matrix4[T constraints.Float] [16]T
+
+func NewMatrix4[T constraints.Float](n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 T) *Matrix4[T] {
+	m := &Matrix4[T]{}
 	m.Set(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44)
 	return m
 }
 
-func NewMatrix4Identity() *Matrix4 {
-	m := &Matrix4{}
+func NewMatrix4Identity[T constraints.Float]() *Matrix4[T] {
+	m := &Matrix4[T]{}
 	m.Identity()
 	return m
 }
 
-func (m *Matrix4) Set(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 float64) *Matrix4 {
+func (m *Matrix4[T]) Set(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 T) *Matrix4[T] {
 	m[0], m[4], m[8], m[12] = n11, n12, n13, n14
 	m[1], m[5], m[9], m[13] = n21, n22, n23, n24
 	m[2], m[6], m[10], m[14] = n31, n32, n33, n34
@@ -24,7 +28,7 @@ func (m *Matrix4) Set(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34
 	return m
 }
 
-func (m *Matrix4) Identity() *Matrix4 {
+func (m *Matrix4[T]) Identity() *Matrix4[T] {
 	return m.Set(
 		1, 0, 0, 0,
 		0, 1, 0, 0,
@@ -33,45 +37,45 @@ func (m *Matrix4) Identity() *Matrix4 {
 	)
 }
 
-func (m *Matrix4) Clone() *Matrix4 {
-	m2 := &Matrix4{}
+func (m *Matrix4[T]) Clone() *Matrix4[T] {
+	m2 := &Matrix4[T]{}
 	m2.Copy(*m)
 	return m2
 }
 
-func (m *Matrix4) Copy(matrix Matrix4) *Matrix4 {
+func (m *Matrix4[T]) Copy(matrix Matrix4[T]) *Matrix4[T] {
 	*m = matrix
 	return m
 }
 
-func (m *Matrix4) CopyPosition(matrix Matrix4) *Matrix4 {
+func (m *Matrix4[T]) CopyPosition(matrix Matrix4[T]) *Matrix4[T] {
 	m[12], m[13], m[14] = matrix[12], matrix[13], matrix[14]
 	return m
 }
 
-func (m *Matrix4) SetFromMatrix3(matrix Matrix3) *Matrix4 {
+func (m *Matrix4[T]) SetFromMatrix3(matrix Matrix3[T]) *Matrix4[T] {
 	m[0], m[1], m[2] = matrix[0], matrix[1], matrix[2]
 	m[4], m[5], m[6] = matrix[3], matrix[4], matrix[5]
 	m[8], m[9], m[10] = matrix[6], matrix[7], matrix[8]
 	return m
 }
 
-func (m *Matrix4) ExtractBasis() (xAxis, yAxis, zAxis Vector3) {
+func (m *Matrix4[T]) ExtractBasis() (xAxis, yAxis, zAxis Vector3[T]) {
 	xAxis.SetFromMatrixColumn(*m, 0)
 	yAxis.SetFromMatrixColumn(*m, 1)
 	zAxis.SetFromMatrixColumn(*m, 2)
 	return xAxis, yAxis, zAxis
 }
 
-func (m *Matrix4) MakeBasis(xAxis, yAxis, zAxis Vector3) *Matrix4 {
+func (m *Matrix4[T]) MakeBasis(xAxis, yAxis, zAxis Vector3[T]) *Matrix4[T] {
 	m[0], m[4], m[8] = xAxis.X, yAxis.X, zAxis.X
 	m[1], m[5], m[9] = xAxis.Y, yAxis.Y, zAxis.Y
 	m[2], m[6], m[10] = xAxis.Z, yAxis.Z, zAxis.Z
 	return m
 }
 
-func (m *Matrix4) ExtractRotation(matrix Matrix4) *Matrix4 {
-	v1 := Vector3{}
+func (m *Matrix4[T]) ExtractRotation(matrix Matrix4[T]) *Matrix4[T] {
+	v1 := Vector3[T]{}
 	scaleX := 1 / v1.SetFromMatrixColumn(matrix, 0).Length()
 	scaleY := 1 / v1.SetFromMatrixColumn(matrix, 1).Length()
 	scaleZ := 1 / v1.SetFromMatrixColumn(matrix, 2).Length()
@@ -94,78 +98,78 @@ func (m *Matrix4) ExtractRotation(matrix Matrix4) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) MakeRotationFromEuler(euler Euler) *Matrix4 {
-	x, y, z := euler.X, euler.Y, euler.Z
+func (m *Matrix4[T]) MakeRotationFromEuler(euler Euler[T]) *Matrix4[T] {
+	x, y, z := float64(euler.X), float64(euler.Y), float64(euler.Z)
 	a, b := math.Cos(x), math.Sin(x)
 	c, d := math.Cos(y), math.Sin(y)
 	e, f := math.Cos(z), math.Sin(z)
 
 	if euler.Order == EULER_ORDER_XYZ {
 		ae, af, be, bf := a*e, a*f, b*e, b*f
-		m[0] = c * e
-		m[4] = -c * f
-		m[8] = d
-		m[1] = af + be*d
-		m[5] = ae - bf*d
-		m[9] = -b * c
-		m[2] = bf - ae*d
-		m[6] = be + af*d
-		m[10] = a * c
+		m[0] = T(c * e)
+		m[4] = T(-c * f)
+		m[8] = T(d)
+		m[1] = T(af + be*d)
+		m[5] = T(ae - bf*d)
+		m[9] = T(-b * c)
+		m[2] = T(bf - ae*d)
+		m[6] = T(be + af*d)
+		m[10] = T(a * c)
 	} else if euler.Order == EULER_ORDER_YXZ {
 		ce, cf, de, df := c*e, c*f, d*e, d*f
-		m[0] = ce + df*b
-		m[4] = de*b - cf
-		m[8] = a * d
-		m[1] = a * f
-		m[5] = a * e
-		m[9] = -b
-		m[2] = cf*b - de
-		m[6] = df + ce*b
-		m[10] = a * c
+		m[0] = T(ce + df*b)
+		m[4] = T(de*b - cf)
+		m[8] = T(a * d)
+		m[1] = T(a * f)
+		m[5] = T(a * e)
+		m[9] = T(-b)
+		m[2] = T(cf*b - de)
+		m[6] = T(df + ce*b)
+		m[10] = T(a * c)
 	} else if euler.Order == EULER_ORDER_ZXY {
 		ce, cf, de, df := c*e, c*f, d*e, d*f
-		m[0] = ce - df*b
-		m[4] = -a * f
-		m[8] = de + cf*b
-		m[1] = cf + de*b
-		m[5] = a * e
-		m[9] = df - ce*b
-		m[2] = -a * d
-		m[6] = b
-		m[10] = a * c
+		m[0] = T(ce - df*b)
+		m[4] = T(-a * f)
+		m[8] = T(de + cf*b)
+		m[1] = T(cf + de*b)
+		m[5] = T(a * e)
+		m[9] = T(df - ce*b)
+		m[2] = T(-a * d)
+		m[6] = T(b)
+		m[10] = T(a * c)
 	} else if euler.Order == EULER_ORDER_ZYX {
 		ae, af, be, bf := a*e, a*f, b*e, b*f
-		m[0] = c * e
-		m[4] = be*d - af
-		m[8] = ae*d + bf
-		m[1] = c * f
-		m[5] = bf*d + ae
-		m[9] = af*d - be
-		m[2] = -d
-		m[6] = b * c
-		m[10] = a * c
+		m[0] = T(c * e)
+		m[4] = T(be*d - af)
+		m[8] = T(ae*d + bf)
+		m[1] = T(c * f)
+		m[5] = T(bf*d + ae)
+		m[9] = T(af*d - be)
+		m[2] = T(-d)
+		m[6] = T(b * c)
+		m[10] = T(a * c)
 	} else if euler.Order == EULER_ORDER_YZX {
 		ac, ad, bc, bd := a*c, a*d, b*c, b*d
-		m[0] = c * e
-		m[4] = bd - ac*f
-		m[8] = bc*f + ad
-		m[1] = f
-		m[5] = a * e
-		m[9] = -b * e
-		m[2] = -d * e
-		m[6] = ad*f + bc
-		m[10] = ac - bd*f
+		m[0] = T(c * e)
+		m[4] = T(bd - ac*f)
+		m[8] = T(bc*f + ad)
+		m[1] = T(f)
+		m[5] = T(a * e)
+		m[9] = T(-b * e)
+		m[2] = T(-d * e)
+		m[6] = T(ad*f + bc)
+		m[10] = T(ac - bd*f)
 	} else if euler.Order == EULER_ORDER_XZY {
 		ac, ad, bc, bd := a*c, a*d, b*c, b*d
-		m[0] = c * e
-		m[4] = -f
-		m[8] = d * e
-		m[1] = ac*f + bd
-		m[5] = a * e
-		m[9] = ad*f - bc
-		m[2] = bc*f - ad
-		m[6] = b * e
-		m[10] = bd*f + ac
+		m[0] = T(c * e)
+		m[4] = T(-f)
+		m[8] = T(d * e)
+		m[1] = T(ac*f + bd)
+		m[5] = T(a * e)
+		m[9] = T(ad*f - bc)
+		m[2] = T(bc*f - ad)
+		m[6] = T(b * e)
+		m[10] = T(bd*f + ac)
 	}
 
 	// bottom row
@@ -182,12 +186,12 @@ func (m *Matrix4) MakeRotationFromEuler(euler Euler) *Matrix4 {
 	return m
 }
 
-func MakeRotationFromQuaternion(q Quaternion) *Matrix4 {
-	m := Matrix4{}
-	return m.Compose(V3Zero, q, V3One)
+func MakeRotationFromQuaternion[T constraints.Float](q Quaternion[T]) *Matrix4[T] {
+	m := Matrix4[T]{}
+	return m.Compose(Vector3[T]{}, q, *NewOneVector3[T]())
 }
 
-func (m *Matrix4) LookAt(eye, target, up Vector3) *Matrix4 {
+func (m *Matrix4[T]) LookAt(eye, target, up Vector3[T]) *Matrix4[T] {
 	z := SubVector3s(eye, target)
 	if z.LengthSq() == 0 {
 		// eye and target are in the same position
@@ -198,10 +202,10 @@ func (m *Matrix4) LookAt(eye, target, up Vector3) *Matrix4 {
 	x := CrossVector3s(up, *z)
 	if x.LengthSq() == 0 {
 		// up and z are parallel
-		if math.Abs(up.Z) == 1 {
-			z.X += EPSILON64
+		if math.Abs(float64(up.Z)) == 1 {
+			z.X += EPSILON
 		} else {
-			z.Z += EPSILON64
+			z.Z += EPSILON
 		}
 		z.Normalize()
 		x = CrossVector3s(up, *z)
@@ -217,7 +221,7 @@ func (m *Matrix4) LookAt(eye, target, up Vector3) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) Multiply(m2 Matrix4) *Matrix4 {
+func (m *Matrix4[T]) Multiply(m2 Matrix4[T]) *Matrix4[T] {
 	a11, a12, a13, a14 := m[0], m[4], m[8], m[12]
 	a21, a22, a23, a24 := m[1], m[5], m[9], m[13]
 	a31, a32, a33, a34 := m[2], m[6], m[10], m[14]
@@ -251,24 +255,24 @@ func (m *Matrix4) Multiply(m2 Matrix4) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) Premultiply(m2 Matrix4) *Matrix4 {
+func (m *Matrix4[T]) Premultiply(m2 Matrix4[T]) *Matrix4[T] {
 	tmp := m2.Clone().Multiply(*m)
 	m.Copy(*tmp)
 	return m
 }
 
-func MultiplyMatrice4s(a, b Matrix4) *Matrix4 {
+func MultiplyMatrice4s[T constraints.Float](a, b Matrix4[T]) *Matrix4[T] {
 	return a.Clone().Multiply(b)
 }
 
-func (m *Matrix4) MultiplyScalar(s float64) *Matrix4 {
+func (m *Matrix4[T]) MultiplyScalar(s T) *Matrix4[T] {
 	for i := 0; i < 16; i++ {
 		m[i] *= s
 	}
 	return m
 }
 
-func (m *Matrix4) Demrminant() float64 {
+func (m *Matrix4[T]) Demrminant() T {
 	n11, n12, n13, n14 := m[0], m[4], m[8], m[12]
 	n21, n22, n23, n24 := m[1], m[5], m[9], m[13]
 	n31, n32, n33, n34 := m[2], m[6], m[10], m[14]
@@ -304,8 +308,8 @@ func (m *Matrix4) Demrminant() float64 {
 
 }
 
-func (m *Matrix4) Transpose() *Matrix4 {
-	tmp := 0.0
+func (m *Matrix4[T]) Transpose() *Matrix4[T] {
+	var tmp T
 	tmp = m[1]
 	m[1] = m[4]
 	m[4] = tmp
@@ -327,12 +331,12 @@ func (m *Matrix4) Transpose() *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) SetPosition(v Vector3) *Matrix4 {
+func (m *Matrix4[T]) SetPosition(v Vector3[T]) *Matrix4[T] {
 	m[12], m[13], m[14] = v.X, v.Y, v.Z
 	return m
 }
 
-func (m *Matrix4) Invert() *Matrix4 {
+func (m *Matrix4[T]) Invert() *Matrix4[T] {
 	// based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
 	n11, n21, n31, n41 := m[0], m[1], m[2], m[3]
 	n12, n22, n32, n42 := m[4], m[5], m[6], m[7]
@@ -379,7 +383,7 @@ func (m *Matrix4) Invert() *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) Scale(v Vector3) *Matrix4 {
+func (m *Matrix4[T]) Scale(v Vector3[T]) *Matrix4[T] {
 	x, y, z := v.X, v.Y, v.Z
 	m[0], m[4], m[8] = m[0]*x, m[4]*y, m[8]*z
 	m[1], m[5], m[9] = m[1]*x, m[5]*y, m[9]*z
@@ -388,14 +392,14 @@ func (m *Matrix4) Scale(v Vector3) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) MaxScaleOnAxis() float64 {
+func (m *Matrix4[T]) MaxScaleOnAxis() T {
 	scaleXSq := m[0]*m[0] + m[1]*m[1] + m[2]*m[2]
 	scaleYSq := m[4]*m[4] + m[5]*m[5] + m[6]*m[6]
 	scaleZSq := m[8]*m[8] + m[9]*m[9] + m[10]*m[10]
-	return math.Sqrt(math.Max(scaleXSq, max(scaleYSq, scaleZSq)))
+	return T(math.Sqrt(float64(max(scaleXSq, max(scaleYSq, scaleZSq)))))
 }
 
-func (m *Matrix4) MakeTranslation(v Vector3) *Matrix4 {
+func (m *Matrix4[T]) MakeTranslation(v Vector3[T]) *Matrix4[T] {
 	m.Set(
 		1, 0, 0, v.X,
 		0, 1, 0, v.Y,
@@ -405,8 +409,9 @@ func (m *Matrix4) MakeTranslation(v Vector3) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) MakeRotationX(theta float64) *Matrix4 {
-	c, s := math.Cos(theta), math.Sin(theta)
+func (m *Matrix4[T]) MakeRotationX(theta T) *Matrix4[T] {
+	c := T(math.Cos(float64(theta)))
+	s := T(math.Sin(float64(theta)))
 	m.Set(
 		1, 0, 0, 0,
 		0, c, -s, 0,
@@ -416,8 +421,9 @@ func (m *Matrix4) MakeRotationX(theta float64) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) MakeRotationY(theta float64) *Matrix4 {
-	c, s := math.Cos(theta), math.Sin(theta)
+func (m *Matrix4[T]) MakeRotationY(theta T) *Matrix4[T] {
+	c := T(math.Cos(float64(theta)))
+	s := T(math.Sin(float64(theta)))
 	m.Set(
 		c, 0, s, 0,
 		0, 1, 0, 0,
@@ -427,8 +433,9 @@ func (m *Matrix4) MakeRotationY(theta float64) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) MakeRotationZ(theta float64) *Matrix4 {
-	c, s := math.Cos(theta), math.Sin(theta)
+func (m *Matrix4[T]) MakeRotationZ(theta T) *Matrix4[T] {
+	c := T(math.Cos(float64(theta)))
+	s := T(math.Sin(float64(theta)))
 	m.Set(
 		c, -s, 0, 0,
 		s, c, 0, 0,
@@ -438,9 +445,10 @@ func (m *Matrix4) MakeRotationZ(theta float64) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) MakeRotationAxis(axis Vector3, angle float64) *Matrix4 {
+func (m *Matrix4[T]) MakeRotationAxis(axis Vector3[T], angle T) *Matrix4[T] {
 	// Based on http://www.gamedev.net/reference/articles/article1199.asp
-	c, s := math.Cos(angle), math.Sin(angle)
+	c := T(math.Cos(float64(angle)))
+	s := T(math.Sin(float64(angle)))
 	t := 1 - c
 	x, y, z := axis.X, axis.Y, axis.Z
 	tx, ty := t*x, t*y
@@ -453,7 +461,7 @@ func (m *Matrix4) MakeRotationAxis(axis Vector3, angle float64) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) MakeScale(v Vector3) *Matrix4 {
+func (m *Matrix4[T]) MakeScale(v Vector3[T]) *Matrix4[T] {
 	m.Set(
 		v.X, 0, 0, 0,
 		0, v.Y, 0, 0,
@@ -463,7 +471,7 @@ func (m *Matrix4) MakeScale(v Vector3) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) MakeShear(xy, xz, yx, yz, zx, zy float64) *Matrix4 {
+func (m *Matrix4[T]) MakeShear(xy, xz, yx, yz, zx, zy T) *Matrix4[T] {
 	m.Set(
 		1, yx, zx, 0,
 		xy, 1, zy, 0,
@@ -473,7 +481,7 @@ func (m *Matrix4) MakeShear(xy, xz, yx, yz, zx, zy float64) *Matrix4 {
 	return m
 }
 
-func (m *Matrix4) Compose(position Vector3, rotation Quaternion, scale Vector3) *Matrix4 {
+func (m *Matrix4[T]) Compose(position Vector3[T], rotation Quaternion[T], scale Vector3[T]) *Matrix4[T] {
 	x, y, z, w := rotation.X, rotation.Y, rotation.Z, rotation.W
 	x2, y2, z2 := x+x, y+y, z+z
 	xx, xy, xz := x*x2, x*y2, x*z2
@@ -505,9 +513,9 @@ func (m *Matrix4) Compose(position Vector3, rotation Quaternion, scale Vector3) 
 	return m
 }
 
-func (m *Matrix4) Decompose() (position Vector3, rotation Quaternion, scale Vector3) {
+func (m *Matrix4[T]) Decompose() (position Vector3[T], rotation Quaternion[T], scale Vector3[T]) {
 	// based on http://www.geometrictools.com/Documentation/ExtracmulerAngles.pdf
-	v1 := NewZeroVector3()
+	v1 := NewZeroVector3[T]()
 	sx := v1.Set(m[0], m[1], m[2]).Length()
 	sy := v1.Set(m[4], m[5], m[6]).Length()
 	sz := v1.Set(m[8], m[9], m[10]).Length()
@@ -550,14 +558,14 @@ func (m *Matrix4) Decompose() (position Vector3, rotation Quaternion, scale Vect
 
 }
 
-func (m *Matrix4) MakePerspective(left, right, top, bottom, near, far float64) *Matrix4 {
+func (m *Matrix4[T]) MakePerspective(left, right, top, bottom, near, far T) *Matrix4[T] {
 	x := 2 * near / (right - left)
 	y := 2 * near / (top - bottom)
 
 	a := (right + left) / (right - left)
 	b := (top + bottom) / (top - bottom)
 
-	var c, d float64
+	var c, d T
 	switch coordinateSystem {
 	case CoordinateSystemWebGL:
 		c = -(far + near) / (far - near)
@@ -580,7 +588,7 @@ func (m *Matrix4) MakePerspective(left, right, top, bottom, near, far float64) *
 	return m
 }
 
-func (m *Matrix4) MakeOrthographic(left, right, top, bottom, near, far float64) *Matrix4 {
+func (m *Matrix4[T]) MakeOrthographic(left, right, top, bottom, near, far T) *Matrix4[T] {
 	x := 1 / (right - left)
 	y := 1 / (top - bottom)
 	z := 1 / (far - near)
@@ -599,7 +607,7 @@ func (m *Matrix4) MakeOrthographic(left, right, top, bottom, near, far float64) 
 	return m
 }
 
-func (m *Matrix4) Equals(matrix Matrix4) bool {
+func (m *Matrix4[T]) Equals(matrix Matrix4[T]) bool {
 	for i := 0; i < 16; i++ {
 		if m[i] != matrix[i] {
 			return false
@@ -608,14 +616,14 @@ func (m *Matrix4) Equals(matrix Matrix4) bool {
 	return true
 }
 
-func (m *Matrix4) FromArray(array []float64, offset int) *Matrix4 {
+func (m *Matrix4[T]) FromArray(array []T, offset int) *Matrix4[T] {
 	for i := 0; i < 16; i++ {
 		m[i] = array[i+offset]
 	}
 	return m
 }
 
-func (m *Matrix4) ToArray(array []float64, offset int) []float64 {
+func (m *Matrix4[T]) ToArray(array []T, offset int) []T {
 	for i := 0; i < 16; i++ {
 		array[i+offset] = m[i]
 	}

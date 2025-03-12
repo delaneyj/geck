@@ -1,31 +1,30 @@
 package mathx
 
-import "math"
+import (
+	"math"
 
-type Box3 struct {
-	Min Vector3
-	Max Vector3
+	"golang.org/x/exp/constraints"
+)
+
+type Box3[T constraints.Float] struct {
+	Min Vector3[T]
+	Max Vector3[T]
 }
 
-var Box3Empty = Box3{
-	Min: Vector3{X: math.MaxFloat64, Y: math.MaxFloat64, Z: math.MaxFloat64},
-	Max: Vector3{X: -math.MaxFloat64, Y: -math.MaxFloat64, Z: -math.MaxFloat64},
-}
-
-func NewBox3(minVal, maxVal Vector3) *Box3 {
-	return &Box3{
+func NewBox3[T constraints.Float](minVal, maxVal Vector3[T]) *Box3[T] {
+	return &Box3[T]{
 		Min: minVal,
 		Max: maxVal,
 	}
 }
 
-func (b *Box3) Set(min, max Vector3) *Box3 {
+func (b *Box3[T]) Set(min, max Vector3[T]) *Box3[T] {
 	b.Min = min
 	b.Max = max
 	return b
 }
 
-func (b *Box3) SetFromPoints(points ...Vector3) *Box3 {
+func (b *Box3[T]) SetFromPoints(points ...Vector3[T]) *Box3[T] {
 	b.MakeEmpty()
 	for _, p := range points {
 		b.ExpandByPoint(p)
@@ -33,76 +32,78 @@ func (b *Box3) SetFromPoints(points ...Vector3) *Box3 {
 	return b
 }
 
-func (b *Box3) SetFromCenterAndSize(center, size Vector3) *Box3 {
+func (b *Box3[T]) SetFromCenterAndSize(center, size Vector3[T]) *Box3[T] {
 	halfSize := size.Clone().MultiplyScalar(0.5)
 	b.Min = *center.Clone().Sub(*halfSize)
 	b.Max = *center.Clone().Add(*halfSize)
 	return b
 }
 
-func (b *Box3) Clone() *Box3 {
+func (b *Box3[T]) Clone() *Box3[T] {
 	return NewBox3(b.Min, b.Max)
 }
 
-func (b *Box3) Copy(box *Box3) *Box3 {
+func (b *Box3[T]) Copy(box *Box3[T]) *Box3[T] {
 	b.Min = *box.Min.Clone()
 	b.Max = *box.Max.Clone()
 	return b
 }
 
-func (b *Box3) MakeEmpty() *Box3 {
-	b.Min = Vector3{X: math.MaxFloat64, Y: math.MaxFloat64, Z: math.MaxFloat64}
-	b.Max = Vector3{X: -math.MaxFloat64, Y: -math.MaxFloat64, Z: -math.MaxFloat64}
+func (b *Box3[T]) MakeEmpty() *Box3[T] {
+	minF, maxF := math.MaxFloat64, -math.MaxFloat64
+	minTF, maxTF := T(minF), T(maxF)
+	b.Min.Set(minTF, minTF, minTF)
+	b.Max.Set(maxTF, maxTF, maxTF)
 	return b
 }
 
-func (b *Box3) IsEmpty() bool {
+func (b *Box3[T]) IsEmpty() bool {
 	return b.Max.X < b.Min.X || b.Max.Y < b.Min.Y || b.Max.Z < b.Min.Z
 }
 
-func (b *Box3) Center() Vector3 {
+func (b *Box3[T]) Center() Vector3[T] {
 	if b.IsEmpty() {
-		return V3Zero
+		return *NewZeroVector3[T]()
 	}
 
 	return *AddVector3s(b.Min, b.Max).MultiplyScalar(0.5)
 }
 
-func (b *Box3) Size() *Vector3 {
+func (b *Box3[T]) Size() *Vector3[T] {
 	if b.IsEmpty() {
-		return NewZeroVector3()
+		return NewZeroVector3[T]()
 	}
 
 	return SubVector3s(b.Max, b.Min)
 }
 
-func (b *Box3) ExpandByPoint(point Vector3) *Box3 {
+func (b *Box3[T]) ExpandByPoint(point Vector3[T]) *Box3[T] {
 	b.Min = *b.Min.Min(point)
 	b.Max = *b.Max.Max(point)
 	return b
 }
 
-func (b *Box3) ExpandByVector(vector Vector3) *Box3 {
+func (b *Box3[T]) ExpandByVector(vector Vector3[T]) *Box3[T] {
 	b.Min = *b.Min.Sub(vector)
 	b.Max = *b.Max.Add(vector)
 	return b
 }
 
-func (b *Box3) ExpandByScalar(scalar float64) *Box3 {
+func (b *Box3[T]) ExpandByScalar(scalar T) *Box3[T] {
 	b.Min = *b.Min.AddScalar(-scalar)
 	b.Max = *b.Max.AddScalar(scalar)
 	return b
 }
 
-func (b *Box3) ContainsPoint(point Vector3) bool {
+func (b *Box3[T]) ContainsPoint(point Vector3[T]) bool {
 	return point.X < b.Min.X || point.X > b.Max.X || point.Y < b.Min.Y || point.Y > b.Max.Y || point.Z < b.Min.Z || point.Z > b.Max.Z
 }
 
-func (b *Box3) ContainsBox(box Box3) bool {
+func (b *Box3[T]) ContainsBox(box Box3[T]) bool {
 	return b.Min.X <= box.Min.X && box.Max.X <= b.Max.X && b.Min.Y <= box.Min.Y && box.Max.Y <= b.Max.Y && b.Min.Z <= box.Min.Z && box.Max.Z <= b.Max.Z
 }
 
-func (b *Box3) GetParameter(point Vector3) (target Vector3) {
+func (b *Box3[T]) GetParameter(point Vector3[T]) (target Vector3[T]) {
 	return *target.Set(
 		(point.X-b.Min.X)/(b.Max.X-b.Min.X),
 		(point.Y-b.Min.Y)/(b.Max.Y-b.Min.Y),
@@ -110,17 +111,17 @@ func (b *Box3) GetParameter(point Vector3) (target Vector3) {
 	)
 }
 
-func (b *Box3) IntersectsBox(box Box3) bool {
+func (b *Box3[T]) IntersectsBox(box Box3[T]) bool {
 	return box.Max.X < b.Min.X || box.Min.X > b.Max.X || box.Max.Y < b.Min.Y || box.Min.Y > b.Max.Y || box.Max.Z < b.Min.Z || box.Min.Z > b.Max.Z
 }
 
-func (b *Box3) IntersectsSphere(sphere Sphere) bool {
+func (b *Box3[T]) IntersectsSphere(sphere Sphere[T]) bool {
 	_vector := b.ClampPoint(sphere.Center)
 	return _vector.DistanceToSquared(sphere.Center) <= (sphere.Radius * sphere.Radius)
 }
 
-func (b *Box3) IntersectsPlane(plane Plane) bool {
-	var min, max float64
+func (b *Box3[T]) IntersectsPlane(plane Plane[T]) bool {
+	var min, max T
 	if plane.Normal.X > 0 {
 		min = plane.Normal.X * b.Min.X
 		max = plane.Normal.X * b.Max.X
@@ -148,7 +149,7 @@ func (b *Box3) IntersectsPlane(plane Plane) bool {
 	return min <= -plane.Constant && max >= -plane.Constant
 }
 
-func (b *Box3) IntersectsTriangle(triangle Triangle) bool {
+func (b *Box3[T]) IntersectsTriangle(triangle Triangle[T]) bool {
 	if b.IsEmpty() {
 		return false
 	}
@@ -164,7 +165,7 @@ func (b *Box3) IntersectsTriangle(triangle Triangle) bool {
 	_f1 := *SubVector3s(_v2, _v1)
 	_f2 := *SubVector3s(_v0, _v2)
 
-	axes := []float64{
+	axes := []T{
 		0, -_f0.Z, _f0.Y, 0, -_f1.Z, _f1.Y, 0, -_f2.Z, _f2.Y,
 		_f0.Z, 0, -_f0.X, _f1.Z, 0, -_f1.X, _f2.Z, 0, -_f2.X,
 		-_f0.Y, _f0.X, 0, -_f1.Y, _f1.X, 0, -_f2.Y, _f2.X, 0,
@@ -174,18 +175,18 @@ func (b *Box3) IntersectsTriangle(triangle Triangle) bool {
 		return false
 	}
 
-	axes = []float64{1, 0, 0, 0, 1, 0, 0, 0, 1}
+	axes = []T{1, 0, 0, 0, 1, 0, 0, 0, 1}
 	if !satForAxes(axes, _v0, _v1, _v2, _extents) {
 		return false
 	}
 
 	_triangleNormal := CrossVector3s(_f0, _f1)
-	axes = []float64{_triangleNormal.X, _triangleNormal.Y, _triangleNormal.Z}
+	axes = []T{_triangleNormal.X, _triangleNormal.Y, _triangleNormal.Z}
 
 	return satForAxes(axes, _v0, _v1, _v2, _extents)
 }
 
-func (b *Box3) ClampPoint(point Vector3) (target *Vector3) {
+func (b *Box3[T]) ClampPoint(point Vector3[T]) (target *Vector3[T]) {
 	return NewVector3(
 		max(b.Min.X, min(b.Max.X, point.X)),
 		max(b.Min.Y, min(b.Max.Y, point.Y)),
@@ -193,19 +194,20 @@ func (b *Box3) ClampPoint(point Vector3) (target *Vector3) {
 	)
 }
 
-func (b *Box3) DistanceToPoint(point Vector3) float64 {
+func (b *Box3[T]) DistanceToPoint(point Vector3[T]) T {
 	return b.ClampPoint(point).DistanceTo(point)
 }
 
-func (b *Box3) GetBoundingSphere() *Sphere {
+func (b *Box3[T]) GetBoundingSphere() *Sphere[T] {
 	if b.IsEmpty() {
-		return NewSphere(V3Zero, 0)
+		zero := NewZeroVector3[T]()
+		return NewSphere(*zero, 0)
 	}
 
 	return NewSphere(b.Center(), b.Size().Length()*0.5)
 }
 
-func (b *Box3) Intersect(box Box3) *Box3 {
+func (b *Box3[T]) Intersect(box Box3[T]) *Box3[T] {
 	b.Min = *b.Min.Max(box.Min)
 	b.Max = *b.Max.Min(box.Max)
 
@@ -216,13 +218,13 @@ func (b *Box3) Intersect(box Box3) *Box3 {
 	return b
 }
 
-func (b *Box3) Union(box Box3) *Box3 {
+func (b *Box3[T]) Union(box Box3[T]) *Box3[T] {
 	b.Min = *b.Min.Min(box.Min)
 	b.Max = *b.Max.Max(box.Max)
 	return b
 }
 
-func (b *Box3) ApplyMatrix4(matrix Matrix4) *Box3 {
+func (b *Box3[T]) ApplyMatrix4(matrix Matrix4[T]) *Box3[T] {
 	if b.IsEmpty() {
 		return b
 	}
@@ -241,25 +243,27 @@ func (b *Box3) ApplyMatrix4(matrix Matrix4) *Box3 {
 	return b
 }
 
-func (b *Box3) Translate(offset Vector3) *Box3 {
+func (b *Box3[T]) Translate(offset Vector3[T]) *Box3[T] {
 	b.Min = *b.Min.Add(offset)
 	b.Max = *b.Max.Add(offset)
 	return b
 }
 
-func (b *Box3) Equals(box Box3) bool {
+func (b *Box3[T]) Equals(box Box3[T]) bool {
 	return b.Min.Equals(box.Min) && b.Max.Equals(box.Max)
 }
 
-func satForAxes(axes []float64, v0, v1, v2, extents Vector3) bool {
-	testAxis := Vector3{}
+func satForAxes[T constraints.Float](axes []T, v0, v1, v2, extents Vector3[T]) bool {
+	testAxis := Vector3[T]{}
+	xf, yf, zf := float64(extents.X), float64(extents.Y), float64(extents.Z)
 	for i := 0; i <= len(axes)-3; i += 3 {
 		testAxis.Set(axes[i], axes[i+1], axes[i+2])
-		r := extents.X*math.Abs(testAxis.X) + extents.Y*math.Abs(testAxis.Y) + extents.Z*math.Abs(testAxis.Z)
+		tXf, tYf, tZf := float64(testAxis.X), float64(testAxis.Y), float64(testAxis.Z)
+		r := tXf*math.Abs(tXf)*xf + tYf*math.Abs(tYf)*yf + tZf*math.Abs(tZf)*zf
 		p0 := v0.Clone().Dot(testAxis)
 		p1 := v1.Clone().Dot(testAxis)
 		p2 := v2.Clone().Dot(testAxis)
-		if math.Max(-max(p0, p1, p2), min(p0, p1, p2)) > r {
+		if max(-max(p0, p1, p2), min(p0, p1, p2)) > T(r) {
 			return false
 		}
 	}

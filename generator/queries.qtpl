@@ -46,8 +46,8 @@ func(w *World) Query{%s data.Name.Singular.Pascal %}(yield {%s iterName %}) {
     {%- if first.ComponentOrTag.IsTag -%}
     for e := range w.{%s firstIterName %}Entities {
     {%- else -%}
-    for e, first := range w.{%s firstIterName %}Entities {
-        args.{%s first.Name.Plural.Pascal %} = first
+    for e, first := range w.{%s firstIterName %} {
+        args.{%s first.Name.Singular.Pascal %} = first
     {%- endif -%}
         ok  = true
 

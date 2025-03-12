@@ -150,10 +150,10 @@ func(w *World) Query`)
 //line generator/queries.qtpl:49
 		qw422016.E().S(firstIterName)
 //line generator/queries.qtpl:49
-		qw422016.N().S(`Entities {
+		qw422016.N().S(` {
         args.`)
 //line generator/queries.qtpl:50
-		qw422016.E().S(first.Name.Plural.Pascal)
+		qw422016.E().S(first.Name.Singular.Pascal)
 //line generator/queries.qtpl:50
 		qw422016.N().S(` = first
 `)

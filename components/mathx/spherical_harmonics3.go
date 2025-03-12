@@ -1,5 +1,7 @@
 package mathx
 
+import "golang.org/x/exp/constraints"
+
 /**
  * Primary reference:
  *   https://graphics.stanford.edu/papers/envmap/envmap.pdf
@@ -10,20 +12,20 @@ package mathx
 
 // 3-band SH defined by 9 coefficients
 
-type SphericalHarmonics3 [9]Vector3
+type SphericalHarmonics3[T constraints.Float] [9]Vector3[T]
 
-func NewSphericalHarmonics3() *SphericalHarmonics3 {
-	return &SphericalHarmonics3{}
+func NewSphericalHarmonics3[T constraints.Float]() *SphericalHarmonics3[T] {
+	return &SphericalHarmonics3[T]{}
 }
 
-func (sh *SphericalHarmonics3) Set(coefficients ...Vector3) *SphericalHarmonics3 {
+func (sh *SphericalHarmonics3[T]) Set(coefficients ...Vector3[T]) *SphericalHarmonics3[T] {
 	for i := 0; i < 9; i++ {
 		sh[i].Copy(coefficients[i])
 	}
 	return sh
 }
 
-func (sh *SphericalHarmonics3) Zero() *SphericalHarmonics3 {
+func (sh *SphericalHarmonics3[T]) Zero() *SphericalHarmonics3[T] {
 	for i := 0; i < 9; i++ {
 		sh[i].Set(0, 0, 0)
 	}
@@ -31,7 +33,7 @@ func (sh *SphericalHarmonics3) Zero() *SphericalHarmonics3 {
 }
 
 // GetAt returns the radiance in the direction of the normal
-func (sh *SphericalHarmonics3) GetAt(normal *Vector3) *Vector3 {
+func (sh *SphericalHarmonics3[T]) GetAt(normal *Vector3[T]) *Vector3[T] {
 	// normal is assumed to be unit length
 
 	x, y, z := normal.X, normal.Y, normal.Z
@@ -55,7 +57,7 @@ func (sh *SphericalHarmonics3) GetAt(normal *Vector3) *Vector3 {
 }
 
 // GetIrradianceAt returns the irradiance (radiance convolved with cosine lobe) in the direction of the normal
-func (sh *SphericalHarmonics3) GetIrradianceAt(normal Vector3) *Vector3 {
+func (sh *SphericalHarmonics3[T]) GetIrradianceAt(normal Vector3[T]) *Vector3[T] {
 	// normal is assumed to be unit length
 
 	x, y, z := normal.X, normal.Y, normal.Z
@@ -80,35 +82,35 @@ func (sh *SphericalHarmonics3) GetIrradianceAt(normal Vector3) *Vector3 {
 	return target
 }
 
-func (sh *SphericalHarmonics3) Add(sh2 SphericalHarmonics3) *SphericalHarmonics3 {
+func (sh *SphericalHarmonics3[T]) Add(sh2 SphericalHarmonics3[T]) *SphericalHarmonics3[T] {
 	for i := 0; i < 9; i++ {
 		sh[i].Add(sh2[i])
 	}
 	return sh
 }
 
-func (sh *SphericalHarmonics3) AddScaledSH(sh2 SphericalHarmonics3, s float64) *SphericalHarmonics3 {
+func (sh *SphericalHarmonics3[T]) AddScaledSH(sh2 SphericalHarmonics3[T], s T) *SphericalHarmonics3[T] {
 	for i := 0; i < 9; i++ {
 		sh[i].AddScaledVector(sh2[i], s)
 	}
 	return sh
 }
 
-func (sh *SphericalHarmonics3) Scale(s float64) *SphericalHarmonics3 {
+func (sh *SphericalHarmonics3[T]) Scale(s T) *SphericalHarmonics3[T] {
 	for i := 0; i < 9; i++ {
 		sh[i].MultiplyScalar(s)
 	}
 	return sh
 }
 
-func (sh *SphericalHarmonics3) Lerp(sh2 SphericalHarmonics3, alpha float64) *SphericalHarmonics3 {
+func (sh *SphericalHarmonics3[T]) Lerp(sh2 SphericalHarmonics3[T], alpha T) *SphericalHarmonics3[T] {
 	for i := 0; i < 9; i++ {
 		sh[i].Lerp(sh2[i], alpha)
 	}
 	return sh
 }
 
-func (sh *SphericalHarmonics3) Equals(sh2 SphericalHarmonics3) bool {
+func (sh *SphericalHarmonics3[T]) Equals(sh2 SphericalHarmonics3[T]) bool {
 	for i := 0; i < 9; i++ {
 		if !sh[i].Equals(sh2[i]) {
 			return false
@@ -117,16 +119,16 @@ func (sh *SphericalHarmonics3) Equals(sh2 SphericalHarmonics3) bool {
 	return true
 }
 
-func (sh *SphericalHarmonics3) Copy(sh2 SphericalHarmonics3) *SphericalHarmonics3 {
+func (sh *SphericalHarmonics3[T]) Copy(sh2 SphericalHarmonics3[T]) *SphericalHarmonics3[T] {
 	copy(sh[:], sh2[:])
 	return sh
 }
 
-func (sh *SphericalHarmonics3) Clone() *SphericalHarmonics3 {
-	return NewSphericalHarmonics3().Copy(*sh)
+func (sh *SphericalHarmonics3[T]) Clone() *SphericalHarmonics3[T] {
+	return NewSphericalHarmonics3[T]().Copy(*sh)
 }
 
-func (sh *SphericalHarmonics3) FromArray(array []float64, offset int) *SphericalHarmonics3 {
+func (sh *SphericalHarmonics3[T]) FromArray(array []T, offset int) *SphericalHarmonics3[T] {
 	coefficients := sh
 
 	for i := 0; i < 9; i++ {
@@ -136,7 +138,7 @@ func (sh *SphericalHarmonics3) FromArray(array []float64, offset int) *Spherical
 	return sh
 }
 
-func (sh *SphericalHarmonics3) ToArray(array []float64, offset int) []float64 {
+func (sh *SphericalHarmonics3[T]) ToArray(array []T, offset int) []T {
 	coefficients := sh
 
 	for i := 0; i < 9; i++ {
@@ -147,7 +149,7 @@ func (sh *SphericalHarmonics3) ToArray(array []float64, offset int) []float64 {
 }
 
 // GetBasisAt evaluates the basis functions
-func (sh *SphericalHarmonics3) BasisAt(normal Vector3, shBasis []float64) []float64 {
+func (sh *SphericalHarmonics3[T]) BasisAt(normal Vector3[T], shBasis []T) []T {
 	// normal is assumed to be unit length
 	x, y, z := normal.X, normal.Y, normal.Z
 

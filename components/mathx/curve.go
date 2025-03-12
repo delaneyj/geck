@@ -1,6 +1,10 @@
 package mathx
 
-import "math"
+import (
+	"math"
+
+	"golang.org/x/exp/constraints"
+)
 
 /**
  * Extensible curve object.
@@ -32,87 +36,87 @@ import "math"
  *
  **/
 
-type Curve interface {
-	Point(t float64) *Vector3
-	PointAt(u float64) *Vector3
-	Points(divisions int) []Vector3
-	SpacedPoints(divisions int) []Vector3
-	LengthsDefault() []float64
-	Length() float64
-	Lengths(divisions int) []float64
+type Curve[T constraints.Float] interface {
+	Point(t T) *Vector3[T]
+	PointAt(u T) *Vector3[T]
+	Points(divisions int) []Vector3[T]
+	SpacedPoints(divisions int) []Vector3[T]
+	LengthsDefault() []T
+	Length() T
+	Lengths(divisions int) []T
 	UpdateArcLengths()
 }
 
-type baseCurve struct {
+type baseCurve[T constraints.Float] struct {
 	ArcLengthDivisions int
-	cacheArcLengths    []float64
+	cacheArcLengths    []T
 	needsUpdate        bool
 }
 
-func newBaseCurve() *baseCurve {
-	return &baseCurve{
+func newBaseCurve[T constraints.Float]() *baseCurve[T] {
+	return &baseCurve[T]{
 		ArcLengthDivisions: 200,
 	}
 }
 
 // Virtual base class method to overwrite and implement in subclasses
 //   - t [0 .. 1]
-func (c *baseCurve) Point(t float64) *Vector3 {
+func (c *baseCurve[T]) Point(t T) *Vector3[T] {
 	panic("GetPoint() not implemented")
 }
 
 // Get point at relative position in curve according to arc length
 // - u [0 .. 1]
-func (c *baseCurve) PointAt(u float64) *Vector3 {
+func (c *baseCurve[T]) PointAt(u T) *Vector3[T] {
 	t := c.uToTmapping(u)
 	return c.Point(t)
 }
 
 // Get sequence of points using getPoint( t )
-func (c *baseCurve) Points(divisions int) []Vector3 {
-	points := make([]Vector3, divisions)
+func (c *baseCurve[T]) Points(divisions int) []Vector3[T] {
+	points := make([]Vector3[T], divisions)
 
 	d := 0
 	for d <= divisions {
-		points[d] = *c.Point(float64(d) / float64(divisions))
+		points[d] = *c.Point(T(d) / T(divisions))
 		d++
 	}
 	return points
 }
 
 // Get sequence of points using getPointAt( u )
-func (c *baseCurve) SpacedPoints(divisions int) []Vector3 {
-	points := make([]Vector3, divisions)
+func (c *baseCurve[T]) SpacedPoints(divisions int) []Vector3[T] {
+	points := make([]Vector3[T], divisions)
 	d := 0
 	for d <= divisions {
-		points[d] = *c.PointAt(float64(d) / float64(divisions))
+		points[d] = *c.PointAt(T(d) / T(divisions))
 		d++
 	}
 	return points
 }
 
-func (c *baseCurve) LengthsDefault() []float64 {
+func (c *baseCurve[T]) LengthsDefault() []T {
 	return c.Lengths(c.ArcLengthDivisions)
 }
 
 // Get total curve arc length
-func (c *baseCurve) Length() float64 {
+func (c *baseCurve[T]) Length() T {
 	lengths := c.LengthsDefault()
 	return lengths[len(lengths)-1]
 }
 
 // Get list of cumulative segment lengths
-func (c *baseCurve) Lengths(divisions int) []float64 {
+func (c *baseCurve[T]) Lengths(divisions int) []T {
 	if c.cacheArcLengths != nil && len(c.cacheArcLengths) == divisions+1 && !c.needsUpdate {
 		return c.cacheArcLengths
 	}
 	c.needsUpdate = false
 	last := c.Point(0)
-	sum := 0.0
-	cache := []float64{0}
+	var sum T
+	cache := []T{0}
 	current := last
 	for p := 1; p <= divisions; p++ {
-		current = c.Point(float64(p) / float64(divisions))
+		current = c.Point(T(p) / T(divisions))
 		sum += current.DistanceTo(*last)
 		cache = append(cache, sum)
 		last = current
@@ -121,23 +125,23 @@ func (c *baseCurve) Lengths(divisions int) []float64 {
 	return cache
 }
 
-func (c *baseCurve) UpdateArcLengths() {
+func (c *baseCurve[T]) UpdateArcLengths() {
 	c.needsUpdate = true
 	c.Lengths(c.ArcLengthDivisions)
 }
 
 // Given u ( 0 .. 1 ), get a t to find p. This gives you points which are equidistant
-func (c *baseCurve) uToTmapping(u float64) float64 {
+func (c *baseCurve[T]) uToTmapping(u T) T {
 	arcLengths := c.Lengths(c.ArcLengthDivisions)
 	var i int
 	il := len(arcLengths)
-	var targetArcLength float64
+	var targetArcLength T
 	if targetArcLength == 0 {
 		targetArcLength = u * arcLengths[il-1]
 	}
 	low := 0
 	high := il - 1
-	var comparison float64
+	var comparison T
 	for low <= high {
 		i = low + (high-low)/2
 		comparison = arcLengths[i] - targetArcLength
@@ -152,13 +156,13 @@ func (c *baseCurve) uToTmapping(u float64) float64 {
 	}
 	i = high
 	if arcLengths[i] == targetArcLength {
-		return float64(i) / float64(il-1)
+		return T(i) / T(il-1)
 	}
 	lengthBefore := arcLengths[i]
 	lengthAfter := arcLengths[i+1]
 	segmentLength := lengthAfter - lengthBefore
 	segmentFraction := (targetArcLength - lengthBefore) / segmentLength
-	t := (float64(i) + segmentFraction) / float64(il-1)
+	t := (T(i) + segmentFraction) / T(il-1)
 	return t
 }
 
@@ -166,8 +170,8 @@ func (c *baseCurve) uToTmapping(u float64) float64 {
 // In case any sub curve does not implement its tangent derivation,
 // 2 points a small delta apart will be used to find its gradient
 // which seems to give a reasonable approximation
-func (c *baseCurve) Tangent(t float64) *Vector3 {
-	delta := 0.0001
+func (c *baseCurve[T]) Tangent(t T) *Vector3[T] {
+	delta := T(0.0001)
 	t1 := t - delta
 	t2 := t + delta
 	if t1 < 0 {
@@ -182,29 +186,29 @@ func (c *baseCurve) Tangent(t float64) *Vector3 {
 	return tangent
 }
 
-func (c *baseCurve) TangentAt(u float64) *Vector3 {
+func (c *baseCurve[T]) TangentAt(u T) *Vector3[T] {
 	t := c.uToTmapping(u)
 	return c.Tangent(t)
 }
 
-func (c *baseCurve) ComputeFrenetFrames(segments int, closed bool) map[string][]Vector3 {
-	normal := NewZeroVector3()
-	tangents := make([]Vector3, segments+1)
-	normals := make([]Vector3, segments+1)
-	binormals := make([]Vector3, segments+1)
-	mat := NewMatrix4Identity()
+func (c *baseCurve[T]) ComputeFrenetFrames(segments int, closed bool) map[string][]Vector3[T] {
+	normal := NewZeroVector3[T]()
+	tangents := make([]Vector3[T], segments+1)
+	normals := make([]Vector3[T], segments+1)
+	binormals := make([]Vector3[T], segments+1)
+	mat := NewMatrix4Identity[T]()
 	i := 0
 	for i <= segments {
-		u := float64(i) / float64(segments)
+		u := T(i) / T(segments)
 		tangents[i] = *c.TangentAt(u)
 		i++
 	}
-	normals[0] = *NewZeroVector3()
-	binormals[0] = *NewZeroVector3()
+	normals[0] = *NewZeroVector3[T]()
+	binormals[0] = *NewZeroVector3[T]()
 	min := 999999.0
-	tx := math.Abs(tangents[0].X)
-	ty := math.Abs(tangents[0].Y)
-	tz := math.Abs(tangents[0].Z)
+	tx := math.Abs(float64(tangents[0].X))
+	ty := math.Abs(float64(tangents[0].Y))
+	tz := math.Abs(float64(tangents[0].Z))
 	if tx <= min {
 		min = tx
 		normal.Set(1, 0, 0)
@@ -225,37 +229,37 @@ func (c *baseCurve) ComputeFrenetFrames(segments int, closed bool) map[string][]
 		vec = CrossVector3s(tangents[i-1], tangents[i])
 		if vec.Length() > 0.0001 {
 			vec.Normalize()
-			theta := math.Acos(math.Max(-1, math.Min(1, tangents[i-1].Dot(tangents[i]))))
-			normals[i].ApplyMatrix4(*mat.MakeRotationAxis(*vec, theta))
+			theta := math.Acos(math.Max(-1, math.Min(1, float64(tangents[i-1].Dot(tangents[i])))))
+			normals[i].ApplyMatrix4(*mat.MakeRotationAxis(*vec, T(theta)))
 		}
 		binormals[i] = *CrossVector3s(tangents[i], normals[i])
 	}
 	if closed {
-		theta := math.Acos(math.Max(-1, math.Min(1, normals[0].Dot(normals[segments]))))
-		theta /= float64(segments)
+		theta := T(math.Acos(math.Max(-1, math.Min(1, float64(normals[0].Dot(normals[segments]))))))
+		theta /= T(segments)
 		if tangents[0].Dot(*CrossVector3s(normals[0], normals[segments])) > 0 {
 			theta = -theta
 		}
 		for i := 1; i <= segments; i++ {
-			normals[i].ApplyMatrix4(*mat.MakeRotationAxis(tangents[i], theta*float64(i)))
+			normals[i].ApplyMatrix4(*mat.MakeRotationAxis(tangents[i], theta*T(i)))
 			binormals[i] = *CrossVector3s(tangents[i], normals[i])
 		}
 
 	}
-	return map[string][]Vector3{
+	return map[string][]Vector3[T]{
 		"tangents":  tangents,
 		"normals":   normals,
 		"binormals": binormals,
 	}
 }
 
-func (c *baseCurve) Clone() *baseCurve {
-	return &baseCurve{
+func (c *baseCurve[T]) Clone() *baseCurve[T] {
+	return &baseCurve[T]{
 		ArcLengthDivisions: c.ArcLengthDivisions,
 	}
 }
 
-func (c *baseCurve) Copy(source baseCurve) *baseCurve {
+func (c *baseCurve[T]) Copy(source baseCurve[T]) *baseCurve[T] {
 	c.ArcLengthDivisions = source.ArcLengthDivisions
 	return c
 }

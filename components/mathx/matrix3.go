@@ -1,30 +1,34 @@
 package mathx
 
-import "math"
+import (
+	"math"
 
-type Matrix3 [9]float64
+	"golang.org/x/exp/constraints"
+)
 
-func NewMatrix3(n11, n12, n13, n21, n22, n23, n31, n32, n33 float64) *Matrix3 {
-	return &Matrix3{
+type Matrix3[T constraints.Float] [9]T
+
+func NewMatrix3[T constraints.Float](n11, n12, n13, n21, n22, n23, n31, n32, n33 T) *Matrix3[T] {
+	return &Matrix3[T]{
 		n11, n12, n13,
 		n21, n22, n23,
 		n31, n32, n33,
 	}
 }
 
-func NewMatrix3Identity() *Matrix3 {
-	m := &Matrix3{}
+func NewMatrix3Identity[T constraints.Float]() *Matrix3[T] {
+	m := &Matrix3[T]{}
 	return m.Identity()
 }
 
-func (m *Matrix3) Set(n11, n12, n13, n21, n22, n23, n31, n32, n33 float64) *Matrix3 {
+func (m *Matrix3[T]) Set(n11, n12, n13, n21, n22, n23, n31, n32, n33 T) *Matrix3[T] {
 	m[0], m[1], m[2] = n11, n12, n13
 	m[3], m[4], m[5] = n21, n22, n23
 	m[6], m[7], m[8] = n31, n32, n33
 	return m
 }
 
-func (m *Matrix3) Identity() *Matrix3 {
+func (m *Matrix3[T]) Identity() *Matrix3[T] {
 	return m.Set(
 		1, 0, 0,
 		0, 1, 0,
@@ -32,12 +36,12 @@ func (m *Matrix3) Identity() *Matrix3 {
 	)
 }
 
-func (m *Matrix3) Copy(matrix Matrix3) *Matrix3 {
+func (m *Matrix3[T]) Copy(matrix Matrix3[T]) *Matrix3[T] {
 	copy(m[:], matrix[:])
 	return m
 }
 
-func (m *Matrix3) SetFromMatrix4(me Matrix4) *Matrix3 {
+func (m *Matrix3[T]) SetFromMatrix4(me Matrix4[T]) *Matrix3[T] {
 	return m.Set(
 		me[0], me[4], me[8],
 		me[1], me[5], me[9],
@@ -45,7 +49,7 @@ func (m *Matrix3) SetFromMatrix4(me Matrix4) *Matrix3 {
 	)
 }
 
-func (m *Matrix3) Multiply(matrix Matrix3) *Matrix3 {
+func (m *Matrix3[T]) Multiply(matrix Matrix3[T]) *Matrix3[T] {
 	a11, a12, a13 := m[0], m[3], m[6]
 	a21, a22, a23 := m[1], m[4], m[7]
 	a31, a32, a33 := m[2], m[5], m[8]
@@ -69,29 +73,29 @@ func (m *Matrix3) Multiply(matrix Matrix3) *Matrix3 {
 	return m
 }
 
-func (m *Matrix3) Premultiply(matrix Matrix3) *Matrix3 {
+func (m *Matrix3[T]) Premultiply(matrix Matrix3[T]) *Matrix3[T] {
 	return MultiplyMatrices(matrix, *m)
 }
 
-func MultiplyMatrices(a, b Matrix3) *Matrix3 {
+func MultiplyMatrices[T constraints.Float](a, b Matrix3[T]) *Matrix3[T] {
 	return a.Clone().Multiply(b)
 }
 
-func (m *Matrix3) MultiplyScalar(s float64) *Matrix3 {
+func (m *Matrix3[T]) MultiplyScalar(s T) *Matrix3[T] {
 	for i := 0; i < 9; i++ {
 		m[i] *= s
 	}
 	return m
 }
 
-func (m *Matrix3) Demrminant() float64 {
+func (m *Matrix3[T]) Demrminant() T {
 	a, b, c := m[0], m[1], m[2]
 	d, e, f := m[3], m[4], m[5]
 	g, h, i := m[6], m[7], m[8]
 	return a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g
 }
 
-func (m *Matrix3) Invert() *Matrix3 {
+func (m *Matrix3[T]) Invert() *Matrix3[T] {
 	n11, n21, n31 := m[0], m[1], m[2]
 	n12, n22, n32 := m[3], m[4], m[5]
 	n13, n23, n33 := m[6], m[7], m[8]
@@ -126,8 +130,8 @@ func (m *Matrix3) Invert() *Matrix3 {
 	return m
 }
 
-func (m *Matrix3) Transpose() *Matrix3 {
-	tmp := 0.0
+func (m *Matrix3[T]) Transpose() *Matrix3[T] {
+	tmp := T(0.0)
 	tmp = m[1]
 	m[1] = m[3]
 	m[3] = tmp
@@ -143,11 +147,11 @@ func (m *Matrix3) Transpose() *Matrix3 {
 	return m
 }
 
-func (m *Matrix3) NormalMatrix(matrix4 Matrix4) *Matrix3 {
+func (m *Matrix3[T]) NormalMatrix(matrix4 Matrix4[T]) *Matrix3[T] {
 	return m.SetFromMatrix4(matrix4).Invert().Transpose()
 }
 
-func (m *Matrix3) TransposeIntoArray(r []float64) *Matrix3 {
+func (m *Matrix3[T]) TransposeIntoArray(r []T) *Matrix3[T] {
 	r[0] = m[0]
 	r[1] = m[3]
 	r[2] = m[6]
@@ -160,9 +164,9 @@ func (m *Matrix3) TransposeIntoArray(r []float64) *Matrix3 {
 	return m
 }
 
-func (m *Matrix3) SetUvTransform(tx, ty, sx, sy, rotation, cx, cy float64) *Matrix3 {
-	c := math.Cos(rotation)
-	s := math.Sin(rotation)
+func (m *Matrix3[T]) SetUvTransform(tx, ty, sx, sy, rotation, cx, cy T) *Matrix3[T] {
+	c := T(math.Cos(float64(rotation)))
+	s := T(math.Sin(float64(rotation)))
 
 	return m.Set(
 		sx*c, sx*s, -sx*(c*cx+s*cy)+cx+tx,
@@ -172,19 +176,19 @@ func (m *Matrix3) SetUvTransform(tx, ty, sx, sy, rotation, cx, cy float64) *Matr
 
 }
 
-func (m *Matrix3) Scale(sx, sy float64) *Matrix3 {
-	return m.Premultiply(*NewMatrix3Identity().MakeScale(sx, sy))
+func (m *Matrix3[T]) Scale(sx, sy T) *Matrix3[T] {
+	return m.Premultiply(*NewMatrix3Identity[T]().MakeScale(sx, sy))
 }
 
-func (m *Matrix3) Rotam(theta float64) *Matrix3 {
-	return m.Premultiply(*NewMatrix3Identity().MakeRotation(-theta))
+func (m *Matrix3[T]) Rotam(theta T) *Matrix3[T] {
+	return m.Premultiply(*NewMatrix3Identity[T]().MakeRotation(-theta))
 }
 
-func (m *Matrix3) Translam(tx, ty float64) *Matrix3 {
-	return m.Premultiply(*NewMatrix3Identity().MakeTranslation(tx, ty))
+func (m *Matrix3[T]) Translam(tx, ty T) *Matrix3[T] {
+	return m.Premultiply(*NewMatrix3Identity[T]().MakeTranslation(tx, ty))
 }
 
-func (m *Matrix3) MakeTranslation(x, y float64) *Matrix3 {
+func (m *Matrix3[T]) MakeTranslation(x, y T) *Matrix3[T] {
 	return m.Set(
 		1, 0, x,
 		0, 1, y,
@@ -193,9 +197,9 @@ func (m *Matrix3) MakeTranslation(x, y float64) *Matrix3 {
 
 }
 
-func (m *Matrix3) MakeRotation(theta float64) *Matrix3 {
-	c := math.Cos(theta)
-	s := math.Sin(theta)
+func (m *Matrix3[T]) MakeRotation(theta T) *Matrix3[T] {
+	c := T(math.Cos(float64(theta)))
+	s := T(math.Sin(float64(theta)))
 
 	return m.Set(
 		c, -s, 0,
@@ -205,7 +209,7 @@ func (m *Matrix3) MakeRotation(theta float64) *Matrix3 {
 
 }
 
-func (m *Matrix3) MakeScale(x, y float64) *Matrix3 {
+func (m *Matrix3[T]) MakeScale(x, y T) *Matrix3[T] {
 	return m.Set(
 		x, 0, 0,
 		0, y, 0,
@@ -213,7 +217,7 @@ func (m *Matrix3) MakeScale(x, y float64) *Matrix3 {
 	)
 }
 
-func (m *Matrix3) Equals(matrix Matrix3) bool {
+func (m *Matrix3[T]) Equals(matrix Matrix3[T]) bool {
 	for i := 0; i < 9; i++ {
 		if m[i] != matrix[i] {
 			return false
@@ -223,14 +227,14 @@ func (m *Matrix3) Equals(matrix Matrix3) bool {
 	return true
 }
 
-func (m *Matrix3) FromArray(array []float64, offset int) *Matrix3 {
+func (m *Matrix3[T]) FromArray(array []T, offset int) *Matrix3[T] {
 	for i := 0; i < 9; i++ {
 		m[i] = array[i+offset]
 	}
 	return m
 }
 
-func (m *Matrix3) ToArray(array []float64, offset int) []float64 {
+func (m *Matrix3[T]) ToArray(array []T, offset int) []T {
 	for i := 0; i < 9; i++ {
 		array[i+offset] = m[i]
 	}
@@ -238,6 +242,6 @@ func (m *Matrix3) ToArray(array []float64, offset int) []float64 {
 	return array
 }
 
-func (m *Matrix3) Clone() *Matrix3 {
-	return NewMatrix3Identity().FromArray(m[:], 0)
+func (m *Matrix3[T]) Clone() *Matrix3[T] {
+	return NewMatrix3Identity[T]().FromArray(m[:], 0)
 }
