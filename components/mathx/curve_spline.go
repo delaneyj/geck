@@ -39,9 +39,9 @@ func (c *SplineCurve[T]) Point(t T) *Vector3[T] {
 	}
 
 	point.Set(
-		CatmullRom[T](weight, p0.X, p1.X, p2.X, p3.X),
-		CatmullRom[T](weight, p0.Y, p1.Y, p2.Y, p3.Y),
-		CatmullRom[T](weight, p0.Z, p1.Z, p2.Z, p3.Z),
+		CatmullRom(weight, p0.X, p1.X, p2.X, p3.X),
+		CatmullRom(weight, p0.Y, p1.Y, p2.Y, p3.Y),
+		CatmullRom(weight, p0.Z, p1.Z, p2.Z, p3.Z),
 	)
 
 	return point

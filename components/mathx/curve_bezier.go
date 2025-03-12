@@ -22,10 +22,10 @@ func (c *CubicBezierCurve[T]) Point(t T) *Vector3[T] {
 	v1 := c.V1
 	v2 := c.V2
 	v3 := c.V3
-	return NewVector3[T](
-		CubicBezier[T](t, v0.X, v1.X, v2.X, v3.X),
-		CubicBezier[T](t, v0.Y, v1.Y, v2.Y, v3.Y),
-		CubicBezier[T](t, v0.Z, v1.Z, v2.Z, v3.Z),
+	return NewVector3(
+		CubicBezier(t, v0.X, v1.X, v2.X, v3.X),
+		CubicBezier(t, v0.Y, v1.Y, v2.Y, v3.Y),
+		CubicBezier(t, v0.Z, v1.Z, v2.Z, v3.Z),
 	)
 }
 

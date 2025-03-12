@@ -131,8 +131,7 @@ func (m *Matrix3[T]) Invert() *Matrix3[T] {
 }
 
 func (m *Matrix3[T]) Transpose() *Matrix3[T] {
-	tmp := T(0.0)
-	tmp = m[1]
+	tmp := m[1]
 	m[1] = m[3]
 	m[3] = tmp
 

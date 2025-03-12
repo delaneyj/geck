@@ -72,7 +72,7 @@ func (v *Vector3[T]) Component(index int) T {
 }
 
 func (v *Vector3[T]) Clone() *Vector3[T] {
-	return NewVector3[T](v.X, v.Y, v.Z)
+	return NewVector3(v.X, v.Y, v.Z)
 }
 
 func (v *Vector3[T]) Copy(vector Vector3[T]) *Vector3[T] {
@@ -97,7 +97,7 @@ func (v *Vector3[T]) AddScalar(scalar T) *Vector3[T] {
 }
 
 func AddVector3s[T constraints.Float](a, b Vector3[T]) *Vector3[T] {
-	return NewVector3[T](a.X+b.X, a.Y+b.Y, a.Z+b.Z)
+	return NewVector3(a.X+b.X, a.Y+b.Y, a.Z+b.Z)
 }
 
 func (v *Vector3[T]) AddScaledVector(vector Vector3[T], scalar T) *Vector3[T] {
@@ -122,7 +122,7 @@ func (v *Vector3[T]) SubScalar(scalar T) *Vector3[T] {
 }
 
 func SubVector3s[T constraints.Float](a, b Vector3[T]) *Vector3[T] {
-	return NewVector3[T](a.X-b.X, a.Y-b.Y, a.Z-b.Z)
+	return NewVector3(a.X-b.X, a.Y-b.Y, a.Z-b.Z)
 }
 
 func (v *Vector3[T]) Multiply(v2 Vector3[T]) *Vector3[T] {
@@ -140,7 +140,7 @@ func (v *Vector3[T]) MultiplyScalar(scalar T) *Vector3[T] {
 }
 
 func MultiplyVector3s[T constraints.Float](a, b Vector3[T]) *Vector3[T] {
-	return NewVector3[T](a.X*b.X, a.Y*b.Y, a.Z*b.Z)
+	return NewVector3(a.X*b.X, a.Y*b.Y, a.Z*b.Z)
 }
 
 func (v *Vector3[T]) ApplyEuler(e Euler[T]) *Vector3[T] {
@@ -313,7 +313,7 @@ func (v *Vector3[T]) Lerp(v2 Vector3[T], alpha T) *Vector3[T] {
 }
 
 func LerpVector3s[T constraints.Float](v1, v2 Vector3[T], alpha T) *Vector3[T] {
-	return NewVector3[T](
+	return NewVector3(
 		v1.X+(v2.X-v1.X)*alpha,
 		v1.Y+(v2.Y-v1.Y)*alpha,
 		v1.Z+(v2.Z-v1.Z)*alpha,
