@@ -129,6 +129,14 @@ func (w *World) Has{%s nsp %}(e Entity) bool {
     return w.{%s ss %}.Contains(e)
 }
 
+func (w *World) {%s npp %}Count() int {
+    return w.{%s ss %}.Len()
+}
+
+func (w *World) {%s npp %}Capacity() int {
+    return w.{%s ss %}.Cap()
+}
+
 func (w *World) All{%s npp %}(yield func(e Entity, c {%s nsp %}Component) bool) {
     for e, c := range w.{%s ss %}.All {
         if !yield(e, c) {

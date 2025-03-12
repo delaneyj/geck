@@ -23,7 +23,15 @@ func (w *World) HasSpacestationTag(entity Entity) bool {
 	return w.spacestationTags.Contains(entity)
 }
 
-func (w *World) AllSpacestationTags(yield func(e Entity) bool) {
+func (w *World) SpacestationTagCount() int {
+	return w.spacestationTags.Len()
+}
+
+func (w *World) SpacestationTagCapacity() int {
+	return w.spacestationTags.Cap()
+}
+
+func (w *World) AllSpacestationEntities(yield func(e Entity) bool) {
 	for e := range w.spacestationTags.All {
 		if !yield(e) {
 			break

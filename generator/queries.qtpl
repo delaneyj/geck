@@ -17,7 +17,7 @@ if first.IsMutable {
 }
 firstIterName += first.Name.Plural.Pascal
 
-firstSparseSetName := first.Name.Singular.Camel
+firstSparseSetName := first.Name.Plural.Camel
 if first.ComponentOrTag.IsTag {
     firstSparseSetName += "Tags"
 } else {
@@ -43,8 +43,12 @@ func(w *World) Query{%s data.Name.Singular.Pascal %}(yield {%s iterName %}) {
     var ok bool
     {% endif %}
 
-    for e, first := range w.{%s firstIterName %} {
-        args.{%s first.Name.Singular.Pascal %} = first
+    {%- if first.ComponentOrTag.IsTag -%}
+    for e := range w.{%s firstIterName %}Entities {
+    {%- else -%}
+    for e, first := range w.{%s firstIterName %}Entities {
+        args.{%s first.Name.Plural.Pascal %} = first
+    {%- endif -%}
         ok  = true
 
         {%- for _, e := range rest -%}

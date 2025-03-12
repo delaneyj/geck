@@ -88,6 +88,14 @@ func (w *World) HasPosition(e Entity) bool {
 	return w.positionComponents.Contains(e)
 }
 
+func (w *World) PositionsCount() int {
+	return w.positionComponents.Len()
+}
+
+func (w *World) PositionsCapacity() int {
+	return w.positionComponents.Cap()
+}
+
 func (w *World) AllPositions(yield func(e Entity, c PositionComponent) bool) {
 	for e, c := range w.positionComponents.All {
 		if !yield(e, c) {

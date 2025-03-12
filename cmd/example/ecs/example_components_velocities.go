@@ -88,6 +88,14 @@ func (w *World) HasVelocity(e Entity) bool {
 	return w.velocityComponents.Contains(e)
 }
 
+func (w *World) VelocitiesCount() int {
+	return w.velocityComponents.Len()
+}
+
+func (w *World) VelocitiesCapacity() int {
+	return w.velocityComponents.Cap()
+}
+
 func (w *World) AllVelocities(yield func(e Entity, c VelocityComponent) bool) {
 	for e, c := range w.velocityComponents.All {
 		if !yield(e, c) {

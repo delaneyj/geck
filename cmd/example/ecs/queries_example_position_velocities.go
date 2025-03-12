@@ -13,8 +13,8 @@ func (w *World) QueryExamplePositionVelocity(yield queryExamplePositionVelocitie
 
 	var ok bool
 
-	for e, first := range w.AllVelocities {
-		args.Velocity = first
+	for e, first := range w.AllVelocitiesEntities {
+		args.Velocities = first
 		ok = true
 
 		args.Position, ok = w.MutablePosition(e)

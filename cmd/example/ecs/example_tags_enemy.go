@@ -23,7 +23,15 @@ func (w *World) HasEnemyTag(entity Entity) bool {
 	return w.enemyTags.Contains(entity)
 }
 
-func (w *World) AllEnemyTags(yield func(e Entity) bool) {
+func (w *World) EnemyTagCount() int {
+	return w.enemyTags.Len()
+}
+
+func (w *World) EnemyTagCapacity() int {
+	return w.enemyTags.Cap()
+}
+
+func (w *World) AllEnemyEntities(yield func(e Entity) bool) {
 	for e := range w.enemyTags.All {
 		if !yield(e) {
 			break

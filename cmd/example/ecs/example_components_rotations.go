@@ -95,6 +95,14 @@ func (w *World) HasRotation(e Entity) bool {
 	return w.rotationComponents.Contains(e)
 }
 
+func (w *World) RotationsCount() int {
+	return w.rotationComponents.Len()
+}
+
+func (w *World) RotationsCapacity() int {
+	return w.rotationComponents.Cap()
+}
+
 func (w *World) AllRotations(yield func(e Entity, c RotationComponent) bool) {
 	for e, c := range w.rotationComponents.All {
 		if !yield(e, c) {

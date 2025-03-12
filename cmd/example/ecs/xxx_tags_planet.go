@@ -23,7 +23,15 @@ func (w *World) HasPlanetTag(entity Entity) bool {
 	return w.planetTags.Contains(entity)
 }
 
-func (w *World) AllPlanetTags(yield func(e Entity) bool) {
+func (w *World) PlanetTagCount() int {
+	return w.planetTags.Len()
+}
+
+func (w *World) PlanetTagCapacity() int {
+	return w.planetTags.Cap()
+}
+
+func (w *World) AllPlanetEntities(yield func(e Entity) bool) {
 	for e := range w.planetTags.All {
 		if !yield(e) {
 			break

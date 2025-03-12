@@ -45,7 +45,7 @@ import "sort"
 	}
 	firstIterName += first.Name.Plural.Pascal
 
-	firstSparseSetName := first.Name.Singular.Camel
+	firstSparseSetName := first.Name.Plural.Camel
 	if first.ComponentOrTag.IsTag {
 		firstSparseSetName += "Tags"
 	} else {
@@ -133,84 +133,101 @@ func(w *World) Query`)
 //line generator/queries.qtpl:44
 	qw422016.N().S(`
 
-    for e, first := range w.`)
+`)
 //line generator/queries.qtpl:46
-	qw422016.E().S(firstIterName)
+	if first.ComponentOrTag.IsTag {
 //line generator/queries.qtpl:46
-	qw422016.N().S(` {
+		qw422016.N().S(`    for e := range w.`)
+//line generator/queries.qtpl:47
+		qw422016.E().S(firstIterName)
+//line generator/queries.qtpl:47
+		qw422016.N().S(`Entities {
+`)
+//line generator/queries.qtpl:48
+	} else {
+//line generator/queries.qtpl:48
+		qw422016.N().S(`    for e, first := range w.`)
+//line generator/queries.qtpl:49
+		qw422016.E().S(firstIterName)
+//line generator/queries.qtpl:49
+		qw422016.N().S(`Entities {
         args.`)
-//line generator/queries.qtpl:47
-	qw422016.E().S(first.Name.Singular.Pascal)
-//line generator/queries.qtpl:47
-	qw422016.N().S(` = first
-        ok  = true
+//line generator/queries.qtpl:50
+		qw422016.E().S(first.Name.Plural.Pascal)
+//line generator/queries.qtpl:50
+		qw422016.N().S(` = first
+`)
+//line generator/queries.qtpl:51
+	}
+//line generator/queries.qtpl:51
+	qw422016.N().S(`        ok  = true
 
 `)
-//line generator/queries.qtpl:50
+//line generator/queries.qtpl:54
 	for _, e := range rest {
-//line generator/queries.qtpl:50
+//line generator/queries.qtpl:54
 		qw422016.N().S(`            `)
-//line generator/queries.qtpl:51
+//line generator/queries.qtpl:55
 		if e.ComponentOrTag.IsTag {
-//line generator/queries.qtpl:51
+//line generator/queries.qtpl:55
 			qw422016.N().S(`
             if !w.Has`)
-//line generator/queries.qtpl:52
+//line generator/queries.qtpl:56
 			qw422016.E().S(e.Name.Singular.Pascal)
-//line generator/queries.qtpl:52
+//line generator/queries.qtpl:56
 			qw422016.N().S(`Tag(e) {
                 continue
             }
             `)
-//line generator/queries.qtpl:55
+//line generator/queries.qtpl:59
 		} else {
-//line generator/queries.qtpl:55
+//line generator/queries.qtpl:59
 			qw422016.N().S(`
                 `)
-//line generator/queries.qtpl:56
+//line generator/queries.qtpl:60
 			if e.IsMutable {
-//line generator/queries.qtpl:56
+//line generator/queries.qtpl:60
 				qw422016.N().S(`
             args.`)
-//line generator/queries.qtpl:57
+//line generator/queries.qtpl:61
 				qw422016.E().S(e.Name.Singular.Pascal)
-//line generator/queries.qtpl:57
+//line generator/queries.qtpl:61
 				qw422016.N().S(`, ok = w.Mutable`)
-//line generator/queries.qtpl:57
+//line generator/queries.qtpl:61
 				qw422016.E().S(e.Name.Singular.Pascal)
-//line generator/queries.qtpl:57
+//line generator/queries.qtpl:61
 				qw422016.N().S(`(e)
                 `)
-//line generator/queries.qtpl:58
+//line generator/queries.qtpl:62
 			} else {
-//line generator/queries.qtpl:58
+//line generator/queries.qtpl:62
 				qw422016.N().S(`
             args.`)
-//line generator/queries.qtpl:59
+//line generator/queries.qtpl:63
 				qw422016.E().S(e.Name.Singular.Pascal)
-//line generator/queries.qtpl:59
+//line generator/queries.qtpl:63
 				qw422016.N().S(`, ok = w.`)
-//line generator/queries.qtpl:59
+//line generator/queries.qtpl:63
 				qw422016.E().S(e.Name.Singular.Pascal)
-//line generator/queries.qtpl:59
+//line generator/queries.qtpl:63
 				qw422016.N().S(`(e)
                 `)
-//line generator/queries.qtpl:60
+//line generator/queries.qtpl:64
 			}
-//line generator/queries.qtpl:60
+//line generator/queries.qtpl:64
 			qw422016.N().S(`
             `)
-//line generator/queries.qtpl:61
+//line generator/queries.qtpl:65
 		}
-//line generator/queries.qtpl:61
+//line generator/queries.qtpl:65
 		qw422016.N().S(`
             if !ok {
                 continue
             }
 `)
-//line generator/queries.qtpl:65
+//line generator/queries.qtpl:69
 	}
-//line generator/queries.qtpl:65
+//line generator/queries.qtpl:69
 	qw422016.N().S(`
 
         if !yield(e, args) {
@@ -220,45 +237,45 @@ func(w *World) Query`)
 }
 
 func(w *World) Query`)
-//line generator/queries.qtpl:74
+//line generator/queries.qtpl:78
 	qw422016.E().S(data.Name.Singular.Pascal)
-//line generator/queries.qtpl:74
+//line generator/queries.qtpl:78
 	qw422016.N().S(`Entities(yield func(e Entity) bool) {
     for e := range w.`)
-//line generator/queries.qtpl:75
+//line generator/queries.qtpl:79
 	qw422016.E().S(firstIterName)
-//line generator/queries.qtpl:75
+//line generator/queries.qtpl:79
 	qw422016.N().S(`Entities {
 `)
-//line generator/queries.qtpl:76
+//line generator/queries.qtpl:80
 	for _, e := range rest {
-//line generator/queries.qtpl:77
+//line generator/queries.qtpl:81
 		if e.ComponentOrTag.IsTag {
-//line generator/queries.qtpl:77
+//line generator/queries.qtpl:81
 			qw422016.N().S(`            if !w.Has`)
-//line generator/queries.qtpl:78
+//line generator/queries.qtpl:82
 			qw422016.E().S(e.Name.Singular.Pascal)
-//line generator/queries.qtpl:78
+//line generator/queries.qtpl:82
 			qw422016.N().S(`Tag(e) {
                 continue
             }
 `)
-//line generator/queries.qtpl:81
+//line generator/queries.qtpl:85
 		} else {
-//line generator/queries.qtpl:81
+//line generator/queries.qtpl:85
 			qw422016.N().S(`            if !w.Has`)
-//line generator/queries.qtpl:82
+//line generator/queries.qtpl:86
 			qw422016.E().S(e.Name.Singular.Pascal)
-//line generator/queries.qtpl:82
+//line generator/queries.qtpl:86
 			qw422016.N().S(`(e) {
                 continue
             }
 `)
-//line generator/queries.qtpl:85
+//line generator/queries.qtpl:89
 		}
-//line generator/queries.qtpl:86
+//line generator/queries.qtpl:90
 	}
-//line generator/queries.qtpl:86
+//line generator/queries.qtpl:90
 	qw422016.N().S(`
         if !yield(e) {
             break
@@ -267,31 +284,31 @@ func(w *World) Query`)
 }
 
 `)
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 }
 
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 func writequeryTemplate(qq422016 qtio422016.Writer, data *queryTmplData) {
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 	streamqueryTemplate(qw422016, data)
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 	qt422016.ReleaseWriter(qw422016)
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 }
 
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 func queryTemplate(data *queryTmplData) string {
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 	writequeryTemplate(qb422016, data)
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 	qs422016 := string(qb422016.B)
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 	return qs422016
-//line generator/queries.qtpl:94
+//line generator/queries.qtpl:98
 }

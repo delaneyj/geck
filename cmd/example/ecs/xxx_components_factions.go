@@ -64,6 +64,14 @@ func (w *World) HasFaction(e Entity) bool {
 	return w.factionComponents.Contains(e)
 }
 
+func (w *World) FactionsCount() int {
+	return w.factionComponents.Len()
+}
+
+func (w *World) FactionsCapacity() int {
+	return w.factionComponents.Cap()
+}
+
 func (w *World) AllFactions(yield func(e Entity, c FactionComponent) bool) {
 	for e, c := range w.factionComponents.All {
 		if !yield(e, c) {

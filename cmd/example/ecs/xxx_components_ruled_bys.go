@@ -64,6 +64,14 @@ func (w *World) HasRuledBy(e Entity) bool {
 	return w.ruledByComponents.Contains(e)
 }
 
+func (w *World) RuledBysCount() int {
+	return w.ruledByComponents.Len()
+}
+
+func (w *World) RuledBysCapacity() int {
+	return w.ruledByComponents.Cap()
+}
+
 func (w *World) AllRuledBys(yield func(e Entity, c RuledByComponent) bool) {
 	for e, c := range w.ruledByComponents.All {
 		if !yield(e, c) {

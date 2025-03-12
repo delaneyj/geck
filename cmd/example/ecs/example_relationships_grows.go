@@ -5,8 +5,7 @@ import (
 )
 
 type GrowsRelationshipPair struct {
-	From Entity
-	To   Entity
+	From, To Entity
 }
 
 type GrowsRelationship struct {
@@ -15,7 +14,7 @@ type GrowsRelationship struct {
 
 func NewGrowsRelationship() *GrowsRelationship {
 	return &GrowsRelationship{
-		btree: btree.NewBTreeG[GrowsRelationshipPair](func(a, b GrowsRelationshipPair) bool {
+		btree: btree.NewBTreeG(func(a, b GrowsRelationshipPair) bool {
 			ati, bti := a.To.Index(), b.To.Index()
 			if ati == bti {
 				return a.From.Index() < b.From.Index()
@@ -33,27 +32,18 @@ func (w *World) LinkGrows(
 	to, from Entity,
 ) {
 	pair := GrowsRelationshipPair{
-		From: from,
-		To:   to,
+		From: from, To: to,
 	}
-
 	w.growsRelationships.btree.Set(pair)
 }
 
 func (w *World) UnlinkGrows(from, to Entity) {
-	pair := GrowsRelationshipPair{
-		From: from,
-		To:   to,
-	}
+	pair := GrowsRelationshipPair{From: from, To: to}
 	w.growsRelationships.btree.Delete(pair)
 }
 
 func (w *World) GrowsIsLinked(from, to Entity) bool {
-	pair := GrowsRelationshipPair{
-		From: from,
-		To:   to,
-	}
-
+	pair := GrowsRelationshipPair{From: from, To: to}
 	_, ok := w.growsRelationships.btree.Get(pair)
 	return ok
 }
@@ -63,7 +53,6 @@ func (w *World) Grows(to Entity) func(yield func(from Entity) bool) {
 		iter := w.growsRelationships.btree.Iter()
 		iter.Seek(GrowsRelationshipPair{To: to})
 		end := GrowsRelationshipPair{To: to + 1}
-
 		for iter.Next() {
 			item := iter.Item()
 			if item.To >= end.To {
@@ -79,11 +68,7 @@ func (w *World) Grows(to Entity) func(yield func(from Entity) bool) {
 
 func (w *World) RemoveGrowsRelationships(to Entity, froms ...Entity) {
 	for _, from := range froms {
-		pair := GrowsRelationshipPair{
-			To:   to,
-			From: from,
-		}
-
+		pair := GrowsRelationshipPair{From: from, To: to}
 		w.growsRelationships.btree.Delete(pair)
 	}
 }
@@ -91,13 +76,11 @@ func (w *World) RemoveGrowsRelationships(to Entity, froms ...Entity) {
 func (w *World) RemoveAllGrowsRelationships(to Entity) {
 	iter := w.growsRelationships.btree.Iter()
 	end := GrowsRelationshipPair{To: to + 1}
-
 	for iter.Next() {
 		item := iter.Item()
 		if item.To >= end.To {
 			break
 		}
-
 		w.growsRelationships.btree.Delete(item)
 	}
 }

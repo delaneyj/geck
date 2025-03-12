@@ -112,15 +112,39 @@ func (w *World) Has`)
 	qw422016.N().S(`.Contains(entity)
 }
 
-func (w *World) All`)
+func (w *World) `)
 //line generator/tags.qtpl:41
 	qw422016.E().S(nsp)
 //line generator/tags.qtpl:41
-	qw422016.N().S(`Tags(yield func(e Entity) bool) {
-    for e := range w.`)
+	qw422016.N().S(`TagCount() int {
+    return w.`)
 //line generator/tags.qtpl:42
 	qw422016.E().S(ss)
 //line generator/tags.qtpl:42
+	qw422016.N().S(`.Len()
+}
+
+func (w *World) `)
+//line generator/tags.qtpl:45
+	qw422016.E().S(nsp)
+//line generator/tags.qtpl:45
+	qw422016.N().S(`TagCapacity() int {
+    return w.`)
+//line generator/tags.qtpl:46
+	qw422016.E().S(ss)
+//line generator/tags.qtpl:46
+	qw422016.N().S(`.Cap()
+}
+
+func (w *World) All`)
+//line generator/tags.qtpl:49
+	qw422016.E().S(nsp)
+//line generator/tags.qtpl:49
+	qw422016.N().S(`Entities(yield func(e Entity) bool) {
+    for e := range w.`)
+//line generator/tags.qtpl:50
+	qw422016.E().S(ss)
+//line generator/tags.qtpl:50
 	qw422016.N().S(`.All {
         if !yield(e) {
             break
@@ -129,81 +153,81 @@ func (w *World) All`)
 }
 
 // `)
-//line generator/tags.qtpl:49
+//line generator/tags.qtpl:57
 	qw422016.E().S(nsp)
-//line generator/tags.qtpl:49
+//line generator/tags.qtpl:57
 	qw422016.N().S(`Builder
 func With`)
-//line generator/tags.qtpl:50
+//line generator/tags.qtpl:58
 	qw422016.E().S(nsp)
-//line generator/tags.qtpl:50
+//line generator/tags.qtpl:58
 	qw422016.N().S(`Tag() EntityBuilderOption {
     return func(w *World, e Entity) {
         w.`)
-//line generator/tags.qtpl:52
+//line generator/tags.qtpl:60
 	qw422016.E().S(ss)
-//line generator/tags.qtpl:52
+//line generator/tags.qtpl:60
 	qw422016.N().S(`.Upsert(e, empty{})
     }
 }
 
 // Resource
 func (w *World) ResourceUpsert`)
-//line generator/tags.qtpl:57
+//line generator/tags.qtpl:65
 	qw422016.E().S(nsp)
-//line generator/tags.qtpl:57
+//line generator/tags.qtpl:65
 	qw422016.N().S(`Tag() {
     w.`)
-//line generator/tags.qtpl:58
+//line generator/tags.qtpl:66
 	qw422016.E().S(nsc)
-//line generator/tags.qtpl:58
+//line generator/tags.qtpl:66
 	qw422016.N().S(`Tags.Upsert(w.resourceEntity, empty{})
 }
 
 func (w *World) ResourceRemove`)
-//line generator/tags.qtpl:61
+//line generator/tags.qtpl:69
 	qw422016.E().S(nsp)
-//line generator/tags.qtpl:61
+//line generator/tags.qtpl:69
 	qw422016.N().S(`Tag() {
     w.`)
-//line generator/tags.qtpl:62
+//line generator/tags.qtpl:70
 	qw422016.E().S(nsc)
-//line generator/tags.qtpl:62
+//line generator/tags.qtpl:70
 	qw422016.N().S(`Tags.Remove(w.resourceEntity)
 }
 
 func (w *World) ResourceHas`)
-//line generator/tags.qtpl:65
+//line generator/tags.qtpl:73
 	qw422016.E().S(nsp)
-//line generator/tags.qtpl:65
+//line generator/tags.qtpl:73
 	qw422016.N().S(`Tag() bool {
     return w.`)
-//line generator/tags.qtpl:66
+//line generator/tags.qtpl:74
 	qw422016.E().S(nsc)
-//line generator/tags.qtpl:66
+//line generator/tags.qtpl:74
 	qw422016.N().S(`Tags.Contains(w.resourceEntity)
 }
 
 // Events
 `)
-//line generator/tags.qtpl:70
+//line generator/tags.qtpl:78
 	if data.ShouldGenAdded {
-//line generator/tags.qtpl:70
+//line generator/tags.qtpl:78
 		qw422016.N().S(`type `)
-//line generator/tags.qtpl:71
+//line generator/tags.qtpl:79
 		qw422016.E().S(nsp)
-//line generator/tags.qtpl:71
+//line generator/tags.qtpl:79
 		qw422016.N().S(`AddedEvent struct {
     Entities []Entity
 }
 func (w *World) On`)
-//line generator/tags.qtpl:74
+//line generator/tags.qtpl:82
 		qw422016.E().S(nsp)
-//line generator/tags.qtpl:74
+//line generator/tags.qtpl:82
 		qw422016.N().S(`Added(fn func(evt `)
-//line generator/tags.qtpl:74
+//line generator/tags.qtpl:82
 		qw422016.E().S(nsp)
-//line generator/tags.qtpl:74
+//line generator/tags.qtpl:82
 		qw422016.N().S(`AddedEvent)) UnsubscribeFunc {
     unsub := mint.On(w.eventBus, fn)
     return func() {
@@ -211,29 +235,29 @@ func (w *World) On`)
     }
 }
 `)
-//line generator/tags.qtpl:80
+//line generator/tags.qtpl:88
 	}
-//line generator/tags.qtpl:80
+//line generator/tags.qtpl:88
 	qw422016.N().S(`
 `)
-//line generator/tags.qtpl:82
+//line generator/tags.qtpl:90
 	if data.ShouldGenRemoved {
-//line generator/tags.qtpl:82
+//line generator/tags.qtpl:90
 		qw422016.N().S(`type `)
-//line generator/tags.qtpl:83
+//line generator/tags.qtpl:91
 		qw422016.E().S(nsp)
-//line generator/tags.qtpl:83
+//line generator/tags.qtpl:91
 		qw422016.N().S(`RemovedEvent struct {
     Entities []Entity
 }
 func (w *World) On`)
-//line generator/tags.qtpl:86
+//line generator/tags.qtpl:94
 		qw422016.E().S(nsp)
-//line generator/tags.qtpl:86
+//line generator/tags.qtpl:94
 		qw422016.N().S(`Removed(fn func(evt `)
-//line generator/tags.qtpl:86
+//line generator/tags.qtpl:94
 		qw422016.E().S(nsp)
-//line generator/tags.qtpl:86
+//line generator/tags.qtpl:94
 		qw422016.N().S(`RemovedEvent)) UnsubscribeFunc {
     unsub := mint.On(w.eventBus, fn)
     return func() {
@@ -241,36 +265,36 @@ func (w *World) On`)
     }
 }
 `)
-//line generator/tags.qtpl:92
+//line generator/tags.qtpl:100
 	}
-//line generator/tags.qtpl:92
+//line generator/tags.qtpl:100
 	qw422016.N().S(`
 `)
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 }
 
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 func writetagTemplate(qq422016 qtio422016.Writer, data *componentTmplData) {
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 	streamtagTemplate(qw422016, data)
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 	qt422016.ReleaseWriter(qw422016)
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 }
 
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 func tagTemplate(data *componentTmplData) string {
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 	writetagTemplate(qb422016, data)
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 	qs422016 := string(qb422016.B)
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 	return qs422016
-//line generator/tags.qtpl:94
+//line generator/tags.qtpl:102
 }

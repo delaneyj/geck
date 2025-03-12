@@ -64,6 +64,14 @@ func (w *World) HasGravity(e Entity) bool {
 	return w.gravityComponents.Contains(e)
 }
 
+func (w *World) GravitiesCount() int {
+	return w.gravityComponents.Len()
+}
+
+func (w *World) GravitiesCapacity() int {
+	return w.gravityComponents.Cap()
+}
+
 func (w *World) AllGravities(yield func(e Entity, c GravityComponent) bool) {
 	for e, c := range w.gravityComponents.All {
 		if !yield(e, c) {

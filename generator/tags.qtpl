@@ -38,7 +38,15 @@ func (w *World) Has{%s nsp %}Tag(entity Entity) bool {
     return w.{%s ss %}.Contains(entity)
 }
 
-func (w *World) All{%s nsp %}Tags(yield func(e Entity) bool) {
+func (w *World) {%s nsp %}TagCount() int {
+    return w.{%s ss %}.Len()
+}
+
+func (w *World) {%s nsp %}TagCapacity() int {
+    return w.{%s ss %}.Cap()
+}
+
+func (w *World) All{%s nsp %}Entities(yield func(e Entity) bool) {
     for e := range w.{%s ss %}.All {
         if !yield(e) {
             break

@@ -64,6 +64,14 @@ func (w *World) HasDirection(e Entity) bool {
 	return w.directionComponents.Contains(e)
 }
 
+func (w *World) DirectionsCount() int {
+	return w.directionComponents.Len()
+}
+
+func (w *World) DirectionsCapacity() int {
+	return w.directionComponents.Cap()
+}
+
 func (w *World) AllDirections(yield func(e Entity, c DirectionComponent) bool) {
 	for e, c := range w.directionComponents.All {
 		if !yield(e, c) {

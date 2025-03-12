@@ -64,6 +64,14 @@ func (w *World) HasDockedTo(e Entity) bool {
 	return w.dockedToComponents.Contains(e)
 }
 
+func (w *World) DockedTosCount() int {
+	return w.dockedToComponents.Len()
+}
+
+func (w *World) DockedTosCapacity() int {
+	return w.dockedToComponents.Cap()
+}
+
 func (w *World) AllDockedTos(yield func(e Entity, c DockedToComponent) bool) {
 	for e, c := range w.dockedToComponents.All {
 		if !yield(e, c) {

@@ -17,8 +17,7 @@ pairName := data.Name.Singular.Pascal + "RelationshipPair"
 -%}
 
 type {%s pairName %} struct {
-    From Entity
-    To Entity
+    From, To Entity
     {%- for _, f := range data.Fields -%}
     {%s f.Name.Singular.Pascal %} {%s f.Type.Singular.Original %}
     {%- endfor -%}
@@ -30,7 +29,7 @@ type {%s nsp %}Relationship struct {
 
 func New{%s nsp %}Relationship() *{%s nsp %}Relationship {
     return &{%s nsp %}Relationship{
-        btree: btree.NewBTreeG[{%s pairName %}](func(a, b {%s pairName %}) bool {
+        btree: btree.NewBTreeG(func(a, b {%s pairName %}) bool {
             ati, bti := a.To.Index(), b.To.Index()
             if ati == bti {
                 return a.From.Index() < b.From.Index()
@@ -51,30 +50,21 @@ func(w *World) Link{%s nsp %}(
     {%- endfor -%}
 ) {
     pair := {%s pairName %}{
-        From: from,
-        To: to,
+        From: from, To: to,
         {%- for _, f := range data.Fields -%}
         {%s f.Name.Singular.Pascal %}: {%s f.Name.Singular.Camel %}Arg,
         {%- endfor -%}
     }
-
     w.{%s nsc %}Relationships.btree.Set(pair)
 }
 
 func(w *World) Unlink{%s nsp %}(from, to Entity) {
-    pair := {%s pairName %}{
-        From: from,
-        To: to,
-    }
+    pair := {%s pairName %}{ From: from, To: to }
     w.{%s nsc %}Relationships.btree.Delete(pair)
 }
 
 func (w *World) {%s nsp %}IsLinked(from, to Entity) bool {
-    pair := {%s pairName %}{
-        From: from,
-        To: to,
-    }
-
+    pair := {%s pairName %}{ From: from, To: to }
     _, ok := w.{%s nsc %}Relationships.btree.Get(pair)
     return ok
 }
@@ -84,7 +74,6 @@ func (w *World) {%s nsp %}(to Entity) func(yield func(from Entity) bool) {
         iter := w.{%s nsc %}Relationships.btree.Iter()
         iter.Seek({%s pairName %}{ To: to })
         end := {%s pairName %}{ To: to + 1 }
-
         for iter.Next() {
             item := iter.Item()
             if item.To >= end.To {
@@ -100,11 +89,7 @@ func (w *World) {%s nsp %}(to Entity) func(yield func(from Entity) bool) {
 
 func (w *World) Remove{%s nsp %}Relationships(to Entity, froms ... Entity) {
     for _, from := range froms {
-        pair := {%s pairName %}{
-            To: to,
-            From: from,
-        }
-
+        pair := {%s pairName %}{ From: from, To: to }
         w.{%s nsc %}Relationships.btree.Delete(pair)
     }
 }
@@ -112,16 +97,13 @@ func (w *World) Remove{%s nsp %}Relationships(to Entity, froms ... Entity) {
 func (w *World) RemoveAll{%s nsp %}Relationships(to Entity) {
     iter := w.{%s nsc %}Relationships.btree.Iter()
     end := {%s pairName %}{ To: to + 1 }
-
     for iter.Next() {
         item := iter.Item()
         if item.To >= end.To {
             break
         }
-
         w.{%s nsc %}Relationships.btree.Delete(item)
     }
 }
-
 
 {%- endfunc -%}

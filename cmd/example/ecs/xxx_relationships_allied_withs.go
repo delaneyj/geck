@@ -5,8 +5,7 @@ import (
 )
 
 type AlliedWithRelationshipPair struct {
-	From Entity
-	To   Entity
+	From, To Entity
 }
 
 type AlliedWithRelationship struct {
@@ -15,7 +14,7 @@ type AlliedWithRelationship struct {
 
 func NewAlliedWithRelationship() *AlliedWithRelationship {
 	return &AlliedWithRelationship{
-		btree: btree.NewBTreeG[AlliedWithRelationshipPair](func(a, b AlliedWithRelationshipPair) bool {
+		btree: btree.NewBTreeG(func(a, b AlliedWithRelationshipPair) bool {
 			ati, bti := a.To.Index(), b.To.Index()
 			if ati == bti {
 				return a.From.Index() < b.From.Index()
@@ -33,27 +32,18 @@ func (w *World) LinkAlliedWith(
 	to, from Entity,
 ) {
 	pair := AlliedWithRelationshipPair{
-		From: from,
-		To:   to,
+		From: from, To: to,
 	}
-
 	w.alliedWithRelationships.btree.Set(pair)
 }
 
 func (w *World) UnlinkAlliedWith(from, to Entity) {
-	pair := AlliedWithRelationshipPair{
-		From: from,
-		To:   to,
-	}
+	pair := AlliedWithRelationshipPair{From: from, To: to}
 	w.alliedWithRelationships.btree.Delete(pair)
 }
 
 func (w *World) AlliedWithIsLinked(from, to Entity) bool {
-	pair := AlliedWithRelationshipPair{
-		From: from,
-		To:   to,
-	}
-
+	pair := AlliedWithRelationshipPair{From: from, To: to}
 	_, ok := w.alliedWithRelationships.btree.Get(pair)
 	return ok
 }
@@ -63,7 +53,6 @@ func (w *World) AlliedWith(to Entity) func(yield func(from Entity) bool) {
 		iter := w.alliedWithRelationships.btree.Iter()
 		iter.Seek(AlliedWithRelationshipPair{To: to})
 		end := AlliedWithRelationshipPair{To: to + 1}
-
 		for iter.Next() {
 			item := iter.Item()
 			if item.To >= end.To {
@@ -79,11 +68,7 @@ func (w *World) AlliedWith(to Entity) func(yield func(from Entity) bool) {
 
 func (w *World) RemoveAlliedWithRelationships(to Entity, froms ...Entity) {
 	for _, from := range froms {
-		pair := AlliedWithRelationshipPair{
-			To:   to,
-			From: from,
-		}
-
+		pair := AlliedWithRelationshipPair{From: from, To: to}
 		w.alliedWithRelationships.btree.Delete(pair)
 	}
 }
@@ -91,13 +76,11 @@ func (w *World) RemoveAlliedWithRelationships(to Entity, froms ...Entity) {
 func (w *World) RemoveAllAlliedWithRelationships(to Entity) {
 	iter := w.alliedWithRelationships.btree.Iter()
 	end := AlliedWithRelationshipPair{To: to + 1}
-
 	for iter.Next() {
 		item := iter.Item()
 		if item.To >= end.To {
 			break
 		}
-
 		w.alliedWithRelationships.btree.Delete(item)
 	}
 }

@@ -466,19 +466,43 @@ func (w *World) Has`)
 	qw422016.N().S(`.Contains(e)
 }
 
-func (w *World) All`)
+func (w *World) `)
 //line generator/components.qtpl:132
 	qw422016.E().S(npp)
 //line generator/components.qtpl:132
-	qw422016.N().S(`(yield func(e Entity, c `)
-//line generator/components.qtpl:132
-	qw422016.E().S(nsp)
-//line generator/components.qtpl:132
-	qw422016.N().S(`Component) bool) {
-    for e, c := range w.`)
+	qw422016.N().S(`Count() int {
+    return w.`)
 //line generator/components.qtpl:133
 	qw422016.E().S(ss)
 //line generator/components.qtpl:133
+	qw422016.N().S(`.Len()
+}
+
+func (w *World) `)
+//line generator/components.qtpl:136
+	qw422016.E().S(npp)
+//line generator/components.qtpl:136
+	qw422016.N().S(`Capacity() int {
+    return w.`)
+//line generator/components.qtpl:137
+	qw422016.E().S(ss)
+//line generator/components.qtpl:137
+	qw422016.N().S(`.Cap()
+}
+
+func (w *World) All`)
+//line generator/components.qtpl:140
+	qw422016.E().S(npp)
+//line generator/components.qtpl:140
+	qw422016.N().S(`(yield func(e Entity, c `)
+//line generator/components.qtpl:140
+	qw422016.E().S(nsp)
+//line generator/components.qtpl:140
+	qw422016.N().S(`Component) bool) {
+    for e, c := range w.`)
+//line generator/components.qtpl:141
+	qw422016.E().S(ss)
+//line generator/components.qtpl:141
 	qw422016.N().S(`.All {
         if !yield(e, c) {
             break
@@ -487,18 +511,18 @@ func (w *World) All`)
 }
 
 func (w *World) AllMutable`)
-//line generator/components.qtpl:140
+//line generator/components.qtpl:148
 	qw422016.E().S(npp)
-//line generator/components.qtpl:140
+//line generator/components.qtpl:148
 	qw422016.N().S(`(yield func(e Entity, c *`)
-//line generator/components.qtpl:140
+//line generator/components.qtpl:148
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:140
+//line generator/components.qtpl:148
 	qw422016.N().S(`Component) bool) {
     for e, c := range w.`)
-//line generator/components.qtpl:141
+//line generator/components.qtpl:149
 	qw422016.E().S(ss)
-//line generator/components.qtpl:141
+//line generator/components.qtpl:149
 	qw422016.N().S(`.AllMutable {
         if !yield(e, c) {
             break
@@ -507,14 +531,14 @@ func (w *World) AllMutable`)
 }
 
 func (w *World) All`)
-//line generator/components.qtpl:148
+//line generator/components.qtpl:156
 	qw422016.E().S(npp)
-//line generator/components.qtpl:148
+//line generator/components.qtpl:156
 	qw422016.N().S(`Entities(yield func(e Entity) bool) {
     for e := range w.`)
-//line generator/components.qtpl:149
+//line generator/components.qtpl:157
 	qw422016.E().S(ss)
-//line generator/components.qtpl:149
+//line generator/components.qtpl:157
 	qw422016.N().S(`.AllEntities {
         if !yield(e) {
             break
@@ -523,145 +547,145 @@ func (w *World) All`)
 }
 
 // `)
-//line generator/components.qtpl:156
+//line generator/components.qtpl:164
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:156
+//line generator/components.qtpl:164
 	qw422016.N().S(`Builder
 `)
-//line generator/components.qtpl:157
+//line generator/components.qtpl:165
 	if data.IsOnlyOneField {
-//line generator/components.qtpl:157
+//line generator/components.qtpl:165
 		qw422016.N().S(`
 func With`)
-//line generator/components.qtpl:158
+//line generator/components.qtpl:166
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:158
+//line generator/components.qtpl:166
 		qw422016.N().S(`(arg `)
-//line generator/components.qtpl:158
+//line generator/components.qtpl:166
 		qw422016.E().S(data.Fields[0].Type.Singular.Original)
-//line generator/components.qtpl:158
+//line generator/components.qtpl:166
 		qw422016.N().S(`) EntityBuilderOption {
     c := `)
-//line generator/components.qtpl:159
+//line generator/components.qtpl:167
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:159
+//line generator/components.qtpl:167
 		qw422016.N().S(`Component{
         `)
-//line generator/components.qtpl:160
+//line generator/components.qtpl:168
 		qw422016.E().S(data.Fields[0].Name.Singular.Pascal)
-//line generator/components.qtpl:160
+//line generator/components.qtpl:168
 		qw422016.N().S(`: arg,
     }
 `)
-//line generator/components.qtpl:162
+//line generator/components.qtpl:170
 	} else {
-//line generator/components.qtpl:162
+//line generator/components.qtpl:170
 		qw422016.N().S(`
 func With`)
-//line generator/components.qtpl:163
+//line generator/components.qtpl:171
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:163
+//line generator/components.qtpl:171
 		qw422016.N().S(`(c `)
-//line generator/components.qtpl:163
+//line generator/components.qtpl:171
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:163
+//line generator/components.qtpl:171
 		qw422016.N().S(`Component) EntityBuilderOption {
 `)
-//line generator/components.qtpl:164
+//line generator/components.qtpl:172
 	}
-//line generator/components.qtpl:164
+//line generator/components.qtpl:172
 	qw422016.N().S(`
     return func(w *World, e Entity) {
         w.`)
-//line generator/components.qtpl:166
+//line generator/components.qtpl:174
 	qw422016.E().S(ss)
-//line generator/components.qtpl:166
+//line generator/components.qtpl:174
 	qw422016.N().S(`.Upsert(e, c)
     }
 }
 
 `)
-//line generator/components.qtpl:170
+//line generator/components.qtpl:178
 	if !data.IsOnlyOneField {
-//line generator/components.qtpl:170
+//line generator/components.qtpl:178
 		qw422016.N().S(`
 func With`)
-//line generator/components.qtpl:171
+//line generator/components.qtpl:179
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:171
+//line generator/components.qtpl:179
 		qw422016.N().S(`FromValues(
 `)
-//line generator/components.qtpl:172
+//line generator/components.qtpl:180
 		for _, f := range data.Fields {
-//line generator/components.qtpl:172
+//line generator/components.qtpl:180
 			qw422016.N().S(`    `)
-//line generator/components.qtpl:173
+//line generator/components.qtpl:181
 			qw422016.E().S(f.Name.Singular.Camel)
-//line generator/components.qtpl:173
+//line generator/components.qtpl:181
 			qw422016.N().S(`Arg `)
-//line generator/components.qtpl:173
+//line generator/components.qtpl:181
 			qw422016.E().S(f.Type.Singular.Original)
-//line generator/components.qtpl:173
+//line generator/components.qtpl:181
 			qw422016.N().S(`,
 `)
-//line generator/components.qtpl:174
+//line generator/components.qtpl:182
 		}
-//line generator/components.qtpl:174
+//line generator/components.qtpl:182
 		qw422016.N().S(`) EntityBuilderOption {
     return func(w *World, e Entity) {
         w.Set`)
-//line generator/components.qtpl:177
+//line generator/components.qtpl:185
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:177
+//line generator/components.qtpl:185
 		qw422016.N().S(`FromValues(e,
 `)
-//line generator/components.qtpl:178
+//line generator/components.qtpl:186
 		for _, f := range data.Fields {
-//line generator/components.qtpl:178
+//line generator/components.qtpl:186
 			qw422016.N().S(`            `)
-//line generator/components.qtpl:179
+//line generator/components.qtpl:187
 			qw422016.E().S(f.Name.Singular.Camel)
-//line generator/components.qtpl:179
+//line generator/components.qtpl:187
 			qw422016.N().S(`Arg,
 `)
-//line generator/components.qtpl:180
+//line generator/components.qtpl:188
 		}
-//line generator/components.qtpl:180
+//line generator/components.qtpl:188
 		qw422016.N().S(`        )
     }
 }
 `)
-//line generator/components.qtpl:184
+//line generator/components.qtpl:192
 	}
-//line generator/components.qtpl:184
+//line generator/components.qtpl:192
 	qw422016.N().S(`
 
 
 // Events
 `)
-//line generator/components.qtpl:188
+//line generator/components.qtpl:196
 	if data.ShouldGenAdded {
-//line generator/components.qtpl:188
+//line generator/components.qtpl:196
 		qw422016.N().S(`type `)
-//line generator/components.qtpl:189
+//line generator/components.qtpl:197
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:189
+//line generator/components.qtpl:197
 		qw422016.N().S(`AddedEvent struct {
     Entity Entity
     Component `)
-//line generator/components.qtpl:191
+//line generator/components.qtpl:199
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:191
+//line generator/components.qtpl:199
 		qw422016.N().S(`Component
 }
 func (w *World) On`)
-//line generator/components.qtpl:193
+//line generator/components.qtpl:201
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:193
+//line generator/components.qtpl:201
 		qw422016.N().S(`Added(fn func(evt `)
-//line generator/components.qtpl:193
+//line generator/components.qtpl:201
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:193
+//line generator/components.qtpl:201
 		qw422016.N().S(`AddedEvent)) UnsubscribeFunc {
     unsub := mint.On(w.eventBus, fn)
     return func() {
@@ -669,34 +693,34 @@ func (w *World) On`)
     }
 }
 `)
-//line generator/components.qtpl:199
+//line generator/components.qtpl:207
 	}
-//line generator/components.qtpl:199
+//line generator/components.qtpl:207
 	qw422016.N().S(`
 `)
-//line generator/components.qtpl:201
+//line generator/components.qtpl:209
 	if data.ShouldGenRemoved {
-//line generator/components.qtpl:201
+//line generator/components.qtpl:209
 		qw422016.N().S(`type `)
-//line generator/components.qtpl:202
+//line generator/components.qtpl:210
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:202
+//line generator/components.qtpl:210
 		qw422016.N().S(`RemovedEvent struct {
     Entity Entity
     Component `)
-//line generator/components.qtpl:204
+//line generator/components.qtpl:212
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:204
+//line generator/components.qtpl:212
 		qw422016.N().S(`Component
 }
 func (w *World) On`)
-//line generator/components.qtpl:206
+//line generator/components.qtpl:214
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:206
+//line generator/components.qtpl:214
 		qw422016.N().S(`Removed(fn func(evt `)
-//line generator/components.qtpl:206
+//line generator/components.qtpl:214
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:206
+//line generator/components.qtpl:214
 		qw422016.N().S(`RemovedEvent)) UnsubscribeFunc {
     unsub := mint.On(w.eventBus, fn)
     return func() {
@@ -704,34 +728,34 @@ func (w *World) On`)
     }
 }
 `)
-//line generator/components.qtpl:212
+//line generator/components.qtpl:220
 	}
-//line generator/components.qtpl:212
+//line generator/components.qtpl:220
 	qw422016.N().S(`
 `)
-//line generator/components.qtpl:214
+//line generator/components.qtpl:222
 	if data.ShouldGenChanged {
-//line generator/components.qtpl:214
+//line generator/components.qtpl:222
 		qw422016.N().S(`type `)
-//line generator/components.qtpl:215
+//line generator/components.qtpl:223
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:215
+//line generator/components.qtpl:223
 		qw422016.N().S(`ChangedEvent struct {
     Entity Entity
     Old, New `)
-//line generator/components.qtpl:217
+//line generator/components.qtpl:225
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:217
+//line generator/components.qtpl:225
 		qw422016.N().S(`Component
 }
 func (w *World) On`)
-//line generator/components.qtpl:219
+//line generator/components.qtpl:227
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:219
+//line generator/components.qtpl:227
 		qw422016.N().S(`Changed(fn func(evt `)
-//line generator/components.qtpl:219
+//line generator/components.qtpl:227
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:219
+//line generator/components.qtpl:227
 		qw422016.N().S(`ChangedEvent)) UnsubscribeFunc {
 	unsub := mint.On(w.eventBus, fn)
 	return func() {
@@ -739,210 +763,210 @@ func (w *World) On`)
 	}
 }
 `)
-//line generator/components.qtpl:225
+//line generator/components.qtpl:233
 	}
-//line generator/components.qtpl:225
+//line generator/components.qtpl:233
 	qw422016.N().S(`
 // Resource methods
 `)
-//line generator/components.qtpl:228
+//line generator/components.qtpl:236
 	if data.IsOnlyOneField {
-//line generator/components.qtpl:228
+//line generator/components.qtpl:236
 		qw422016.N().S(`
 func (w *World) Set`)
-//line generator/components.qtpl:229
+//line generator/components.qtpl:237
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:229
+//line generator/components.qtpl:237
 		qw422016.N().S(`Resource(arg `)
-//line generator/components.qtpl:229
+//line generator/components.qtpl:237
 		qw422016.E().S(data.Fields[0].Type.Singular.Original)
-//line generator/components.qtpl:229
+//line generator/components.qtpl:237
 		qw422016.N().S(`) {
     w.Set`)
-//line generator/components.qtpl:230
+//line generator/components.qtpl:238
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:230
+//line generator/components.qtpl:238
 		qw422016.N().S(`(w.resourceEntity, arg)
 }
 `)
-//line generator/components.qtpl:232
+//line generator/components.qtpl:240
 	} else {
-//line generator/components.qtpl:232
+//line generator/components.qtpl:240
 		qw422016.N().S(`
 func (w *World) Set`)
-//line generator/components.qtpl:233
+//line generator/components.qtpl:241
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:233
+//line generator/components.qtpl:241
 		qw422016.N().S(`Resource(c `)
-//line generator/components.qtpl:233
+//line generator/components.qtpl:241
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:233
+//line generator/components.qtpl:241
 		qw422016.N().S(`Component) {
     w.Set`)
-//line generator/components.qtpl:234
+//line generator/components.qtpl:242
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:234
+//line generator/components.qtpl:242
 		qw422016.N().S(`(w.resourceEntity, c)
 }
 `)
-//line generator/components.qtpl:236
+//line generator/components.qtpl:244
 	}
-//line generator/components.qtpl:236
+//line generator/components.qtpl:244
 	qw422016.N().S(`
 
 `)
-//line generator/components.qtpl:238
+//line generator/components.qtpl:246
 	if !data.IsOnlyOneField {
-//line generator/components.qtpl:238
+//line generator/components.qtpl:246
 		qw422016.N().S(`
 func (w *World) Set`)
-//line generator/components.qtpl:239
+//line generator/components.qtpl:247
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:239
+//line generator/components.qtpl:247
 		qw422016.N().S(`ResourceFromValues(
 `)
-//line generator/components.qtpl:240
+//line generator/components.qtpl:248
 		for _, f := range data.Fields {
-//line generator/components.qtpl:240
+//line generator/components.qtpl:248
 			qw422016.N().S(`    `)
-//line generator/components.qtpl:241
+//line generator/components.qtpl:249
 			qw422016.E().S(f.Name.Singular.Camel)
-//line generator/components.qtpl:241
+//line generator/components.qtpl:249
 			qw422016.N().S(`Arg `)
-//line generator/components.qtpl:241
+//line generator/components.qtpl:249
 			qw422016.E().S(f.Type.Singular.Original)
-//line generator/components.qtpl:241
+//line generator/components.qtpl:249
 			qw422016.N().S(`,
 `)
-//line generator/components.qtpl:242
+//line generator/components.qtpl:250
 		}
-//line generator/components.qtpl:242
+//line generator/components.qtpl:250
 		qw422016.N().S(`) {
    w.Set`)
-//line generator/components.qtpl:244
+//line generator/components.qtpl:252
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:244
+//line generator/components.qtpl:252
 		qw422016.N().S(`Resource(`)
-//line generator/components.qtpl:244
+//line generator/components.qtpl:252
 		qw422016.E().S(nsp)
-//line generator/components.qtpl:244
+//line generator/components.qtpl:252
 		qw422016.N().S(`Component{
 `)
-//line generator/components.qtpl:245
+//line generator/components.qtpl:253
 		for _, f := range data.Fields {
-//line generator/components.qtpl:245
+//line generator/components.qtpl:253
 			qw422016.N().S(`        `)
-//line generator/components.qtpl:246
+//line generator/components.qtpl:254
 			qw422016.E().S(f.Name.Singular.Pascal)
-//line generator/components.qtpl:246
+//line generator/components.qtpl:254
 			qw422016.N().S(`: `)
-//line generator/components.qtpl:246
+//line generator/components.qtpl:254
 			qw422016.E().S(f.Name.Singular.Camel)
-//line generator/components.qtpl:246
+//line generator/components.qtpl:254
 			qw422016.N().S(`Arg,
 `)
-//line generator/components.qtpl:247
+//line generator/components.qtpl:255
 		}
-//line generator/components.qtpl:247
+//line generator/components.qtpl:255
 		qw422016.N().S(`    })
 }
 `)
-//line generator/components.qtpl:250
+//line generator/components.qtpl:258
 	}
-//line generator/components.qtpl:250
+//line generator/components.qtpl:258
 	qw422016.N().S(`
 
 func (w *World) `)
-//line generator/components.qtpl:252
+//line generator/components.qtpl:260
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:252
+//line generator/components.qtpl:260
 	qw422016.N().S(`Resource() (`)
-//line generator/components.qtpl:252
+//line generator/components.qtpl:260
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:252
+//line generator/components.qtpl:260
 	qw422016.N().S(`Component,bool) {
     return w.`)
-//line generator/components.qtpl:253
+//line generator/components.qtpl:261
 	qw422016.E().S(ss)
-//line generator/components.qtpl:253
+//line generator/components.qtpl:261
 	qw422016.N().S(`.Data(w.resourceEntity)
 }
 
 func (w *World) Must`)
-//line generator/components.qtpl:256
+//line generator/components.qtpl:264
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:256
+//line generator/components.qtpl:264
 	qw422016.N().S(`Resource() `)
-//line generator/components.qtpl:256
+//line generator/components.qtpl:264
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:256
+//line generator/components.qtpl:264
 	qw422016.N().S(`Component {
     c, ok := w.`)
-//line generator/components.qtpl:257
+//line generator/components.qtpl:265
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:257
+//line generator/components.qtpl:265
 	qw422016.N().S(`Resource()
     if !ok {
         panic("resource entity does not have `)
-//line generator/components.qtpl:259
+//line generator/components.qtpl:267
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:259
+//line generator/components.qtpl:267
 	qw422016.N().S(`")
     }
     return c
 }
 
 func (w *World) Remove`)
-//line generator/components.qtpl:264
+//line generator/components.qtpl:272
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:264
+//line generator/components.qtpl:272
 	qw422016.N().S(`Resource() {
     w.`)
-//line generator/components.qtpl:265
+//line generator/components.qtpl:273
 	qw422016.E().S(ss)
-//line generator/components.qtpl:265
+//line generator/components.qtpl:273
 	qw422016.N().S(`.Remove(w.resourceEntity)
 }
 
 func (w *World) Has`)
-//line generator/components.qtpl:268
+//line generator/components.qtpl:276
 	qw422016.E().S(nsp)
-//line generator/components.qtpl:268
+//line generator/components.qtpl:276
 	qw422016.N().S(`Resource() bool {
     return w.`)
-//line generator/components.qtpl:269
+//line generator/components.qtpl:277
 	qw422016.E().S(ss)
-//line generator/components.qtpl:269
+//line generator/components.qtpl:277
 	qw422016.N().S(`.Contains(w.resourceEntity)
 }
 
 
 `)
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 }
 
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 func writecomponentTemplate(qq422016 qtio422016.Writer, data *componentTmplData) {
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 	streamcomponentTemplate(qw422016, data)
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 	qt422016.ReleaseWriter(qw422016)
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 }
 
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 func componentTemplate(data *componentTmplData) string {
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 	writecomponentTemplate(qb422016, data)
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 	qs422016 := string(qb422016.B)
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 	return qs422016
-//line generator/components.qtpl:273
+//line generator/components.qtpl:281
 }

@@ -64,6 +64,14 @@ func (w *World) HasName(e Entity) bool {
 	return w.nameComponents.Contains(e)
 }
 
+func (w *World) NamesCount() int {
+	return w.nameComponents.Len()
+}
+
+func (w *World) NamesCapacity() int {
+	return w.nameComponents.Cap()
+}
+
 func (w *World) AllNames(yield func(e Entity, c NameComponent) bool) {
 	for e, c := range w.nameComponents.All {
 		if !yield(e, c) {

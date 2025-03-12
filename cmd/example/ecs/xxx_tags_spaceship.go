@@ -23,7 +23,15 @@ func (w *World) HasSpaceshipTag(entity Entity) bool {
 	return w.spaceshipTags.Contains(entity)
 }
 
-func (w *World) AllSpaceshipTags(yield func(e Entity) bool) {
+func (w *World) SpaceshipTagCount() int {
+	return w.spaceshipTags.Len()
+}
+
+func (w *World) SpaceshipTagCapacity() int {
+	return w.spaceshipTags.Cap()
+}
+
+func (w *World) AllSpaceshipEntities(yield func(e Entity) bool) {
 	for e := range w.spaceshipTags.All {
 		if !yield(e) {
 			break

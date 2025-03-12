@@ -5,8 +5,7 @@ import (
 )
 
 type IsARelationshipPair struct {
-	From Entity
-	To   Entity
+	From, To Entity
 }
 
 type IsARelationship struct {
@@ -15,7 +14,7 @@ type IsARelationship struct {
 
 func NewIsARelationship() *IsARelationship {
 	return &IsARelationship{
-		btree: btree.NewBTreeG[IsARelationshipPair](func(a, b IsARelationshipPair) bool {
+		btree: btree.NewBTreeG(func(a, b IsARelationshipPair) bool {
 			ati, bti := a.To.Index(), b.To.Index()
 			if ati == bti {
 				return a.From.Index() < b.From.Index()
@@ -33,27 +32,18 @@ func (w *World) LinkIsA(
 	to, from Entity,
 ) {
 	pair := IsARelationshipPair{
-		From: from,
-		To:   to,
+		From: from, To: to,
 	}
-
 	w.isARelationships.btree.Set(pair)
 }
 
 func (w *World) UnlinkIsA(from, to Entity) {
-	pair := IsARelationshipPair{
-		From: from,
-		To:   to,
-	}
+	pair := IsARelationshipPair{From: from, To: to}
 	w.isARelationships.btree.Delete(pair)
 }
 
 func (w *World) IsAIsLinked(from, to Entity) bool {
-	pair := IsARelationshipPair{
-		From: from,
-		To:   to,
-	}
-
+	pair := IsARelationshipPair{From: from, To: to}
 	_, ok := w.isARelationships.btree.Get(pair)
 	return ok
 }
@@ -63,7 +53,6 @@ func (w *World) IsA(to Entity) func(yield func(from Entity) bool) {
 		iter := w.isARelationships.btree.Iter()
 		iter.Seek(IsARelationshipPair{To: to})
 		end := IsARelationshipPair{To: to + 1}
-
 		for iter.Next() {
 			item := iter.Item()
 			if item.To >= end.To {
@@ -79,11 +68,7 @@ func (w *World) IsA(to Entity) func(yield func(from Entity) bool) {
 
 func (w *World) RemoveIsARelationships(to Entity, froms ...Entity) {
 	for _, from := range froms {
-		pair := IsARelationshipPair{
-			To:   to,
-			From: from,
-		}
-
+		pair := IsARelationshipPair{From: from, To: to}
 		w.isARelationships.btree.Delete(pair)
 	}
 }
@@ -91,13 +76,11 @@ func (w *World) RemoveIsARelationships(to Entity, froms ...Entity) {
 func (w *World) RemoveAllIsARelationships(to Entity) {
 	iter := w.isARelationships.btree.Iter()
 	end := IsARelationshipPair{To: to + 1}
-
 	for iter.Next() {
 		item := iter.Item()
 		if item.To >= end.To {
 			break
 		}
-
 		w.isARelationships.btree.Delete(item)
 	}
 }
