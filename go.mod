@@ -1,15 +1,13 @@
 module github.com/delaneyj/geck
 
-go 1.23.3
-
-toolchain go1.24.0
+go 1.24.0
 
 require (
 	github.com/a-h/templ v0.3.833
 	github.com/btvoidx/mint v0.4.3
 	github.com/delaneyj/toolbelt v0.4.3
 	github.com/go-chi/chi/v5 v5.2.1
-	github.com/go-openapi/inflect v0.21.0
+	github.com/go-openapi/inflect v0.21.1
 	github.com/samber/lo v1.49.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/btree v1.7.0

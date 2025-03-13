@@ -112,9 +112,9 @@ func (w *World) Reset() {
 	w.alliedWithRelationships.Clear()
 }
 
-func (w *World) AddSystems(systems ...System) error {
+func (w *World) AddSystems(ctx context.Context, systems ...System) error {
 	for _, s := range systems {
-		if err := s.Initialize(w); err != nil {
+		if err := s.Initialize(ctx, w); err != nil {
 			return fmt.Errorf("failed to initialize system: %w", err)
 		}
 
@@ -141,7 +141,7 @@ func (w *World) Tick(ctx context.Context) error {
 type ReliedOnIter func(reliedOn System) bool
 
 type System interface {
-	Initialize(w *World) error
+	Initialize(ctx context.Context, w *World) error
 	ReliesOn() ReliedOnIter
 }
 

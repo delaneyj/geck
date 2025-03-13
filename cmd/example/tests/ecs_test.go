@@ -23,7 +23,7 @@ func (sys *RelationshipSystem) ReliesOn() ecs.ReliedOnIter {
 	}
 }
 
-func (sys *RelationshipSystem) Initialize(w *ecs.World) error {
+func (sys *RelationshipSystem) Initialize(ctx context.Context, w *ecs.World) error {
 	return nil
 }
 
@@ -83,7 +83,7 @@ func TestECSRelationships(t *testing.T) {
 	defer w.Reset()
 
 	relSys := &RelationshipSystem{}
-	if err := w.AddSystems(relSys); err != nil {
+	if err := w.AddSystems(t.Context(), relSys); err != nil {
 		t.Fatal(err)
 	}
 

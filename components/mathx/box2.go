@@ -101,7 +101,8 @@ func (b *Box2[T]) ExpandByScalar(scalar T) *Box2[T] {
 }
 
 func (b *Box2[T]) ContainsPoint(point Vector2[T]) bool {
-	return point.X < b.Min.X || point.X > b.Max.X || point.Y < b.Min.Y || point.Y > b.Max.Y
+	return point.X >= b.Min.X && point.X <= b.Max.X &&
+		point.Y >= b.Min.Y && point.Y <= b.Max.Y
 }
 
 func (b *Box2[T]) ContainsBox(box *Box2[T]) bool {

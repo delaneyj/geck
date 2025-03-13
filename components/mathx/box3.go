@@ -96,7 +96,9 @@ func (b *Box3[T]) ExpandByScalar(scalar T) *Box3[T] {
 }
 
 func (b *Box3[T]) ContainsPoint(point Vector3[T]) bool {
-	return point.X < b.Min.X || point.X > b.Max.X || point.Y < b.Min.Y || point.Y > b.Max.Y || point.Z < b.Min.Z || point.Z > b.Max.Z
+	return point.X >= b.Min.X && point.X <= b.Max.X &&
+		point.Y >= b.Min.Y && point.Y <= b.Max.Y &&
+		point.Z >= b.Min.Z && point.Z <= b.Max.Z
 }
 
 func (b *Box3[T]) ContainsBox(box Box3[T]) bool {

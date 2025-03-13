@@ -8,7 +8,7 @@ type ArcCurve[T constraints.Float] struct {
 
 func NewArcCurve[T constraints.Float](aX, aY, aRadius, aStartAngle, aEndAngle T, aClockwise bool) *ArcCurve[T] {
 	return &ArcCurve[T]{
-		EllipseCurve: *NewEllipseCurve[T](
+		EllipseCurve: *NewEllipseCurve(
 			aX, aY,
 			aRadius, aRadius,
 			aStartAngle, aEndAngle,
