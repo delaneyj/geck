@@ -75,6 +75,14 @@ func (w *World) MutableRotation(e Entity) (c *RotationComponent, ok bool) {
 	return w.rotationComponents.DataMutable(e)
 }
 
+func (w *World) MustMutableRotation(e Entity) *RotationComponent {
+	c, ok := w.MutableRotation(e)
+	if !ok {
+		panic("entity does not have Rotation")
+	}
+	return c
+}
+
 func (w *World) MustRotation(e Entity) RotationComponent {
 	c, ok := w.rotationComponents.Data(e)
 	if !ok {
@@ -127,10 +135,16 @@ func (w *World) AllRotationsEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutableRotationsEntities(yield func(e Entity) bool) {
+	w.AllRotationsEntities(yield)
+}
+
 // RotationBuilder
+func WithRotationDefault() EntityBuilderOption {
+	return WithRotation(DefaultRotationComponent())
+}
 
 func WithRotation(c RotationComponent) EntityBuilderOption {
-
 	return func(w *World, e Entity) {
 		w.rotationComponents.Upsert(e, c)
 	}
@@ -155,7 +169,6 @@ func WithRotationFromValues(
 // Events
 
 // Resource methods
-
 func (w *World) SetRotationResource(c RotationComponent) {
 	w.SetRotation(w.resourceEntity, c)
 }

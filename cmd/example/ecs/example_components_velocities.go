@@ -68,6 +68,14 @@ func (w *World) MutableVelocity(e Entity) (c *VelocityComponent, ok bool) {
 	return w.velocityComponents.DataMutable(e)
 }
 
+func (w *World) MustMutableVelocity(e Entity) *VelocityComponent {
+	c, ok := w.MutableVelocity(e)
+	if !ok {
+		panic("entity does not have Velocity")
+	}
+	return c
+}
+
 func (w *World) MustVelocity(e Entity) VelocityComponent {
 	c, ok := w.velocityComponents.Data(e)
 	if !ok {
@@ -120,10 +128,16 @@ func (w *World) AllVelocitiesEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutableVelocitiesEntities(yield func(e Entity) bool) {
+	w.AllVelocitiesEntities(yield)
+}
+
 // VelocityBuilder
+func WithVelocityDefault() EntityBuilderOption {
+	return WithVelocity(DefaultVelocityComponent())
+}
 
 func WithVelocity(c VelocityComponent) EntityBuilderOption {
-
 	return func(w *World, e Entity) {
 		w.velocityComponents.Upsert(e, c)
 	}
@@ -146,7 +160,6 @@ func WithVelocityFromValues(
 // Events
 
 // Resource methods
-
 func (w *World) SetVelocityResource(c VelocityComponent) {
 	w.SetVelocity(w.resourceEntity, c)
 }

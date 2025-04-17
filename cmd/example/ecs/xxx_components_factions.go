@@ -44,6 +44,14 @@ func (w *World) MutableFaction(e Entity) (c *FactionComponent, ok bool) {
 	return w.factionComponents.DataMutable(e)
 }
 
+func (w *World) MustMutableFaction(e Entity) *FactionComponent {
+	c, ok := w.MutableFaction(e)
+	if !ok {
+		panic("entity does not have Faction")
+	}
+	return c
+}
+
 func (w *World) MustFaction(e Entity) FactionComponent {
 	c, ok := w.factionComponents.Data(e)
 	if !ok {
@@ -96,13 +104,19 @@ func (w *World) AllFactionsEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutableFactionsEntities(yield func(e Entity) bool) {
+	w.AllFactionsEntities(yield)
+}
+
 // FactionBuilder
+func WithFactionDefault() EntityBuilderOption {
+	return WithFaction(DefaultFactionComponent().Entity)
+}
 
 func WithFaction(arg Entity) EntityBuilderOption {
 	c := FactionComponent{
 		Entity: arg,
 	}
-
 	return func(w *World, e Entity) {
 		w.factionComponents.Upsert(e, c)
 	}
@@ -111,7 +125,6 @@ func WithFaction(arg Entity) EntityBuilderOption {
 // Events
 
 // Resource methods
-
 func (w *World) SetFactionResource(arg Entity) {
 	w.SetFaction(w.resourceEntity, arg)
 }

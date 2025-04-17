@@ -44,6 +44,14 @@ func (w *World) MutableGravity(e Entity) (c *GravityComponent, ok bool) {
 	return w.gravityComponents.DataMutable(e)
 }
 
+func (w *World) MustMutableGravity(e Entity) *GravityComponent {
+	c, ok := w.MutableGravity(e)
+	if !ok {
+		panic("entity does not have Gravity")
+	}
+	return c
+}
+
 func (w *World) MustGravity(e Entity) GravityComponent {
 	c, ok := w.gravityComponents.Data(e)
 	if !ok {
@@ -96,13 +104,19 @@ func (w *World) AllGravitiesEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutableGravitiesEntities(yield func(e Entity) bool) {
+	w.AllGravitiesEntities(yield)
+}
+
 // GravityBuilder
+func WithGravityDefault() EntityBuilderOption {
+	return WithGravity(DefaultGravityComponent().G)
+}
 
 func WithGravity(arg float32) EntityBuilderOption {
 	c := GravityComponent{
 		G: arg,
 	}
-
 	return func(w *World, e Entity) {
 		w.gravityComponents.Upsert(e, c)
 	}
@@ -111,7 +125,6 @@ func WithGravity(arg float32) EntityBuilderOption {
 // Events
 
 // Resource methods
-
 func (w *World) SetGravityResource(arg float32) {
 	w.SetGravity(w.resourceEntity, arg)
 }

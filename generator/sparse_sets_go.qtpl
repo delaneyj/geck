@@ -17,12 +17,19 @@ func NewSparseSet[T any]() *SparseSet[T] {
 }
 
 func (s *SparseSet[T]) search(idx int) int {
-	if idx >= len(s.sparse) {
+	sl, dl := len(s.sparse), len(s.dense)
+	if idx >= sl || dl == 0 {
 		return -1
 	}
 
-	if s.sparse[idx] < len(s.dense) && s.dense[s.sparse[idx]].Index() == idx {
-		return s.sparse[idx]
+	denseIdx := s.sparse[idx]
+	if denseIdx < 0 || denseIdx >= dl {
+		return -1
+	}
+
+	dense := s.dense[denseIdx]
+	if denseIdx < len(s.dense) && dense.Index() == idx {
+		return denseIdx
 	}
 
 	return -1
@@ -64,8 +71,11 @@ func (s *SparseSet[T]) Remove(e Entity) (wasRemoved bool) {
 
 	lastIdx := len(s.dense) - 1
 	lastEntity := s.dense[lastIdx]
+	lastEntityIdx := lastEntity.Index()
 	s.dense[sIdx] = lastEntity
-	s.sparse[lastEntity.Index()] = sIdx
+	s.data[sIdx] = s.data[lastIdx]
+	s.sparse[lastEntityIdx] = sIdx
+	s.sparse[idx] = ssTombstoneIndex
 	s.dense = s.dense[:lastIdx]
 	s.data = s.data[:lastIdx]
 	return true

@@ -3,9 +3,9 @@ package generator
 {% func componentTemplate(data *componentTmplData) %}
 package {%s data.PackageName -%}
 
-{% if data.HasAnyEvents %}
+{%- if data.HasAnyEvents -%}
 import "github.com/btvoidx/mint"
-{% endif %}
+{%- endif -%}
 
 {%- code
 npp := data.Name.Plural.Pascal
@@ -94,7 +94,7 @@ func (w *World) Set{%s nsp %}FromValues(
     fireEvent(w, {%s nsp %}ChangedEvent{Entity: e, Old: old, New: w.Must{%s nsp %}(e)})
     {%- endif -%}
 }
-{% endif %}
+{%- endif -%}
 
 func (w *World) {%s nsp %}(e Entity) (c {%s nsp %}Component, ok bool) {
     return w.{%s ss %}.Data(e)
@@ -102,6 +102,14 @@ func (w *World) {%s nsp %}(e Entity) (c {%s nsp %}Component, ok bool) {
 
 func (w *World) Mutable{%s nsp %}(e Entity) (c *{%s nsp %}Component, ok bool) {
     return w.{%s ss %}.DataMutable(e)
+}
+
+func (w *World) MustMutable{%s nsp %}(e Entity) *{%s nsp %}Component {
+    c, ok := w.Mutable{%s nsp %}(e)
+    if !ok {
+        panic("entity does not have {%s nsp %}")
+    }
+    return c
 }
 
 func (w *World) Must{%s nsp %}(e Entity) {%s nsp %}Component {
@@ -161,21 +169,33 @@ func (w *World) All{%s npp %}Entities(yield func(e Entity) bool) {
     }
 }
 
+func (w *World) AllMutable{%s npp %}Entities(yield func(e Entity) bool) {
+    w.All{%s npp %}Entities(yield)
+}
+
 // {%s nsp %}Builder
-{% if data.IsOnlyOneField %}
+func With{%s nsp %}Default() EntityBuilderOption {
+    {%- if data.IsOnlyOneField -%}
+    return With{%s nsp %}(Default{%s nsp %}Component().{%s data.Fields[0].Name.Singular.Pascal %})
+    {%- else -%}
+    return With{%s nsp %}(Default{%s nsp %}Component())
+    {%- endif -%}
+}
+
+{%- if data.IsOnlyOneField -%}
 func With{%s nsp %}(arg {%s data.Fields[0].Type.Singular.Original %}) EntityBuilderOption {
     c := {%s nsp %}Component{
         {%s data.Fields[0].Name.Singular.Pascal %}: arg,
     }
-{% else %}
+{%- else -%}
 func With{%s nsp %}(c {%s nsp %}Component) EntityBuilderOption {
-{% endif %}
+{%- endif -%}
     return func(w *World, e Entity) {
         w.{%s ss %}.Upsert(e, c)
     }
 }
 
-{% if !data.IsOnlyOneField %}
+{%- if !data.IsOnlyOneField -%}
 func With{%s nsp %}FromValues(
     {%- for _, f := range data.Fields -%}
     {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
@@ -189,7 +209,7 @@ func With{%s nsp %}FromValues(
         )
     }
 }
-{% endif %}
+{%- endif -%}
 
 
 // Events
@@ -233,17 +253,17 @@ func (w *World) On{%s nsp %}Changed(fn func(evt {%s nsp %}ChangedEvent)) Unsubsc
 {%- endif -%}
 
 // Resource methods
-{% if data.IsOnlyOneField %}
+{%- if data.IsOnlyOneField -%}
 func (w *World) Set{%s nsp %}Resource(arg {%s data.Fields[0].Type.Singular.Original %}) {
     w.Set{%s nsp %}(w.resourceEntity, arg)
 }
-{% else %}
+{%- else -%}
 func (w *World) Set{%s nsp %}Resource(c {%s nsp %}Component) {
     w.Set{%s nsp %}(w.resourceEntity, c)
 }
-{% endif %}
+{%- endif -%}
 
-{% if !data.IsOnlyOneField %}
+{%- if !data.IsOnlyOneField -%}
 func (w *World) Set{%s nsp %}ResourceFromValues(
     {%- for _, f := range data.Fields -%}
     {%s f.Name.Singular.Camel %}Arg {%s f.Type.Singular.Original %},
@@ -255,7 +275,7 @@ func (w *World) Set{%s nsp %}ResourceFromValues(
         {%- endfor -%}
     })
 }
-{% endif %}
+{%- endif -%}
 
 func (w *World) {%s nsp %}Resource() ({%s nsp %}Component,bool) {
     return w.{%s ss %}.Data(w.resourceEntity)

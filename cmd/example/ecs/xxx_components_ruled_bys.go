@@ -44,6 +44,14 @@ func (w *World) MutableRuledBy(e Entity) (c *RuledByComponent, ok bool) {
 	return w.ruledByComponents.DataMutable(e)
 }
 
+func (w *World) MustMutableRuledBy(e Entity) *RuledByComponent {
+	c, ok := w.MutableRuledBy(e)
+	if !ok {
+		panic("entity does not have RuledBy")
+	}
+	return c
+}
+
 func (w *World) MustRuledBy(e Entity) RuledByComponent {
 	c, ok := w.ruledByComponents.Data(e)
 	if !ok {
@@ -96,13 +104,19 @@ func (w *World) AllRuledBysEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutableRuledBysEntities(yield func(e Entity) bool) {
+	w.AllRuledBysEntities(yield)
+}
+
 // RuledByBuilder
+func WithRuledByDefault() EntityBuilderOption {
+	return WithRuledBy(DefaultRuledByComponent().Entity)
+}
 
 func WithRuledBy(arg Entity) EntityBuilderOption {
 	c := RuledByComponent{
 		Entity: arg,
 	}
-
 	return func(w *World, e Entity) {
 		w.ruledByComponents.Upsert(e, c)
 	}
@@ -111,7 +125,6 @@ func WithRuledBy(arg Entity) EntityBuilderOption {
 // Events
 
 // Resource methods
-
 func (w *World) SetRuledByResource(arg Entity) {
 	w.SetRuledBy(w.resourceEntity, arg)
 }

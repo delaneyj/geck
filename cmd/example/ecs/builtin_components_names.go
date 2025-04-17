@@ -44,6 +44,14 @@ func (w *World) MutableName(e Entity) (c *NameComponent, ok bool) {
 	return w.nameComponents.DataMutable(e)
 }
 
+func (w *World) MustMutableName(e Entity) *NameComponent {
+	c, ok := w.MutableName(e)
+	if !ok {
+		panic("entity does not have Name")
+	}
+	return c
+}
+
 func (w *World) MustName(e Entity) NameComponent {
 	c, ok := w.nameComponents.Data(e)
 	if !ok {
@@ -96,13 +104,19 @@ func (w *World) AllNamesEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutableNamesEntities(yield func(e Entity) bool) {
+	w.AllNamesEntities(yield)
+}
+
 // NameBuilder
+func WithNameDefault() EntityBuilderOption {
+	return WithName(DefaultNameComponent().Value)
+}
 
 func WithName(arg string) EntityBuilderOption {
 	c := NameComponent{
 		Value: arg,
 	}
-
 	return func(w *World, e Entity) {
 		w.nameComponents.Upsert(e, c)
 	}
@@ -111,7 +125,6 @@ func WithName(arg string) EntityBuilderOption {
 // Events
 
 // Resource methods
-
 func (w *World) SetNameResource(arg string) {
 	w.SetName(w.resourceEntity, arg)
 }

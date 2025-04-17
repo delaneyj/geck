@@ -68,6 +68,14 @@ func (w *World) MutablePosition(e Entity) (c *PositionComponent, ok bool) {
 	return w.positionComponents.DataMutable(e)
 }
 
+func (w *World) MustMutablePosition(e Entity) *PositionComponent {
+	c, ok := w.MutablePosition(e)
+	if !ok {
+		panic("entity does not have Position")
+	}
+	return c
+}
+
 func (w *World) MustPosition(e Entity) PositionComponent {
 	c, ok := w.positionComponents.Data(e)
 	if !ok {
@@ -120,10 +128,16 @@ func (w *World) AllPositionsEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutablePositionsEntities(yield func(e Entity) bool) {
+	w.AllPositionsEntities(yield)
+}
+
 // PositionBuilder
+func WithPositionDefault() EntityBuilderOption {
+	return WithPosition(DefaultPositionComponent())
+}
 
 func WithPosition(c PositionComponent) EntityBuilderOption {
-
 	return func(w *World, e Entity) {
 		w.positionComponents.Upsert(e, c)
 	}
@@ -146,7 +160,6 @@ func WithPositionFromValues(
 // Events
 
 // Resource methods
-
 func (w *World) SetPositionResource(c PositionComponent) {
 	w.SetPosition(w.resourceEntity, c)
 }

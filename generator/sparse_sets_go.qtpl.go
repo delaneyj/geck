@@ -44,12 +44,19 @@ func NewSparseSet[T any]() *SparseSet[T] {
 }
 
 func (s *SparseSet[T]) search(idx int) int {
-	if idx >= len(s.sparse) {
+	sl, dl := len(s.sparse), len(s.dense)
+	if idx >= sl || dl == 0 {
 		return -1
 	}
 
-	if s.sparse[idx] < len(s.dense) && s.dense[s.sparse[idx]].Index() == idx {
-		return s.sparse[idx]
+	denseIdx := s.sparse[idx]
+	if denseIdx < 0 || denseIdx >= dl {
+		return -1
+	}
+
+	dense := s.dense[denseIdx]
+	if denseIdx < len(s.dense) && dense.Index() == idx {
+		return denseIdx
 	}
 
 	return -1
@@ -91,8 +98,11 @@ func (s *SparseSet[T]) Remove(e Entity) (wasRemoved bool) {
 
 	lastIdx := len(s.dense) - 1
 	lastEntity := s.dense[lastIdx]
+	lastEntityIdx := lastEntity.Index()
 	s.dense[sIdx] = lastEntity
-	s.sparse[lastEntity.Index()] = sIdx
+	s.data[sIdx] = s.data[lastIdx]
+	s.sparse[lastEntityIdx] = sIdx
+	s.sparse[idx] = ssTombstoneIndex
 	s.dense = s.dense[:lastIdx]
 	s.data = s.data[:lastIdx]
 	return true
@@ -160,31 +170,31 @@ func (s *SparseSet[T]) Cap() int {
 }
 
 `)
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 }
 
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 func writesparseSetTemplate(qq422016 qtio422016.Writer, data *ecsTmplData) {
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 	streamsparseSetTemplate(qw422016, data)
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 	qt422016.ReleaseWriter(qw422016)
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 }
 
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 func sparseSetTemplate(data *ecsTmplData) string {
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 	qb422016 := qt422016.AcquireByteBuffer()
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 	writesparseSetTemplate(qb422016, data)
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 	qs422016 := string(qb422016.B)
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 	qt422016.ReleaseByteBuffer(qb422016)
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 	return qs422016
-//line generator/sparse_sets_go.qtpl:135
+//line generator/sparse_sets_go.qtpl:145
 }

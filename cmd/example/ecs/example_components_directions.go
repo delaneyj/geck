@@ -44,6 +44,14 @@ func (w *World) MutableDirection(e Entity) (c *DirectionComponent, ok bool) {
 	return w.directionComponents.DataMutable(e)
 }
 
+func (w *World) MustMutableDirection(e Entity) *DirectionComponent {
+	c, ok := w.MutableDirection(e)
+	if !ok {
+		panic("entity does not have Direction")
+	}
+	return c
+}
+
 func (w *World) MustDirection(e Entity) DirectionComponent {
 	c, ok := w.directionComponents.Data(e)
 	if !ok {
@@ -96,13 +104,19 @@ func (w *World) AllDirectionsEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutableDirectionsEntities(yield func(e Entity) bool) {
+	w.AllDirectionsEntities(yield)
+}
+
 // DirectionBuilder
+func WithDirectionDefault() EntityBuilderOption {
+	return WithDirection(DefaultDirectionComponent().Values)
+}
 
 func WithDirection(arg EnumDirection) EntityBuilderOption {
 	c := DirectionComponent{
 		Values: arg,
 	}
-
 	return func(w *World, e Entity) {
 		w.directionComponents.Upsert(e, c)
 	}
@@ -111,7 +125,6 @@ func WithDirection(arg EnumDirection) EntityBuilderOption {
 // Events
 
 // Resource methods
-
 func (w *World) SetDirectionResource(arg EnumDirection) {
 	w.SetDirection(w.resourceEntity, arg)
 }

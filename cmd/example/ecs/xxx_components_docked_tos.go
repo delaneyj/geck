@@ -44,6 +44,14 @@ func (w *World) MutableDockedTo(e Entity) (c *DockedToComponent, ok bool) {
 	return w.dockedToComponents.DataMutable(e)
 }
 
+func (w *World) MustMutableDockedTo(e Entity) *DockedToComponent {
+	c, ok := w.MutableDockedTo(e)
+	if !ok {
+		panic("entity does not have DockedTo")
+	}
+	return c
+}
+
 func (w *World) MustDockedTo(e Entity) DockedToComponent {
 	c, ok := w.dockedToComponents.Data(e)
 	if !ok {
@@ -96,13 +104,19 @@ func (w *World) AllDockedTosEntities(yield func(e Entity) bool) {
 	}
 }
 
+func (w *World) AllMutableDockedTosEntities(yield func(e Entity) bool) {
+	w.AllDockedTosEntities(yield)
+}
+
 // DockedToBuilder
+func WithDockedToDefault() EntityBuilderOption {
+	return WithDockedTo(DefaultDockedToComponent().Entity)
+}
 
 func WithDockedTo(arg Entity) EntityBuilderOption {
 	c := DockedToComponent{
 		Entity: arg,
 	}
-
 	return func(w *World, e Entity) {
 		w.dockedToComponents.Upsert(e, c)
 	}
@@ -111,7 +125,6 @@ func WithDockedTo(arg Entity) EntityBuilderOption {
 // Events
 
 // Resource methods
-
 func (w *World) SetDockedToResource(arg Entity) {
 	w.SetDockedTo(w.resourceEntity, arg)
 }
